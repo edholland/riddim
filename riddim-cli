@@ -1,0 +1,20 @@
+#!/bin/sh
+# Launcher so riddim works from any directory.
+#
+# `python -m riddim` only works from the repo root, because that is where the
+# package has to be importable from - running it from inside riddim/ fails with
+# "No module named riddim", which is confusing and easy to hit. This resolves
+# its own location and puts the repo root on the import path, so the command
+# works from anywhere, including from inside the package directory.
+#
+# Add the repo root to your PATH and this becomes just `riddim-cli ...`.
+here=$(cd "$(dirname "$0")" && pwd)
+
+# Prefer the project venv if it has mido; otherwise fall back to python3.
+if [ -x "$here/.venv/bin/python" ] && "$here/.venv/bin/python" -c "import mido" 2>/dev/null; then
+    python="$here/.venv/bin/python"
+else
+    python=python3
+fi
+
+exec env PYTHONPATH="$here${PYTHONPATH:+:$PYTHONPATH}" "$python" -m riddim "$@"
