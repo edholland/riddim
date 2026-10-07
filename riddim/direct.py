@@ -171,8 +171,14 @@ def knob(params: SongParams, path: str) -> Knob | None:
 
 
 def knobs(params: SongParams) -> dict[str, Knob]:
-    """Every discoverable knob, by path, with this song's current value."""
-    return {path: knob(params, path) for path in _BOUNDS}
+    """Every discoverable knob, by path, with this song's current value.
+
+    `key` is first: it is a knob like any other, and steering it by words
+    ("down a third") must show up in the readback or the maker cannot see it.
+    """
+    out = {"key": knob(params, "key")}
+    out.update({path: knob(params, path) for path in _BOUNDS})
+    return out
 
 
 # --------------------------------------------------------------------------
@@ -382,7 +388,7 @@ def diff(a: SongParams, b: SongParams) -> list[Delta]:
     and one you cannot.
     """
     out: list[Delta] = []
-    for path in _BOUNDS:
+    for path in knobs(a):
         va, vb = read_knob(a, path), read_knob(b, path)
         if abs(va - vb) > 1e-6:
             out.append(Delta(path, round(va, 3), round(vb, 3)))
