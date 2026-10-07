@@ -183,15 +183,36 @@ song = regenerate(song, "drums")         # new drums, everything else identical
 ## The UI
 
 ```bash
-./riddim-cli ui        # opens http://localhost:8765
+./riddim-cli ui        # opens http://127.0.0.1:8765
 ```
 
 Standard library only. The page shows the structure as an editable timeline
-(add, remove, reorder, resize, set energy, toggle which roles play), every
-drum and bass parameter as a slider, a piano roll per part with the chord
-tones shaded, and in-browser playback. Every part has a *regenerate* button;
-so do harmony and structure. Export MIDI or send to the Deluge from the
-header.
+(add, remove, reorder, resize, set energy, toggle which roles play), the
+steering surface, a piano roll per part with the chord tones shaded, and
+in-browser playback. Export MIDI or send to the Deluge from the header.
+
+## Steering: twist, don't reroll
+
+The sound panel is a steering surface, not a random button. Every part has a
+*regenerate* button; the panel above it is for when the track has an identity
+and you want to move it. The model, in `direct.py`:
+
+- **Twisting a knob is a step, not a roll.** The engine keeps every seed
+  frozen and recomposes, so the result is a small move from where you were -
+  the bass got denser, the chords did not touch. A fresh roll is the opposite,
+  and it is available, but it is a different action with a different name.
+- **A roll starts a new take.** Regenerating a part or rerolling the song
+  becomes the A/B baseline: from then on, the readback is measured against
+  the roll, not the song you were steering into it.
+- **You can walk the trail.** Every step is on a history; the page has undo
+  and redo, and *reset take* puts every knob back where the take began.
+- **The readback is the feedback.** After a change the page tells you exactly
+  which knobs moved and which parts did - `moved drums, sub (drums.kick_density
+  0.22->0.30, ...)`. Hold **A/B** to hear the start of the take and the current
+  state in alternation.
+- **Words work too.** An intent like `busier`, `down a third`, or `faster by 4`
+  resolves to precise knob moves; anything the engine does not understand is
+  said so rather than silently ignored.
 
 ## Profiles
 
@@ -210,18 +231,29 @@ theory/     pitch, scale, chord, voicing, harmony, rhythm, melody, bassline
 arrange/    structure — sections, energy curve, density and brightness
 profile.py  genre settings
 compose.py  the pipeline: key → progression → material → sections → Song
+direct.py   steering — knobs, ops, word intents, the trail, the readback
 song.py     Note / Part / Song / Rig — the boundary between theory and MIDI
 render/     standard MIDI file output
 deluge/     the AI SysEx protocol, client, and session-clip renderer
+ui/         the steering page (standard library only)
 ```
 
 ## Deluge firmware
 
-Depends on the custom `AISysex` command set in
-`DelugeFirmware/src/deluge/io/midi/ai_sysex.cpp` (untracked local work, not
-upstream). `deluge/sysex.py` is a direct transcription of that file's parser,
-including the payload-length thresholds the firmware uses to switch between
-14-bit and 21-bit timing — `tests/test_deluge_sysex.py` pins all of them.
+Depends on the custom `AISysex` command set, now in its own repo
+(`deluge-firmware`, a small fork of the community firmware): a dedicated
+`AI` SysEx namespace with 19 commands (note push/clear, session clip
+select/clone/create/clamp, row expression and automation, preset load,
+section repeat) plus the song-mode section loop that lets jam/song mode
+wrap playback instead of stopping.
+
+`deluge/sysex.py` is a direct transcription of the firmware's parser,
+including the payload-length thresholds it uses to switch between 14-bit and
+21-bit timing — `tests/test_deluge_sysex.py` pins all of them. The fork
+removed the shared-sound param-manager hot path for performance; the
+corresponding `SYNC_SHARED_OUTPUT_PARAMS` command is still in the protocol
+but no-oped on the device, and riddim never sends it (cloned clips inherit
+their template's output anyway).
 
 ## Tests
 

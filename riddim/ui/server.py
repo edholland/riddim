@@ -6,10 +6,21 @@ and every interaction is "edit params, recompose". Because params resolve
 completely and each part has its own seed, the page can change one slider,
 or regenerate one part, and show exactly what moved.
 
-    riddim-cli ui            # then open http://localhost:8765
+    riddim-cli ui            # then open http://127.0.0.1:8765
+
+The steering model (see riddim.direct):
+
+* every state change is a *step* on a history trail, so the page can
+  undo / redo and diff against the start of the take;
+* twisting a knob keeps every seed frozen - the result is a small move
+  from where you were, not a new roll;
+* "re-roll" (a part or the whole song) starts a *new take*, which becomes
+  the A/B baseline.
 """
 
 from __future__ import annotations
+
+from dataclasses import asdict
 
 import io
 import json
@@ -23,6 +34,9 @@ from pathlib import Path
 
 from .. import profile as profile_mod
 from ..compose import compose
+from ..direct import Op, apply_ops, diff as params_diff, direct as parse_direct
+from ..direct import knobs as read_knobs
+from ..direct import song_diff
 from ..params import SongParams
 from ..song import Rig, Song
 from ..theory import harmony
@@ -31,45 +45,146 @@ from ..units import TICKS_PER_BAR
 
 HERE = Path(__file__).parent
 
+HISTORY_LIMIT = 60  # a take is a few dozen twists at most
+
+
+class _Snap:
+    """One point on the steering trail: the params and song that were live."""
+
+    __slots__ = ("params", "song")
+
+    def __init__(self, params: SongParams, song: Song):
+        self.params = params
+        self.song = song
+
+
+def _ops(body: dict) -> list[Op]:
+    """Turn the page's requested changes into ops.
+
+    The page sends absolute targets from its sliders: {"path", "to"} or
+    relative nudges: {"path", "delta"}.
+    """
+    ops: list[Op] = []
+    for item in body.get("ops") or []:
+        if isinstance(item, str):
+            ops.extend(parse_direct(item))
+        elif isinstance(item, dict) and item.get("path"):
+            ops.append(Op(
+                item["path"],
+                delta=float(item.get("delta", 0.0)),
+                to=item.get("to"),
+            ))
+    return ops
+
 
 class State:
-    """The one song the page is editing."""
+    """The one song the page is steering, with its trail."""
 
     def __init__(self, params: SongParams | None = None):
         self.lock = threading.Lock()
         self.params = params or SongParams(profile="dubstep_140", seed=random.randrange(1, 10**6))
         self.song: Song = compose(params=self.params)
+        # The take: the song twists are steering, and the params it started from.
+        self.baseline: Song = self.song
+        self.base_params: SongParams = self.params
+        self.history: list[_Snap] = []
+        self.future: list[_Snap] = []
+
+    # -- take bookkeeping ------------------------------------------------
+
+    def _push(self) -> None:
+        self.history.append(_Snap(self.params, self.song))
+        if len(self.history) > HISTORY_LIMIT:
+            self.history.pop(0)
+        self.future.clear()
+
+    def _retake(self, params: SongParams, song: Song) -> Song:
+        self._push()
+        self.params, self.song = params, song
+        self.baseline, self.base_params = song, params
+        return song
+
+    # -- the steering ------------------------------------------------------
 
     def recompose(self, params: SongParams) -> Song:
+        """A wholesale params edit (arrange/advanced panel) - a step, not a retake."""
         with self.lock:
+            self._push()
             self.params = params
+            self.song = compose(params=params)
+            return self.song
+
+    def mutate(self, ops: list[Op]) -> Song:
+        """Twist knobs: apply ops, keep every seed frozen, recompose."""
+        with self.lock:
+            if not ops:
+                return self.song
+            self._push()
+            self.params = apply_ops(self.params, ops)
             self.song = compose(params=self.params)
             return self.song
 
     def regenerate(self, part: str) -> Song:
+        """A fresh roll of one part - that starts a new take."""
         from ..compose import regenerate
         with self.lock:
-            self.song = regenerate(self.song, part)
-            self.params = self.song.params
-            return self.song
+            song = regenerate(self.song, part)
+            return self._retake(song.params, song)
 
     def reroll(self, keep: dict) -> Song:
         """A new song: fresh seed, everything drawn again except what the
-        page asked to keep (profile, key, bpm...)."""
+        page asked to keep (profile, key, bpm...). Starts a new take."""
         with self.lock:
             fresh = SongParams(profile=self.params.profile, seed=random.randrange(1, 10**6))
             for k, v in keep.items():
                 if hasattr(fresh, k) and v not in (None, ""):
                     setattr(fresh, k, v)
-            self.params = fresh
-            self.song = compose(params=self.params)
+            return self._retake(fresh, compose(params=fresh))
+
+    def undo(self) -> Song:
+        with self.lock:
+            if not self.history:
+                return self.song
+            self.future.append(_Snap(self.params, self.song))
+            snap = self.history.pop()
+            self.params, self.song = snap.params, snap.song
+            return self.song
+
+    def redo(self) -> Song:
+        with self.lock:
+            if not self.future:
+                return self.song
+            self.history.append(_Snap(self.params, self.song))
+            snap = self.future.pop()
+            self.params, self.song = snap.params, snap.song
             return self.song
 
 
-def song_to_dict(song: Song) -> dict:
+def _changed(state: State, song: Song) -> dict:
+    """What moved since the take began - for the page's readback."""
+    base = state.baseline
+    if base is song:
+        return {"knobs": [], "moved": [], "notes": _part_counts(song)}
+    deltas = [
+        {"path": d.path, "from": round(d.from_value, 3), "to": round(d.to_value, 3)}
+        for d in params_diff(state.base_params, state.params)
+    ]
+    moved = song_diff(base, song).moved_parts
+    return {
+        "knobs": deltas,
+        "moved": moved,
+        "notes": {**_part_counts(base), **_part_counts(song)},
+    }
+
+
+def _part_counts(song: Song) -> dict:
+    return {p.role: len(p.notes) for p in song.parts}
+
+
+def song_to_dict(song: Song, state: State | None = None) -> dict:
     """Everything the page needs to draw and play the song."""
     arr = song.arrangement
-    return {
+    d = {
         "name": song.name,
         "bpm": song.bpm,
         "bars": song.bars,
@@ -100,6 +215,11 @@ def song_to_dict(song: Song) -> dict:
         "params": song.params.to_dict(),
         "ticks_per_bar": TICKS_PER_BAR,
     }
+    if state is not None:
+        d["can_undo"] = bool(state.history)
+        d["can_redo"] = bool(state.future)
+        d["changed"] = _changed(state, song)
+    return d
 
 
 def options() -> dict:
@@ -122,7 +242,7 @@ class Handler(BaseHTTPRequestHandler):
     # -- plumbing ------------------------------------------------------
 
     def log_message(self, fmt, *args):  # quieter
-        if "/api/" in (args[0] if args else ""):
+        if args and "/api/" in str(args[0]):
             return
         sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))
 
@@ -153,7 +273,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.path in ("/", "/index.html"):
                 return self._file(HERE / "index.html", "text/html; charset=utf-8")
             if self.path == "/api/song":
-                return self._json(song_to_dict(self.state.song))
+                return self._json(song_to_dict(self.state.song, self.state))
             if self.path == "/api/options":
                 return self._json(options())
             if self.path == "/api/progressions":
@@ -165,6 +285,13 @@ class Handler(BaseHTTPRequestHandler):
                     for pr in harmony.enumerate_progressions(scale)
                 ]
                 return self._json({"key": str(scale), "progressions": items})
+            if self.path == "/api/knobs":
+                knobs = [asdict(k) for k in read_knobs(self.state.params).values()]
+                return self._json({"knobs": knobs, "key": str(self.state.song.scale)})
+            if self.path == "/api/baseline":
+                d = song_to_dict(self.state.baseline)
+                d["knobs"] = [asdict(k) for k in read_knobs(self.state.base_params).values()]
+                return self._json(d)
             if self.path == "/api/ports":
                 import mido
                 return self._json({"outputs": mido.get_output_names()})
@@ -192,11 +319,18 @@ class Handler(BaseHTTPRequestHandler):
             body = self._body()
             if self.path == "/api/compose":
                 params = SongParams.from_dict(body["params"])
-                return self._json(song_to_dict(self.state.recompose(params)))
+                return self._json(song_to_dict(self.state.recompose(params), self.state))
+            if self.path == "/api/mutate":
+                song = self.state.mutate(_ops(body))
+                return self._json(song_to_dict(song, self.state))
             if self.path == "/api/regenerate":
-                return self._json(song_to_dict(self.state.regenerate(body["part"])))
+                return self._json(song_to_dict(self.state.regenerate(body["part"]), self.state))
             if self.path == "/api/reroll":
-                return self._json(song_to_dict(self.state.reroll(body.get("keep", {}))))
+                return self._json(song_to_dict(self.state.reroll(body.get("keep", {})), self.state))
+            if self.path == "/api/undo":
+                return self._json(song_to_dict(self.state.undo(), self.state))
+            if self.path == "/api/redo":
+                return self._json(song_to_dict(self.state.redo(), self.state))
             if self.path == "/api/send":
                 return self._json(self._send(body))
             self.send_error(404)
