@@ -4,7 +4,8 @@ import json
 
 from riddim.compose import compose
 from riddim.params import SongParams
-from riddim.ui.server import State, options, song_to_dict
+from riddim.direct import Op
+from riddim.ui.server import State, _changed, options, song_to_dict
 
 
 def test_song_to_dict_is_json_and_complete():
@@ -66,3 +67,84 @@ def test_options_cover_every_profile():
     from riddim import profile as pm
 
     assert set(options()["profiles"]) == set(pm.PROFILES)
+
+
+# -- the steering model -----------------------------------------------------
+#
+# A twist is a step on a trail; a roll (regenerate/reroll) starts a new take.
+# Undo/redo walk the trail. The readback says what moved.
+
+
+
+def _state():
+    return State(SongParams(profile="dubstep_140", seed=17))
+
+
+def test_mutate_is_a_step_on_the_trail():
+    state = _state()
+    before = state.params.copy()
+    state.mutate([Op("bass.density", delta=0.1)])
+    assert state.history and not state.future
+    assert state.params is not before
+    assert state.song is not None
+
+
+def test_undo_redo_round_trip():
+    state = _state()
+    base = state.params.copy()
+    state.mutate([Op("tension", 0.25), Op("bpm", 4)])
+    state.undo()
+    assert state.params.to_dict() == base.to_dict()
+    state.redo()
+    assert state.history and not state.future
+    assert state.params.tension - base.tension > 0.2
+
+
+def test_empty_ops_is_a_no_op():
+    state = _state()
+    song = state.mutate([])
+    assert song is state.song
+    assert not state.history
+
+
+def test_regenerate_starts_a_new_take():
+    state = _state()
+    state.mutate([Op("tension", 0.3)])
+    baseline_song = state.baseline
+    state.regenerate("drums")
+    # The take now starts at the regenerated song: the readback against it
+    # is empty, because the baseline moved with it.
+    assert state.baseline is state.song
+    assert baseline_song is not state.song
+    assert _changed(state, state.song)["knobs"] == []
+
+
+def test_reroll_starts_a_new_take_with_new_seed():
+    state = _state()
+    old_seed = state.song.seed
+    state.reroll({"key": "G phrygian"})
+    assert state.baseline is state.song
+    assert state.song.seed != old_seed
+    assert state.song.scale.name == "phrygian"
+
+
+def test_changed_readback_reports_moved_knobs():
+    state = _state()
+    state.mutate([Op("tension", 0.3)])
+    changed = _changed(state, state.song)
+    assert changed["knobs"] and changed["knobs"][0]["path"] == "tension"
+    assert changed["notes"]
+
+
+def test_key_steering_is_in_the_readback():
+    state = _state()
+    state.mutate([Op("key", to=-2)])
+    changed = _changed(state, state.song)
+    assert any(k["path"] == "key" for k in changed["knobs"])
+
+
+def test_history_is_bounded():
+    state = _state()
+    for _ in range(70):
+        state.mutate([Op("tension", 0.01)])
+    assert len(state.history) <= 60
