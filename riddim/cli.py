@@ -39,6 +39,9 @@ def _add_compose_args(parser: argparse.ArgumentParser) -> None:
                         help="keep every part on Deluge synths instead of "
                              "sending the bass and chords out to the Coral")
     parser.add_argument("--name", default="", help="song name")
+    parser.add_argument("--check", action="store_true",
+                        help="run the self-critic over the song and print "
+                             "what is not doing its job")
 
 
 def _build(args):
@@ -55,6 +58,18 @@ def _build(args):
     )
 
 
+def _print_check(song) -> None:
+    from . import critique
+
+    findings = critique.critique(song)
+    print("\ncheck:")
+    if not findings:
+        print("  clean")
+        return
+    for f in findings:
+        print(f"  [{f.severity:<7}] {f.where:<8} {f.message}")
+
+
 def cmd_compose(args) -> int:
     song = _build(args)
     print(song.summary())
@@ -64,6 +79,10 @@ def cmd_compose(args) -> int:
     print("Performance notes:")
     for note in song.notes_for_player:
         print(f"  - {note}")
+
+    if args.check:
+        _print_check(song)
+        print()
 
     if args.out:
         from .render import midifile
@@ -80,6 +99,9 @@ def cmd_plan(args) -> int:
     print(song.summary())
     print()
     print(song.arrangement.describe(song.bpm))
+    if args.check:
+        _print_check(song)
+        print()
     print("\nDeluge session layout:")
     print(render.plan(song))
     return 0

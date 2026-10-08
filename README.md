@@ -33,6 +33,11 @@ Use the `riddim-cli` launcher in the repo root — it works from any directory:
 # See what would land on the Deluge, without sending
 ./riddim-cli plan --profile dub --seed 42
 
+# Run the engine's own knowledge in reverse over the song: which sections are
+# not doing what they claim, which notes are out of register, where the energy
+# curve lies
+./riddim-cli compose --profile dubstep --seed 40 --check
+
 # Send it into the Deluge session, ready to jam
 ./riddim-cli send --profile dub --seed 42
 
@@ -153,9 +158,10 @@ generator with musical parameters:
 |---|---|---|
 | Drum feel | `theory/groove.py` | kick anchors, kick density and syncopation, snare ghosts, hat density and offbeat bias — one-drop, steppers and half-time are *points* in this space, not the only points |
 | Chord-stab rhythm | `theory/groove.py` | density per felt beat, syncopation; never on the downbeat |
-| Progression | `theory/harmony.py` | a root-motion grammar over the mode's stable triads, scored for tension; names its output by analysis (`i-bVII-bVI-V`) |
+| Progression | `theory/harmony.py` | a root-motion grammar over the mode's stable triads, scored for tension; names its output by analysis (`i-bVII-bVI-V`). One per section: body sections share the tune's core, every peak shares one cadence, every hole shares one rest chord |
 | Bassline | `theory/bassline.py` | density, syncopation, approach tones, octave jumps, fifth weight, contour, anticipation; phrasing as *operations* — state, restate, answer |
-| Structure | `arrange/structure.py` | an energy grammar (intro? build peak [release build peak]* outro), roles entering subtractively by threshold, deliberate holes |
+| Structure | `arrange/structure.py` | an energy grammar (intro? build peak [release build peak]* outro), roles entering subtractively by threshold, deliberate holes. Builds *ramp*: the section's energy climbs bar by bar toward its level, so the approach to a peak is audible |
+| Drum fills | `theory/fill.py` | the last bar of a phrase, specified by the energy of the section ending: soft rims out of a hole, a climbing snare run out of a build, sixteenths and a hard thwack out of a peak. All of it in the second half of the bar — a fill points *at* the next downbeat, never pre-empts it |
 | Melody | `theory/melody.py` | contour, span, chord-tone snapping, then development transforms |
 
 The old named figures, riddims and templates still exist in the library and
@@ -180,6 +186,23 @@ song = compose(params=song.params)       # only the bass changed
 song = regenerate(song, "drums")         # new drums, everything else identical
 ```
 
+Sections carry two extra fields the UI can set: `progression` (a library name
+like `andalusian`, a Roman-numeral string like `i-bVII-bVI`, or the resolved
+name of a generated progression; `None` inherits the tune's core) and `ramp`
+(0..1, how much the section climbs through its own span). Both resolve, write
+back, and reproduce, exactly like every other knob.
+
+## The self-critic
+
+Generation is one direction of the engine; `riddim/critique.py` is the other.
+The same knowledge that keeps the generators musical runs in reverse over a
+finished song and says plainly where it is not doing its job: a part listed in
+a section but silent there, notes outside a register window, a bass that never
+puts a root under a fast-changing chord, a peak that is not the loudest thing,
+a build that never climbs, a hole that is loud. It reports, it does not
+rewrite — the findings are the `--check` output, and the fixing is the
+maker's call.
+
 ## The UI
 
 ```bash
@@ -187,9 +210,15 @@ song = regenerate(song, "drums")         # new drums, everything else identical
 ```
 
 Standard library only. The page shows the structure as an editable timeline
-(add, remove, reorder, resize, set energy, toggle which roles play), the
-steering surface, a piano roll per part with the chord tones shaded, and
-in-browser playback. Export MIDI or send to the Deluge from the header.
+(add, remove, reorder, resize, set energy, toggle which roles play, name a
+section's own progression, set how hard it ramps), the steering surface, a
+piano roll per part with the chord tones shaded, and in-browser playback.
+Export MIDI or send to the Deluge from the header.
+
+The readback is at note level: besides the parts that moved, it counts notes
+*added* and *removed* per part, and the piano roll shades added notes and
+ghosts removed ones, so a key change and a density nudge look different on
+screen.
 
 ## Steering: twist, don't reroll
 
@@ -210,9 +239,11 @@ and you want to move it. The model, in `direct.py`:
   which knobs moved and which parts did - `moved drums, sub (drums.kick_density
   0.22->0.30, ...)`. Hold **A/B** to hear the start of the take and the current
   state in alternation.
-- **Words work too.** An intent like `busier`, `down a third`, or `faster by 4`
-  resolves to precise knob moves; anything the engine does not understand is
-  said so rather than silently ignored.
+- **Words work too.** An intent like `busier`, `down a third`, `faster by 4`,
+  or a mode — `phrygian`, `dorian`, `phrygian dominant` — resolves to precise
+  knob moves. A mode keeps the tonic and moves the whole harmonic personality
+  (the b2, the raised 7th): a big move, on purpose. Anything the engine does
+  not understand is said so rather than silently ignored.
 
 ## Profiles
 
@@ -227,11 +258,12 @@ not editing the engine.
 ## Layout
 
 ```
-theory/     pitch, scale, chord, voicing, harmony, rhythm, melody, bassline
+theory/     pitch, scale, chord, voicing, harmony, rhythm, melody, bassline, fill
 arrange/    structure — sections, energy curve, density and brightness
 profile.py  genre settings
 compose.py  the pipeline: key → progression → material → sections → Song
 direct.py   steering — knobs, ops, word intents, the trail, the readback
+critique.py the self-critic: the engine's knowledge run in reverse (--check)
 song.py     Note / Part / Song / Rig — the boundary between theory and MIDI
 render/     standard MIDI file output
 deluge/     the AI SysEx protocol, client, and session-clip renderer

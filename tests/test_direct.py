@@ -86,6 +86,28 @@ def test_phrase_parsing():
     assert direct("shorter") == [Op("_total_bars", delta=-16)]
 
 
+def test_phrase_parsing_with_numbers():
+    """'by N' says how many written bpm or bars; the sign comes from the verb.
+    A double of the number, or a flipped sign, is a change nobody asked for."""
+    assert direct("faster by 4") == [Op("bpm", delta=4)]
+    assert direct("slower by 4") == [Op("bpm", delta=-4)]
+    assert direct("shorter by 16") == [Op("_total_bars", delta=-16)]
+    assert direct("longer by 16") == [Op("_total_bars", delta=16)]
+    assert direct("shorter by 8 bars") == [Op("_total_bars", delta=-8)]
+
+
+def test_mode_intent_keeps_the_tonic():
+    """The mode is a word like any other; it moves the mode, not the key."""
+    assert direct("phrygian") == [Op("mode", to="phrygian")]
+    assert direct("dorian") == [Op("mode", to="dorian")]
+    assert direct("phrygian dominant") == [Op("mode", to="phrygian_dominant")]
+    p = SongParams(profile="dubstep_140", seed=1, key="G dorian")
+    assert apply_ops(p, [Op("mode", to="phrygian")]).key == "G phrygian"
+    assert apply_ops(p, INTENTS["minor"]).key == "G minor"
+    with pytest.raises(ValueError):
+        apply_ops(p, [Op("mode", to="locrian")])
+
+
 # -- knobs: the discoverable view ------------------------------------------
 
 def test_knobs_cover_the_song_and_round_trip():
@@ -120,6 +142,17 @@ def test_song_diff_reports_which_parts_moved():
     assert d.total_notes > 0
     assert d.delta_notes > 0
     assert "drums" in d.summary()
+
+
+def test_song_diff_sees_a_key_change():
+    """A key change transposes every pitched note and keeps every count the
+    same, so a count-based diff would report 'moved nothing' - a readback
+    lying to the maker. The diff compares notes, so it sees the move."""
+    s0 = _song()
+    s1 = compose(apply_ops(s0.params, [Op("key", to=-2)]))
+    d = song_diff(s0, s1)
+    assert "sub" in d.moved_parts
+    assert "drums" not in d.moved_parts
 
 
 # -- the trail -------------------------------------------------------------
@@ -168,6 +201,16 @@ def test_session_attempt_and_report():
     # Compare against the baseline covers the whole walk.
     d = sess.compare()
     assert d.moved_parts
+
+
+def test_session_key_move_is_legible():
+    """The key is a first-class knob: steering it reports one knob delta and
+    the part-level readback shows the pitched parts moving, the kit not."""
+    sess = Session(_song())
+    st = sess.attempt("down a third")
+    assert [d.path for d in st.delta] == ["key"]
+    assert "sub" in st.song_diff.moved_parts
+    assert "drums" not in st.song_diff.moved_parts
 
 
 def test_session_compare_baseline_untouched_by_later_steps():

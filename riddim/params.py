@@ -40,6 +40,12 @@ class SectionSpec:
     active: list[str]
     dub_throw: bool = False
     direction: str = ""
+    # This section's harmonic personality: a progression name (a library
+    # name, a Roman-numeral string, or a generated name like 'i-bIII-iv').
+    # None = inherit the tune's core progression.
+    progression: str | None = None
+    # How much this section climbs through its own span, 0..1.
+    ramp: float = 0.0
 
 
 @dataclass
@@ -116,7 +122,7 @@ def _encode(value):
 
 
 _FROZENSET_FIELDS = {"anchors", "avoid", "kick_anchors", "backbeat_override"}
-_TUPLE_FIELDS = {"answer_bars", "velocity"}
+_TUPLE_FIELDS = {"answer_bars", "velocity", "omit"}
 
 
 def _decode(cls, data):

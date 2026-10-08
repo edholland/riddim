@@ -207,6 +207,38 @@ class HarmonyPlan:
     def symbols(self) -> list[str]:
         return [ev.chord.symbol() for ev in self.events]
 
+    def offset(self, ticks: int) -> "HarmonyPlan":
+        """A copy of this plan moved `ticks` along the timeline.
+
+        Used to lay one plan per section: each section's plan is realised at
+        the origin, then shifted to the section's absolute start bar.
+        """
+        return HarmonyPlan(
+            self.scale, self.progression,
+            [ChordEvent(ev.chord, ev.start + ticks, ev.length,
+                         ev.label, dict(ev.meta)) for ev in self.events],
+        )
+
+
+def merge_section_plans(
+    plans: list[HarmonyPlan],
+    core: Progression | None = None,
+) -> HarmonyPlan:
+    """Flatten one plan per section onto a single timeline.
+
+    Events are already at absolute positions, so the merge is a plain
+    concatenation. The merged plan reports `core` - the tune's base
+    progression - rather than whatever happens to sit in the first section,
+    because first sections are usually holes (a drone), not the tune.
+    """
+    if not plans:
+        raise ValueError("no section plans to merge")
+    return HarmonyPlan(
+        plans[0].scale,
+        core or plans[0].progression,
+        [ev for plan in plans for ev in plan.events],
+    )
+
 
 def realise(
     scale: Scale,
@@ -251,11 +283,17 @@ def voiced(
     high: int,
     rootless: bool = True,
     centre: int | None = None,
+    first: Chord | None = None,
 ) -> HarmonyPlan:
     """Apply voice leading to a plan, optionally dropping roots.
 
     Rootless is the default because the bass part owns the root. Doubling it
-    in the chords is the single most common way these arrangements turn to mud.
+    in the chords is the single most common way these arrangements turn to
+    mud.
+
+    `first` is the voicing the *previous* section ended on, so that a section
+    change - including a change of progression - continues by the smallest
+    move instead of every voice jumping back to home.
     """
     from .voicing import lead
 
@@ -267,7 +305,7 @@ def voiced(
         # keeping the chord register well above the sub.
         chords = [chord_mod.rootless(c) if len(c.pitches) >= 4 else c for c in chords]
 
-    led = lead(chords, low, high, centre=centre)
+    led = lead(chords, low, high, centre=centre, first=first)
     events = [
         ChordEvent(new, ev.start, ev.length, label=ev.label, meta=dict(ev.meta))
         for ev, new in zip(plan.events, led)

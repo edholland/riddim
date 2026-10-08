@@ -37,6 +37,15 @@ class Section:
     direction: str = ""
     start_bar: int = 0
     dub_throw: bool = False
+    # This section's harmonic personality, as a progression name. None means
+    # "inherit the tune's core progression". A song changes its harmonic
+    # identity where the energy curve asks for it: the drop earns a cadence,
+    # the hole earns a drone.
+    progression: str | None = None
+    # How much the section climbs through its own span, 0..1. A build with a
+    # ramp thickens bar by bar toward its energy level instead of landing on
+    # a plateau - the approach to the drop becomes audible.
+    ramp: float = 0.0
 
     @property
     def end_bar(self) -> int:
@@ -288,6 +297,8 @@ def build(template: str = "dub", bars: int | None = None, name: str = "") -> Arr
             direction=direction,
             start_bar=cursor,
             dub_throw=throw,
+            # A build climbs; a plateau is a build that never arrives.
+            ramp=0.5 if row_name.startswith("build") else 0.0,
         )
         sections.append(section)
         cursor += scaled
@@ -405,6 +416,20 @@ def brightness_for(energy: float) -> float:
 def velocity_for(energy: float, base: int = 100) -> int:
     """Scale a base velocity by section energy."""
     return max(1, min(127, int(round(base * (0.72 + 0.35 * energy)))))
+
+
+def bar_energy(section: Section, bar: int) -> float:
+    """The energy at one bar into the section.
+
+    A flat section sits on its energy everywhere. A ramped one climbs from
+    `energy - ramp` up to `energy` across its span, so a build thickens bar
+    by bar instead of jumping to a plateau: the drop still gets the full
+    level, but the approach is audible in the density and velocity curve.
+    """
+    if section.ramp <= 0 or section.bars <= 1:
+        return section.energy
+    pos = min(1.0, bar / (section.bars - 1))
+    return max(0.05, section.energy - section.ramp * (1.0 - pos))
 
 
 # --------------------------------------------------------------------------
@@ -576,6 +601,9 @@ def generate(
         # velocity computed from 0.934.
         energy = round(max(0.05, min(1.0, rng.uniform(lo, hi)
                                      + rng.uniform(-p.energy_jitter, p.energy_jitter))), 3)
+        # Only builds climb. Everything else sits on its level - a peak that
+        # rambled up from below would stop reading as a drop.
+        ramp = round(rng.uniform(0.4, 0.85), 2) if k == "build" else 0.0
         counts[k] = counts.get(k, 0) + 1
         label = k if counts[k] == 1 else f"{k}_{counts[k]}"
         sections.append(Section(
@@ -583,6 +611,7 @@ def generate(
             active=_roles_for(k, energy, p), development=dev,
             direction=_DIRECTION[k], start_bar=cursor,
             dub_throw=k in ("dub_out", "breakdown", "outro"),
+            ramp=ramp,
         ))
         cursor += bars
         dev += 1

@@ -325,6 +325,140 @@ def test_template_override():
 
 
 # --------------------------------------------------------------------------
+# Per-section harmony: the song changes its identity where the energy asks
+# --------------------------------------------------------------------------
+
+def test_peaks_share_one_cadence():
+    """Two drops on the same cadence is what makes the second read as a
+    return; a new cadence on the second drop would read as a new tune."""
+    for seed in range(12):
+        song = compose("dubstep_140", seed=seed)
+        peaks = [s.progression for s in song.arrangement.sections
+                 if s.energy >= 0.8]
+        assert len(set(peaks)) <= 1, f"seed {seed}: {peaks}"
+
+
+def test_holes_share_a_rest():
+    """A hole's harmony is a place to go, not a destination: the quiet
+    sections of a song sit on one shared rest chord."""
+    for seed in range(12):
+        song = compose("dubstep_140", seed=seed)
+        holes = [s.progression for s in song.arrangement.sections
+                 if s.energy <= 0.35]
+        assert len(set(holes)) <= 1, f"seed {seed}: {holes}"
+
+
+def test_section_personalities_vary_between_songs():
+    names = {
+        tuple(s.progression for s in compose("dubstep_140", seed=s).arrangement.sections)
+        for s in range(20)
+    }
+    assert len(names) >= 3, f"only {names}"
+
+
+def test_explicit_section_progression_is_honoured():
+    """A section spec that names its own progression is honoured exactly -
+    that is the contract the UI's per-section field rests on."""
+    from riddim.params import SongParams
+
+    s0 = compose(params=SongParams(profile="dubstep_140", seed=11))
+    p = s0.params.copy()
+    i = next(i for i, s in enumerate(s0.arrangement.sections)
+             if s.progression != "andalusian" and s.plays("chords"))
+    p.sections[i].progression = "andalusian"
+    s1 = compose(params=p)
+    assert s1.arrangement.sections[i].progression == "andalusian"
+    assert s1.params.sections[i].progression == "andalusian"
+    # And the section re-voices to it.
+    sec = s0.arrangement.sections[i]
+    t0, t1 = sec.start_tick, sec.start_tick + sec.length_ticks
+    before = [n for n in s0.part("chords").notes if t0 <= n.start < t1]
+    after = [n for n in s1.part("chords").notes if t0 <= n.start < t1]
+    assert before != after
+
+
+def test_regenerate_harmony_redraws_the_sections():
+    from riddim.compose import regenerate
+    from riddim.params import SongParams
+
+    changed = sum(
+        [s.progression for s in compose(params=SongParams(profile="dubstep_140", seed=s))
+         .arrangement.sections]
+        !=
+        [s.progression for s in regenerate(
+            compose(params=SongParams(profile="dubstep_140", seed=s)), "harmony")
+         .arrangement.sections]
+        for s in range(6)
+    )
+    assert changed, "redrawing the harmony never changed a section"
+    # The structure itself is untouched - only the personalities moved.
+    s0 = compose(params=SongParams(profile="dubstep_140", seed=3))
+    s1 = regenerate(s0, "harmony")
+    assert [(s.name, s.bars) for s in s0.arrangement.sections] == \
+           [(s.name, s.bars) for s in s1.arrangement.sections]
+
+
+# --------------------------------------------------------------------------
+# Ramps: the approach to a peak is audible
+# --------------------------------------------------------------------------
+
+def test_bar_energy_math():
+    from riddim.arrange import structure
+
+    sec = structure.Section(name="build", bars=8, energy=0.6, ramp=0.5)
+    e = [structure.bar_energy(sec, b) for b in range(8)]
+    assert e == sorted(e)
+    assert e[0] == pytest.approx(0.1)   # 0.6 - 0.5, before the floor
+    assert e[-1] == pytest.approx(0.6)  # the peak still gets the full level
+    flat = structure.Section(name="riddim", bars=8, energy=0.6, ramp=0.0)
+    assert all(structure.bar_energy(flat, b) == 0.6 for b in range(8))
+    one = structure.Section(name="x", bars=1, energy=0.6, ramp=0.5)
+    assert structure.bar_energy(one, 0) == 0.6
+
+
+def test_ramped_builds_climb_bar_by_bar():
+    """A ramped section plays its own energy curve: the chords get harder
+    toward its end instead of landing on a plateau."""
+    for seed in range(8):
+        song = compose("dubstep_140", seed=seed)
+        for sec in song.arrangement.sections:
+            if sec.ramp <= 0 or not sec.plays("chords"):
+                continue
+            chords = song.part("chords")
+            if chords is None:
+                continue
+
+            def vel(bar):
+                t0 = (sec.start_bar + bar) * TICKS_PER_BAR
+                ns = [n for n in chords.notes if t0 <= n.start < t0 + TICKS_PER_BAR]
+                return sum(n.velocity for n in ns) / len(ns) if ns else None
+
+            first, last = vel(0), vel(sec.bars - 1)
+            if first is not None and last is not None:
+                assert first < last, f"seed {seed} {sec.name}: {first} -> {last}"
+
+
+def test_section_ends_with_a_fill_in_the_second_half(songs):
+    """The last bar of a section belongs to the fill: snare and rim let go
+    of the pattern and run into the next downbeat - never the first half,
+    which would pre-empt the phrase the fill is pointing at."""
+    for name, song in songs.items():
+        drums = song.part("drums")
+        if drums is None:
+            continue
+        for sec in song.arrangement.sections:
+            if not sec.plays("drums") or sec.bars < 4:
+                continue
+            t0 = (sec.start_bar + sec.bars - 1) * TICKS_PER_BAR
+            for n in drums.in_bars(sec.start_bar + sec.bars - 1,
+                                   sec.start_bar + sec.bars):
+                if n.midi in (KIT_ROWS["snare"], KIT_ROWS["rim"]):
+                    assert (n.start - t0) >= TICKS_PER_BAR // 2, (
+                        f"{name}/{sec.name}: a fill hit in the first half of the bar"
+                    )
+
+
+# --------------------------------------------------------------------------
 # Arrangement
 # --------------------------------------------------------------------------
 

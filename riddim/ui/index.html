@@ -143,7 +143,7 @@
 // ---------------------------------------------------------------- state
 const S = { song:null, baseline:null, live:null, options:null, params:null,
             selected:0, muted:new Set(), pxPerBar:40, playing:false,
-            knobs:[], baseKnobs:[], pendingOps:new Map() };
+            knobs:[], baseKnobs:[], pendingOps:new Map(), baseNotes:null };
 const ROLES = ["drums","perc","sub","chords","pad","lead"];
 const $ = id => document.getElementById(id);
 const status = (t, bad=false) => { const el=$('status'); el.textContent=t; el.style.color = bad?'var(--danger)':'var(--warn)'; if(!bad) setTimeout(()=>{ if(el.textContent===t) el.textContent=''; }, 4000); };
@@ -158,6 +158,9 @@ function live(){ return S.live || S.song; }
 function setSong(song){
   const same = S.song && song && S.song.seed===song.seed && S.song.name===song.name;
   S.song = song; S.params = song.params; S.live = song;
+  // A retake moves where the take began; drop the cached baseline so the next
+  // A/B and the diff shading fetch the take that is actually live.
+  S.baseline = null; S.baseKnobs = []; S.baseNotes = null;
   render();
 }
 // every full-params edit (arrange/advanced) is a step on the take's trail
@@ -255,6 +258,20 @@ function render(){
   renderSound(); renderAdvanced(); renderStructure(); renderRolls(); renderChanged(s);
   $('nfp').innerHTML = s.notes_for_player.map(n=>`<li>${n}</li>`).join('');
   $('undo').disabled = !s.can_undo; $('redo').disabled = !s.can_redo;
+  maybeLoadBaseNotes(s);
+}
+// A/B shading data: the take's baseline notes per role, fetched once when the
+// readback says something moved. `null` keys mean "no diff to show".
+function baseNoteSets(song){
+  const out={}; for(const role of ROLES){ const part=song.parts&&song.parts[role]; if(part) out[role]=new Set(part.notes.map(n=>n.join(':'))); }
+  return out;
+}
+function maybeLoadBaseNotes(s){
+  const nc=(s.changed&&s.changed.note_changes)||{};
+  if(!(s.changed&&(s.changed.moved.length||Object.keys(nc).length))){ S.baseNotes=null; return; }
+  if(S.baseNotes) return;
+  if(S.baseline){ S.baseNotes=baseNoteSets(S.baseline); renderRolls(); return; }
+  baselineLoaded().then(b=>{ S.baseNotes=baseNoteSets(b); if(live()===S.song) renderRolls(); });
 }
 function renderChanged(s){
   const bar=$('changed-bar');
@@ -262,7 +279,8 @@ function renderChanged(s){
   bar.style.display='flex';
   const chips=s.changed.knobs.slice(0,4).map(d=>`<span class="chip">${PRETTY[d.path.split('.').pop()]||d.path} <b>${(+d.from).toFixed(2)} → ${(+d.to).toFixed(2)}</b></span>`);
   if(s.changed.knobs.length>4) chips.push(`<span class="chip">+${s.changed.knobs.length-4} more</span>`);
-  s.changed.moved.forEach(r=>{ const a=s.changed.notes[r]||{}; chips.push(`<span class="chip t-${r}">${r} <b>${a.base??''}${a.base!=null&&a.now!=null?`→${a.now}`:''}</b></span>`); });
+  s.changed.moved.forEach(r=>{ const a=s.changed.notes[r]||{}; const nc=(s.changed.note_changes||{})[r];
+    chips.push(`<span class="chip t-${r}">${r} <b>${a.base??''}${a.base!=null&&a.now!=null?`→${a.now}`:''}${nc?` (+${nc.added}/−${nc.removed})`:''}</b></span>`); });
   bar.innerHTML=chips.join('');
 }
 function fillSelect(el, items, value){ el.innerHTML = items.map(i=>`<option ${i===value?'selected':''}>${i}</option>`).join(''); }
@@ -315,6 +333,8 @@ function renderStructure(){
     <div class="row"><label>bars</label><select id="s-bars">${[4,8,16,24,32].map(b=>`<option ${b===sec.bars?'selected':''}>${b}</option>`).join('')}</select>
       <label style="width:auto">throw</label><input type="checkbox" id="s-throw" ${sec.dub_throw?'checked':''}></div>
     <div class="row"><label>energy</label><input type="range" id="s-energy" min="0.05" max="1" step="0.01" value="${sec.energy}"><span class="val" id="v-senergy">${sec.energy.toFixed(2)}</span></div>
+    <div class="row"><label>progression</label><input type="text" id="s-prog" value="${sec.progression||''}" placeholder="core"></div>
+    <div class="row"><label>ramp</label><input type="range" id="s-ramp" min="0" max="1" step="0.05" value="${sec.ramp||0}"><span class="val" id="v-sramp">${(sec.ramp||0).toFixed(2)}</span></div>
     <div class="row"><label>plays</label><div class="chips" id="s-roles">${ROLES.map(r=>`<button class="small ${sec.active.includes(r)?'on c-'+r:''}" data-r="${r}">${r}</button>`).join('')}</div></div>
     <div class="row"><label></label><span style="color:var(--dim)">${sec.direction||''}</span></div>`;
   $('s-name').onchange=e=>{ sec.name=e.target.value; recomposeSoon(); };
@@ -322,6 +342,9 @@ function renderStructure(){
   $('s-throw').onchange=e=>{ sec.dub_throw=e.target.checked; recomposeSoon(); };
   $('s-energy').oninput=e=>{ $('v-senergy').textContent=(+e.target.value).toFixed(2); };
   $('s-energy').onchange=e=>{ sec.energy=+e.target.value; recomposeSoon(); };
+  $('s-prog').onchange=e=>{ sec.progression=e.target.value.trim()||null; recomposeSoon(); };
+  $('s-ramp').oninput=e=>{ $('v-sramp').textContent=(+e.target.value).toFixed(2); };
+  $('s-ramp').onchange=e=>{ sec.ramp=+e.target.value; recomposeSoon(); };
   ed.querySelectorAll('#s-roles button').forEach(b=>b.onclick=()=>{ const r=b.dataset.r; const set=new Set(sec.active); set.has(r)?set.delete(r):set.add(r); sec.active=ROLES.filter(x=>set.has(x)); recomposeSoon(); renderStructure(); });
   $('s-left').onclick=()=>{ if(S.selected>0){ [secs[S.selected-1],secs[S.selected]]=[secs[S.selected],secs[S.selected-1]]; S.selected--; recomposeSoon(); renderStructure(); } };
   $('s-right').onclick=()=>{ if(S.selected<secs.length-1){ [secs[S.selected+1],secs[S.selected]]=[secs[S.selected],secs[S.selected+1]]; S.selected++; recomposeSoon(); renderStructure(); } };
@@ -356,9 +379,21 @@ function renderRolls(){
     // chord tones as faint rows (pitched parts)
     if(!isKit){ c.fillStyle='rgba(111,168,220,0.08)'; for(const ch of s.chords){ for(const p of ch.pitches){ for(let m=lo;m<=hi;m++){ if(m%12===p%12){ c.fillRect(ch.start/tpb*S.pxPerBar,(hi-m)*rh,ch.length/tpb*S.pxPerBar,rh); } } } } }
     const color=getComputedStyle(document.documentElement).getPropertyValue('--'+role).trim();
+    // Diff shading against the take's baseline: added notes glow, removed
+    // ones leave a ghost outline. (Skipped when the diff is too big to read.)
+    const baseSet = S.baseNotes ? S.baseNotes[role] : null;
+    const curSet = baseSet ? new Set(part.notes.map(n=>n.join(':'))) : null;
+    const removed = curSet ? [...baseSet].filter(k=>!curSet.has(k)) : [];
     for(const [midi,start,len,vel] of part.notes){ const y=(hi-midi)*rh; if(y<0||y>=H) continue;
-      c.globalAlpha=0.45+0.55*(vel/127); c.fillStyle=color; c.fillRect(start/tpb*S.pxPerBar, y+1, Math.max(2,len/tpb*S.pxPerBar-1), rh-2); }
+      const added = curSet && !baseSet.has([midi,start,len,vel].join(':'));
+      c.globalAlpha=0.45+0.55*(vel/127); c.fillStyle = added ? '#f2e9c9' : color;
+      c.fillRect(start/tpb*S.pxPerBar, y+1, Math.max(2,len/tpb*S.pxPerBar-1), rh-2); }
     c.globalAlpha=1;
+    if(removed.length && removed.length < 120){
+      c.strokeStyle='rgba(255,255,255,0.3)';
+      for(const k of removed){ const [midi,start,len]=k.split(':').map(Number); const y=(hi-midi)*rh; if(y<0||y>=H) continue;
+        c.strokeRect(start/tpb*S.pxPerBar+0.5, y+1.5, Math.max(1.5,len/tpb*S.pxPerBar-1)-1, rh-3); }
+    }
     if(isKit){ c.fillStyle='rgba(255,255,255,0.5)'; c.font='9px monospace'; for(let m=lo;m<=hi;m++) c.fillText(KIT[m]||m, 2, (hi-m)*rh+8); }
     sc.appendChild(box);
   }

@@ -143,6 +143,32 @@ def test_key_steering_is_in_the_readback():
     assert any(k["path"] == "key" for k in changed["knobs"])
 
 
+def test_changed_reports_note_level_changes():
+    """Counts alone cannot show a key change (same number of notes, every
+    pitch moved), so the readback also counts notes added and removed per
+    part - the picture the piano-roll shading is drawn from."""
+    state = _state()
+    state.mutate([Op("key", to=-2)])
+    changed = _changed(state, state.song)
+    for counts in changed["notes"].values():
+        assert set(counts) == {"base", "now"}
+    assert changed["note_changes"]["sub"]
+    assert changed["note_changes"]["sub"]["added"] + \
+        changed["note_changes"]["sub"]["removed"] > 0
+    assert "drums" not in changed["note_changes"]
+
+
+def test_song_payload_carries_the_readback_shape():
+    state = _state()
+    state.mutate([Op("bpm", 4)])
+    d = song_to_dict(state.song, state)
+    assert all(set(c) == {"base", "now"} for c in d["changed"]["notes"].values())
+    assert "note_changes" in d["changed"]
+    # The section editor's harmony and ramp fields ride along.
+    for s in d["sections"]:
+        assert "progression" in s and "ramp" in s
+
+
 def test_history_is_bounded():
     state = _state()
     for _ in range(70):

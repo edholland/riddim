@@ -183,7 +183,7 @@ def generate(
         if chord is not None and scale is not None:
             weight = metric_weight(int(hit.step), rhythm.steps_per_bar)
             if weight >= 2.0:
-                degree = _nearest_chord_degree(degree, chord, scale)
+                degree = nearest_chord_degree(degree, chord, scale)
 
         last_leap = 0 if previous is None else degree - previous
         if abs(last_leap) < 3:
@@ -195,8 +195,13 @@ def generate(
     return Motif(tones, rhythm.length, rhythm.steps_per_bar, name)
 
 
-def _nearest_chord_degree(degree: int, chord: Chord, scale: Scale) -> int:
-    """Nudge a scale degree to the closest degree that is a chord tone."""
+def nearest_chord_degree(degree: int, chord: Chord, scale: Scale) -> int:
+    """Nudge a scale degree to the closest degree that is a chord tone.
+
+    Public because the composer uses it for the long-tones lead: a tone that
+    is not a chord tone on a strong beat is the one fixable error a melody
+    can carry.
+    """
     targets = chord.pitch_classes()
     for offset in (0, -1, 1, -2, 2, -3, 3):
         candidate = degree + offset

@@ -223,6 +223,17 @@ def _apply_absolute(params: SongParams, op: Op) -> None:
     elif op.path == "progression":
         params.progression = to
         params.tension = None
+    elif op.path == "mode":
+        # Same tonic, new mode: 'G phrygian' in, 'G dorian' out. The b2, the
+        # natural 6th, the raised 7th - the mode is where the menace lives.
+        scale = parse_key(params.key or "G minor")
+        names = pitch.FLAT_NAMES if scale.prefers_flats else pitch.SHARP_NAMES
+        if to not in ("minor", "dorian", "phrygian", "harmonic_minor",
+                      "phrygian_dominant"):
+            raise ValueError(
+                f"unknown mode {to!r}; known: minor, dorian, phrygian, "
+                f"harmonic_minor, phrygian_dominant")
+        params.key = f"{names[scale.root_pc]} {to}"
     elif op.path == "_total_bars":
         st = params.structure or _sub_defaults("structure")
         params.structure = replace(st, total_bars=int(to))
@@ -278,6 +289,14 @@ INTENTS = {
     "relax_progression": [Op("progression", to="tonic_drone")],
     "faster": [Op("bpm", 2)],
     "slower": [Op("bpm", -2)],
+    # A mode is the harmonic personality; the tonic stays put. 'phrygian'
+    # alone means 'make it phrygian', which moves the chords, bass colour and
+    # lead onto the new mode - a big move, on purpose.
+    "minor": [Op("mode", to="minor")],
+    "dorian": [Op("mode", to="dorian")],
+    "phrygian": [Op("mode", to="phrygian")],
+    "phrygian_dominant": [Op("mode", to="phrygian_dominant")],
+    "more_phrygian": [Op("mode", to="phrygian")],
 }
 
 INTENT_ALIASES = {
@@ -287,6 +306,8 @@ INTENT_ALIASES = {
     "straighten": "straighter", "swing": "swingier",
     "tense": "more_tension", "relax": "less_tension",
     "bright": "brighter", "dark": "darker",
+    "phrygian dominant": "phrygian_dominant",
+    "more phrygian": "more_phrygian",
 }
 
 
@@ -317,17 +338,17 @@ def direct(text: str) -> list[Op]:
                     return [Op("key", to=d * semis)]
 
     # "faster by 4", "slower by 4", "shorter by 16", "longer by 16".
+    # 'by N' means N written bpm or N bars, in the direction of the verb;
+    # a bare verb is one default step (+/-2 bpm, +/-16 bars).
     for head in ("faster", "slower", "shorter", "longer"):
         if not t.startswith(head):
             continue
-        field = "bpm" if head in ("faster", "slower") else "_total_bars"
         m = t.find(" by ")
         n = _number(t[m + 4:]) if m >= 0 else None
+        sign = 1 if head in ("faster", "longer") else -1
         if head in ("faster", "slower"):
-            delta = n * 2 if n else {"faster": 2, "slower": -2}[head]
-            return [Op(field, delta)]
-        value = n * 16 if n else (16 if head == "longer" else -16)
-        return [Op(field, value)]
+            return [Op("bpm", sign * (n if n is not None else 2))]
+        return [Op("_total_bars", sign * (n if n is not None else 16))]
 
     key = t
     if key in INTENT_ALIASES:
@@ -398,7 +419,11 @@ def diff(a: SongParams, b: SongParams) -> list[Delta]:
 
 @dataclass(frozen=True)
 class SongDiff:
-    """The audible difference between two composed songs."""
+    """The audible difference between two composed songs.
+
+    `moved_parts` is roles whose notes differ in any field, so a pure key
+    change - same note counts, every pitch shifted - still reads as moved.
+    """
     deltas: list[Delta] = field(default_factory=list)
     total_notes: int = 0
     delta_notes: int = 0
@@ -413,20 +438,29 @@ class SongDiff:
         return f"moved {moved} ({head})"
 
 
+def _part_notes(song) -> dict[str, tuple]:
+    return {p.role: tuple(p.sorted_notes()) for p in song.parts}
+
+
 def song_diff(baseline: object, trial: object) -> SongDiff:
     """Compare two composed songs: knobs that moved and which parts changed.
 
-    `moved_parts` lists the roles whose note count shifted - the normal case of
-    a nudge is that only the intended part moves. This is the feedback a maker
-    wants: 'the bass got busier, the chords did not touch'.
+    `moved_parts` lists the roles whose *notes* differ in any field - pitch,
+    time, length or velocity - not just their count. Count alone would report
+    'moved nothing' for a key change, which transposes every pitched note and
+    leaves every part with the same number of them. The normal case of a nudge
+    is still that only the intended part moves: 'the bass got busier, the
+    chords did not touch'.
     """
     deltas = diff(baseline.params, trial.params)
-    base = {p.role: len(p.notes) for p in baseline.parts}
-    trial_notes = {p.role: len(p.notes) for p in trial.parts}
-    moved = sorted(r for r in trial_notes
-                if abs(trial_notes.get(r, 0) - base.get(r, 0)) > 0)
-    total = sum(trial_notes.values())
-    d_notes = total - sum(base.values())
+    base = _part_notes(baseline)
+    trial_parts = _part_notes(trial)
+    moved = sorted(
+        r for r in set(base) | set(trial_parts)
+        if base.get(r, ()) != trial_parts.get(r, ())
+    )
+    total = sum(len(n) for n in trial_parts.values())
+    d_notes = total - sum(len(n) for n in base.values())
     return SongDiff(deltas, total, d_notes, moved)
 
 

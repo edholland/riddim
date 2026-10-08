@@ -30,7 +30,9 @@ from .arrange.structure import Arrangement, Section, StructureParams
 from .params import PARTS, SectionSpec, SongParams
 from .profile import Profile
 from .song import Automation, Note, Part, Rig, Song
-from .theory import bassline, chord as chord_mod, groove, harmony, melody, pitch, rhythm
+from .theory import (
+    bassline, chord as chord_mod, fill, groove, harmony, melody, pitch, rhythm,
+)
 from .theory.scale import Scale, parse_key
 from .units import STEPS_PER_BAR, TICKS_PER_16TH, TICKS_PER_BAR
 
@@ -54,15 +56,19 @@ class Material:
     bass_pitch_seed: float
     lead_style: str
     swing: float
+    # One progression per section, in section order (may repeat).
+    progressions: tuple = ()
 
     def describe(self) -> str:
         d = self.drums
+        distinct = list(dict.fromkeys(p.name for p in self.progressions))
         return (
             f"drums={d.feel} kick@{sorted(d.kick_anchors)} dens={d.kick_density:.2f} "
             f"sync={d.kick_syncopation:.2f} | stabs {groove.describe(self.stab)} | "
             f"bass dens={self.bass.density:.2f} sync={self.bass.syncopation:.2f} "
             f"approach={self.bass.approach:.2f} contour={self.bass.contour} "
             f"answer={self.bass.answer_bars} | lead={self.lead_style}"
+            + (f" | harmony {' / '.join(distinct)}" if len(distinct) > 1 else "")
         )
 
 
@@ -109,6 +115,11 @@ def compose(
     scale = _resolve_scale(params, prof, rng)
     arrangement = _resolve_structure(params, prof, rng)
     material = _resolve_material(params, prof, scale, arrangement, rng)
+
+    # The resolved per-section progression names land on the sections too,
+    # so the UI and the plan show what each section actually harmonises.
+    for sec, prog in zip(arrangement.sections, material.progressions):
+        sec.progression = prog.name
 
     song = Song(
         name=name or f"{prof.name}_{params.seed}",
@@ -160,6 +171,8 @@ def regenerate(song: Song, part: str, rig: Rig | None = None) -> Song:
     elif part == "harmony":
         params.progression = None
         params.tension = None
+        for spec in params.sections or []:
+            spec.progression = None   # per-section draws get a fresh roll too
     return compose(params=params, rig=rig, name=song.name)
 
 
@@ -188,7 +201,8 @@ def _resolve_scale(params: SongParams, prof: Profile, rng: random.Random) -> Sca
 
 def _section_spec(s: Section) -> SectionSpec:
     return SectionSpec(s.name, s.bars, s.energy, list(s.active),
-                       s.dub_throw, s.direction)
+                       s.dub_throw, s.direction,
+                       progression=s.progression, ramp=s.ramp)
 
 
 def _resolve_structure(params: SongParams, prof: Profile, rng: random.Random) -> Arrangement:
@@ -201,6 +215,7 @@ def _resolve_structure(params: SongParams, prof: Profile, rng: random.Random) ->
                 active=tuple(r for r in structure.ROLES if r in spec.active),
                 development=i, direction=spec.direction, start_bar=cursor,
                 dub_throw=spec.dub_throw,
+                progression=spec.progression, ramp=spec.ramp,
             ))
             cursor += spec.bars
         return Arrangement(sections, "edited")
@@ -227,18 +242,40 @@ def _resolve_material(
             min(0.95, prof.progression_tension + 0.25)), 2)
     if params.bars_per_chord is None:
         params.bars_per_chord = hrng.choice(prof.bars_per_chord_choices)
+
+    sections = arrangement.sections
     if params.progression and params.progression != "generate":
+        # A named progression applies to the whole song - that is what was
+        # asked for; a user's choice is not a suggestion to vary.
         if params.progression in harmony.BY_NAME:
             prog = harmony.BY_NAME[params.progression]
         else:
             prog = _parse_roman(params.progression, scale)
+        progs = [prog] * len(sections)
+        core = prog
     else:
-        prog = harmony.generate_progression(scale, params.tension, hrng)
-        params.progression = prog.name
-    plan = harmony.realise(scale, prog, arrangement.bars, params.bars_per_chord,
-                           size=prof.chord_size)
-    voiced = harmony.voiced(plan, prof.chords.low, prof.chords.high,
-                            rootless=True, centre=prof.chords.centre)
+        progs, core = _harmony_for_sections(scale, sections, params, hrng)
+
+    # One chord plan per section, laid out at the section's absolute start,
+    # with voice leading continuing across the seams so a progression change
+    # moves by the smallest step instead of every voice jumping to home.
+    plan_pieces: list[harmony.HarmonyPlan] = []
+    voiced_pieces: list[harmony.HarmonyPlan] = []
+    previous: chord_mod.Chord | None = None
+    for sec, prog in zip(sections, progs):
+        piece = harmony.realise(
+            scale, prog, sec.bars, params.bars_per_chord, size=prof.chord_size,
+        ).offset(sec.start_tick)
+        led = harmony.voiced(
+            piece, prof.chords.low, prof.chords.high,
+            rootless=True, centre=prof.chords.centre, first=previous,
+        )
+        if led.events:
+            previous = led.events[-1].chord
+        plan_pieces.append(piece)
+        voiced_pieces.append(led)
+    plan = harmony.merge_section_plans(plan_pieces, core)
+    voiced = harmony.merge_section_plans(voiced_pieces, core)
 
     # Drums: a feel varied into a specific spec.
     if params.drums is None:
@@ -293,7 +330,75 @@ def _resolve_material(
         drums=params.drums, drum_bars=[bar_a, bar_b], stab=stab,
         bass=params.bass, bass_cells=cells, bass_pitch_seed=bass_rng.random(),
         lead_style=params.lead_style, swing=params.swing or 0.0,
+        progressions=tuple(progs),
     )
+
+
+# The energy boundaries that give a section its own harmonic personality:
+# at or above this a section is a peak and earns a cadence; at or below it a
+# hole and earns a rest chord; between, it sits on the tune's core.
+PEAK_ENERGY = 0.8
+HOLE_ENERGY = 0.35
+
+
+def _progression_by_name(name: str, scale: Scale) -> harmony.Progression:
+    if name in harmony.BY_NAME:
+        return harmony.BY_NAME[name]
+    return _parse_roman(name, scale)
+
+
+def _harmony_for_sections(
+    scale: Scale,
+    sections: list[Section],
+    params: SongParams,
+    hrng: random.Random,
+) -> tuple[list[harmony.Progression], harmony.Progression]:
+    """One progression per section, three personalities in all.
+
+    Body sections share the tune's core, generated at the global tension.
+    Peaks (energy >= PEAK_ENERGY) share one cadence drawn from the library at
+    high tension - this is where a drop earns its own identity, and sharing
+    it between two drops is what makes the second one read as a return.
+    Holes (energy <= HOLE_ENERGY - intros, dub-outs, breakdowns, outros)
+    share one rest chord, because a hole's harmony is a place to go, not a
+    destination.
+
+    Section specs that already carry a progression name (resolved on a
+    previous compose, or set by the user or the UI) are honoured exactly;
+    only the open sections draw. Draws are written back into the specs so a
+    recompose reproduces the song to the bit.
+
+    Returns the per-section progression list and the core - the progression
+    of the first mid-energy section, since that is what the tune *is*; the
+    song header reports the core, not the drone that usually opens it.
+    """
+    base = peak = release = None
+    progs: list[harmony.Progression] = []
+    for i, sec in enumerate(sections):
+        spec = params.sections[i] if params.sections and i < len(params.sections) else None
+        if spec is not None and spec.progression:
+            progs.append(_progression_by_name(spec.progression, scale))
+            continue
+        if sec.energy >= PEAK_ENERGY:
+            if peak is None:
+                peak = harmony.choose(scale.name, 0.85, hrng, tolerance=0.4)
+            progs.append(peak)
+        elif sec.energy <= HOLE_ENERGY:
+            if release is None:
+                release = harmony.choose(scale.name, 0.15, hrng)
+            progs.append(release)
+        else:
+            if base is None:
+                base = harmony.generate_progression(scale, params.tension, hrng)
+            progs.append(base)
+        if spec is not None:
+            spec.progression = progs[-1].name
+    core = next(
+        (p for s, p in zip(sections, progs)
+         if HOLE_ENERGY < s.energy < PEAK_ENERGY),
+        progs[0],
+    )
+    return progs, core
 
 
 def _parse_roman(text: str, scale: Scale) -> harmony.Progression:
@@ -313,7 +418,13 @@ def _parse_roman(text: str, scale: Scale) -> harmony.Progression:
             if matched is not None:
                 break
         if matched is None:
-            raise ValueError(f"cannot read chord {token!r} in {scale}")
+            # The spelling of a degree depends on the mode - 'bVII' is valid
+            # in natural minor but that degree is vii° in harmonic minor - so
+            # tell the writer what this key actually calls each degree.
+            spellings = ", ".join(harmony.roman(scale, d)
+                                   for d in range(scale.size))
+            raise ValueError(
+                f"cannot read {token!r} in {scale} (this key spells: {spellings})")
         degrees.append(matched)
     return harmony.Progression(text, tuple(degrees), (scale.name,), 0.5,
                                "specified", tuple(majors))
@@ -335,18 +446,25 @@ def _emit(part: Part, notes, offset_ticks: int, low=None, high=None) -> None:
 
 
 def _build_drums(part, section, prof, m: Material, rng):
-    density = structure.density_for(section.energy, "drums")
     for bar in range(section.bars):
         bar_tick = (section.start_bar + bar) * TICKS_PER_BAR
+        # A ramped section climbs bar by bar; a flat one sits on its level.
+        energy = structure.bar_energy(section, bar)
+        density = structure.density_for(energy, "drums")
         # A two-bar riddim: A A A A' - the variant on every fourth bar.
         voices = m.drum_bars[1] if (bar % 4 == 3) else m.drum_bars[0]
         ends_phrase = (bar + 1) % 8 == 0
         ends_section = bar == section.bars - 1
-        is_fill = (ends_phrase or ends_section) and section.bars >= 4
+        # The last bar of a section is a fill: the snare and rim let go of
+        # the riddim and run into the next section's downbeat. An 8-bar
+        # phrase end inside a section just thickens the ordinary pattern.
+        fill_this_bar = ends_section and section.bars >= 4
 
         for voice, pattern in voices.items():
             if voice not in KIT_ROWS or not pattern.hits:
                 continue
+            if fill_this_bar and voice in ("snare", "rim"):
+                continue  # the fill owns this bar
             keep = density if voice in ("hat", "rim") else min(1.0, density + 0.35)
             p = rhythm.thin(pattern, keep, rng)
             if m.swing:
@@ -354,25 +472,38 @@ def _build_drums(part, section, prof, m: Material, rng):
             if voice == "snare":
                 p = rhythm.lay_back(p, 0.05, tags=())
             p = rhythm.humanize(p, 0.02, 6, rng)
-            if is_fill and voice == "snare":
-                p = rhythm.thicken(p, 5 if ends_section else 3, rng, velocity=95)
-            vel_scale = structure.velocity_for(section.energy) / 100.0
+            if ends_phrase and not fill_this_bar and voice == "snare":
+                p = rhythm.thicken(p, 3, rng, velocity=95)
+            vel_scale = structure.velocity_for(energy) / 100.0
             _emit(part, [(KIT_ROWS[voice], h.step, min(h.length, 0.9), h.velocity * vel_scale)
                          for h in p.sorted_hits()], bar_tick)
 
+        if fill_this_bar:
+            vel_scale = structure.velocity_for(energy) / 100.0
+            for voice, pattern in fill.make(energy, rng).items():
+                if voice not in KIT_ROWS:
+                    continue
+                _emit(part, [(KIT_ROWS[voice], h.step, min(h.length, 0.9),
+                              h.velocity * vel_scale) for h in pattern.sorted_hits()],
+                      bar_tick)
+
 
 def _build_perc(part, section, prof, m: Material, rng):
-    density = structure.density_for(section.energy, "perc")
-    pulses = max(2, int(round(3 + density * 5)))
-    pattern = rhythm.euclid(pulses, STEPS_PER_BAR, rotation=rng.choice((1, 3, 5)))
-    pattern = rhythm.accent(pattern, strong=88, weak=58)
-    if m.swing:
-        pattern = rhythm.swing(pattern, m.swing)
-    two_bar = rhythm.every_other_bar(pattern, rhythm.rotate(pattern, 2), bars=2)
     for bar in range(0, section.bars, 2):
+        energy = structure.bar_energy(section, bar)
+        density = structure.density_for(energy, "perc")
+        pulses = max(2, int(round(3 + density * 5)))
+        # A fresh cell per two bars: a shaker that loops one figure for a
+        # whole section is the sound of a loop, not of a player.
+        pattern = rhythm.euclid(pulses, STEPS_PER_BAR, rotation=rng.choice((1, 3, 5)))
+        pattern = rhythm.accent(pattern, strong=88, weak=58)
+        if m.swing:
+            pattern = rhythm.swing(pattern, m.swing)
+        two_bar = rhythm.every_other_bar(pattern, rhythm.rotate(pattern, 2), bars=2)
         bar_tick = (section.start_bar + bar) * TICKS_PER_BAR
         shaken = rhythm.humanize(two_bar, 0.03, 8, rng)
-        _emit(part, [(KIT_ROWS["shaker"], h.step, 0.5, h.velocity)
+        vel_scale = structure.velocity_for(energy) / 100.0
+        _emit(part, [(KIT_ROWS["shaker"], h.step, 0.5, h.velocity * vel_scale)
                      for h in shaken.sorted_hits()], bar_tick)
 
 
@@ -446,20 +577,21 @@ def _build_sub(part, section, prof, m: Material, rng):
 
 
 def _build_chords(part, section, prof, m: Material, rng):
-    density = structure.density_for(section.energy, "chords")
     for bar in range(section.bars):
         bar_tick = (section.start_bar + bar) * TICKS_PER_BAR
         ev = m.voiced.at(bar_tick)
         if ev is None:
             continue
+        density = structure.density_for(structure.bar_energy(section, bar), "chords")
         p = rhythm.thin(m.stab, density, rng) if density < 1.0 else m.stab
         if m.swing:
             p = rhythm.swing(p, m.swing)
         p = rhythm.humanize(p, 0.02, 7, rng)
+        vel = lambda v: structure.velocity_for(
+            structure.bar_energy(section, bar), v)  # noqa: E731
         for hit in p.sorted_hits():
-            vel = structure.velocity_for(section.energy, hit.velocity)
             for note in ev.chord.pitches:
-                _emit(part, [(note, hit.step, hit.length, vel)], bar_tick)
+                _emit(part, [(note, hit.step, hit.length, vel(hit.velocity))], bar_tick)
 
 
 def _build_pad(part, section, prof, m: Material, rng):
@@ -503,7 +635,7 @@ def _build_lead(part, section, prof, m: Material, rng):
                     # second is free to be a scale tone, or four bars of
                     # long tones collapse onto one note.
                     if slot == 0:
-                        degree = melody._nearest_chord_degree(degree, ev.chord, m.scale)
+                        degree = melody.nearest_chord_degree(degree, ev.chord, m.scale)
                 _emit(part, [(m.scale.note(degree), slot * (STEPS_PER_BAR // per_bar),
                               hold, velocity(78))],
                       bar_tick, low=prof.lead.low, high=prof.lead.high)
@@ -550,14 +682,23 @@ def _add_automation(part: Part, role: str, arrangement: Arrangement, prof: Profi
         if not section.plays(role):
             continue
         brightness = structure.brightness_for(section.energy)
-        following = arrangement.sections[i + 1] if i + 1 < len(arrangement.sections) else None
-        if following is not None and following.energy - section.energy > 0.3:
+        if section.ramp > 0:
+            # A build opens inside the section, the same bar-by-bar way the
+            # density ramps - the lid comes off before the drop, not at it.
             part.automation.append(Automation(
-                "lpf", section.start_tick, section.length_ticks, brightness,
-                min(1.0, structure.brightness_for(following.energy))))
+                "lpf", section.start_tick, section.length_ticks,
+                structure.brightness_for(structure.bar_energy(section, 0)),
+                brightness))
         else:
-            part.automation.append(Automation(
-                "lpf", section.start_tick, section.length_ticks, brightness))
+            following = (arrangement.sections[i + 1]
+                         if i + 1 < len(arrangement.sections) else None)
+            if following is not None and following.energy - section.energy > 0.3:
+                part.automation.append(Automation(
+                    "lpf", section.start_tick, section.length_ticks, brightness,
+                    min(1.0, structure.brightness_for(following.energy))))
+            else:
+                part.automation.append(Automation(
+                    "lpf", section.start_tick, section.length_ticks, brightness))
         if section.dub_throw:
             part.automation.append(Automation(
                 "reverb", section.start_tick, section.length_ticks, 0.55, 0.8))

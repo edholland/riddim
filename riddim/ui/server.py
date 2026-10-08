@@ -161,20 +161,47 @@ class State:
 
 
 def _changed(state: State, song: Song) -> dict:
-    """What moved since the take began - for the page's readback."""
+    """What moved since the take began - for the page's readback.
+
+    `note_changes` counts notes added and removed per part, which is the
+    note-level picture the piano-roll shading needs: a key change moves every
+    note, a density nudge adds a handful of hats.
+    """
     base = state.baseline
     if base is song:
-        return {"knobs": [], "moved": [], "notes": _part_counts(song)}
+        counts = _part_counts(song)
+        return {"knobs": [], "moved": [],
+                "notes": {r: {"base": n, "now": n} for r, n in counts.items()},
+                "note_changes": {}}
     deltas = [
         {"path": d.path, "from": round(d.from_value, 3), "to": round(d.to_value, 3)}
         for d in params_diff(state.base_params, state.params)
     ]
     moved = song_diff(base, song).moved_parts
+    before = _part_counts(base)
+    after = _part_counts(song)
     return {
         "knobs": deltas,
         "moved": moved,
-        "notes": {**_part_counts(base), **_part_counts(song)},
+        "notes": {r: {"base": before.get(r, 0), "now": after.get(r, 0)}
+                  for r in set(before) | set(after)},
+        "note_changes": _note_changes(base, song),
     }
+
+
+def _note_changes(base: Song, song: Song) -> dict:
+    def _sets(part) -> set:
+        return {(n.midi, n.start, n.length, n.velocity) for n in part.notes}
+
+    b = {p.role: _sets(p) for p in base.parts}
+    t = {p.role: _sets(p) for p in song.parts}
+    out = {}
+    for role in set(b) | set(t):
+        added = len(t.get(role, set()) - b.get(role, set()))
+        removed = len(b.get(role, set()) - t.get(role, set()))
+        if added or removed:
+            out[role] = {"added": added, "removed": removed}
+    return out
 
 
 def _part_counts(song: Song) -> dict:
@@ -201,7 +228,9 @@ def song_to_dict(song: Song, state: State | None = None) -> dict:
         "sections": [
             {"name": s.name, "bars": s.bars, "start_bar": s.start_bar,
              "energy": s.energy, "active": list(s.active), "dub_throw": s.dub_throw,
-             "direction": s.direction}
+             "direction": s.direction,
+             "progression": s.progression or song.harmony.progression.name,
+             "ramp": s.ramp}
             for s in arr.sections
         ],
         "parts": {
