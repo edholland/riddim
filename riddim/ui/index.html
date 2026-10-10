@@ -13,7 +13,7 @@
   }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--text); }
-  header { display:flex; gap:14px; align-items:center; padding:10px 14px; background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z sticky;z-index:5; flex-wrap:wrap; }
+  header { display:flex; gap:14px; align-items:center; padding:10px 14px; background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; flex-wrap:wrap; }
   header h1 { font-size:15px; margin:0 8px 0 0; color:var(--accent); letter-spacing:.06em; }
   header .meta { color:var(--dim); }
   header .meta b { color:var(--text); font-weight:600; }
@@ -67,6 +67,15 @@
   #playhead { position:absolute; top:0; bottom:0; width:1px; background:#fff; opacity:.7; pointer-events:none; left:0; }
   .notes-for-player { color:var(--dim); line-height:1.5; }
   .notes-for-player li { margin:2px 0; }
+  /* check panel */
+  #check-score { font-size:11px; margin-bottom:6px; }
+  #check .finding { display:flex; gap:7px; align-items:baseline; margin:5px 0; flex-wrap:wrap; }
+  #check .dot { width:8px; height:8px; border-radius:4px; flex:none; transform:translateY(1px); }
+  #check .dot.note { background:var(--warn); }
+  #check .dot.warning { background:var(--danger); }
+  #check .where { min-width:52px; flex:none; font-weight:600; }
+  #check .msg { color:var(--dim); flex:1; min-width:120px; }
+  #check .clean { color:var(--dim); }
   #status { color:var(--warn); }
   .c-drums { background:var(--drums);} .c-perc{background:var(--perc);} .c-sub{background:var(--sub);} .c-chords{background:var(--chords);} .c-pad{background:var(--pad);} .c-lead{background:var(--lead);}
   .t-drums { color:var(--drums);} .t-perc{color:var(--perc);} .t-sub{color:var(--sub);} .t-chords{color:var(--chords);} .t-pad{color:var(--pad);} .t-lead{color:var(--lead);}
@@ -98,6 +107,12 @@
     <div class="panel" id="sound">
       <h2>sound - twist to steer <button class="small" id="reset-take">reset take</button></h2>
       <div id="sound-body"></div>
+    </div>
+
+    <div class="panel" id="check">
+      <h2>check <button class="small" id="fix-all" title="run the critic's revision loop">fix all</button></h2>
+      <div id="check-score"></div>
+      <div id="check-body"></div>
     </div>
 
     <div class="panel" id="advanced">
@@ -162,6 +177,9 @@ function setSong(song){
   // A/B and the diff shading fetch the take that is actually live.
   S.baseline = null; S.baseKnobs = []; S.baseNotes = null;
   render();
+  // The dial positions are the server's truth: refetch after any take change
+  // so the sliders track the song actually live (a retake moves them too).
+  refreshKnobs();
 }
 // every full-params edit (arrange/advanced) is a step on the take's trail
 async function recompose(){ status('composing…'); setSong(await api('/api/compose', {params:S.params})); status('ok'); }
@@ -172,8 +190,12 @@ const recomposeSoon = debounce(recompose, 300);
 // Twisting a knob sends an absolute target to /api/mutate; the server keeps
 // every seed frozen and recomposes - so the song moves, it does not reroll.
 const GROUPS = [["drums","drums"],["bass","bass"],["chords","chords"],["groove","groove"],["harmony","harmony"]];
-const GROUP_OF = { drums:"drums", bass:"bass", stab_density:"chords", stab_syncopation:"chords",
-                   bpm:"groove", swing:"groove", tension:"harmony", bars_per_chord:"harmony", key:"harmony" };
+// Which of the five panels a knob belongs to. Dotted paths take their group
+// from the path itself (drums.kick_density -> drums); only the undotted ones
+// need naming. A knob that matches nothing simply does not get a panel.
+const GROUP_OF = { key:"harmony", stab_density:"chords", stab_syncopation:"chords",
+                   bpm:"groove", swing:"groove", tension:"harmony", bars_per_chord:"harmony" };
+const groupOf = k => GROUP_OF[k.path] || k.path.split(".")[0];
 const PRETTY = { kick_density:"kick density", kick_syncopation:"kick syncopation", snare_ghosts:"snare ghosts",
   hat_density:"hat density", hat_offbeat_bias:"hat offbeat bias", rim_density:"rim density",
   density:"bass density", syncopation:"bass syncopation", approach:"bass approach tones",
@@ -205,7 +227,7 @@ function knobRow(k){
 function renderSound(){
   const body=$('sound-body'); body.innerHTML='';
   for(const [key,label] of GROUPS){
-    const ks=S.knobs.filter(k=>GROUP_OF[k.path]===key); if(!ks.length) continue;
+    const ks=S.knobs.filter(k=>groupOf(k)===key); if(!ks.length) continue;
     const h=document.createElement('div'); h.className='group'; h.textContent=label; body.appendChild(h);
     ks.forEach(k=>body.appendChild(knobRow(k)));
   }
@@ -255,7 +277,7 @@ $('ab').addEventListener('pointerleave', ()=>{ if(S._saved) abRelease(); });
 function render(){
   const s=live(), p=S.params;
   $('song-meta').innerHTML = `<b>${s.key}</b> · ${s.progression} · <b>${s.bpm}</b>bpm · ${s.bars} bars · seed ${s.seed}`;
-  renderSound(); renderAdvanced(); renderStructure(); renderRolls(); renderChanged(s);
+  renderSound(); renderAdvanced(); renderStructure(); renderRolls(); renderChanged(s); renderChecks(s);
   $('nfp').innerHTML = s.notes_for_player.map(n=>`<li>${n}</li>`).join('');
   $('undo').disabled = !s.can_undo; $('redo').disabled = !s.can_redo;
   maybeLoadBaseNotes(s);
@@ -283,6 +305,41 @@ function renderChanged(s){
     chips.push(`<span class="chip t-${r}">${r} <b>${a.base??''}${a.base!=null&&a.now!=null?`→${a.now}`:''}${nc?` (+${nc.added}/−${nc.removed})`:''}</b></span>`); });
   bar.innerHTML=chips.join('');
 }
+// The self-critic: what is not doing its job, and the change that would
+// cure it. A twist fix is a step on the trail (undoable); a roll fix is a
+// new take - the same two verbs as everywhere else on this page.
+function renderChecks(s){
+  const score=$('check-score'), body=$('check-body');
+  score.textContent = s.score<1 ? `score ${(+s.score).toFixed(2)}` : 'clean';
+  score.style.color = s.score>=1 ? 'var(--accent)' : (s.score<0.6?'var(--danger)':'var(--warn)');
+  body.innerHTML='';
+  if(!(s.checks&&s.checks.length)){ body.innerHTML='<div class="clean">the engine finds nothing to fix</div>'; return; }
+  s.checks.forEach(f=>{
+    const row=document.createElement('div'); row.className='finding';
+    const isRole=ROLES.includes(f.where);
+    row.innerHTML=`<span class="dot ${f.severity}"></span>
+      <span class="where ${isRole?'t-'+f.where:''}">${f.where}</span>
+      <span class="msg">${f.message}</span>`;
+    (f.fixes||[]).slice(0,2).forEach(fx=>{
+      const b=document.createElement('button'); b.className='small';
+      b.textContent = fx.kind==='roll' ? `⟳ ${fx.part||'re-roll'}` : 'fix';
+      b.title = fx.why || fx.kind;
+      b.onclick=async()=>{
+        status(fx.kind==='roll' ? 'new take of '+fx.part+'…' : 'applying fix…');
+        if(fx.kind==='roll') setSong(await api('/api/regenerate',{part:fx.part}));
+        else setSong(await api('/api/mutate',{ops:fx.ops}));
+        status('ok');
+      };
+      row.appendChild(b);
+    });
+    body.appendChild(row);
+  });
+}
+$('fix-all').onclick=async()=>{
+  status('revising…');
+  setSong(await api('/api/revise',{}));
+  status('ok');
+};
 function fillSelect(el, items, value){ el.innerHTML = items.map(i=>`<option ${i===value?'selected':''}>${i}</option>`).join(''); }
 const keyParts=(key='') => { const m=(key||'').match(/^([A-G][#b]?)\d*\s+(\w+)$/); return m?{root:m[1], mode:m[2]}:{root:'G', mode:'minor'}; };
 const ENH = {'Db':'C#','D#':'Eb','Gb':'F#','G#':'Ab','A#':'Bb'};

@@ -158,6 +158,59 @@ def test_changed_reports_note_level_changes():
     assert "drums" not in changed["note_changes"]
 
 
+def test_song_payload_carries_checks_and_score():
+    """The check panel redraws on every response, so every response carries
+    the critic's view: one row per finding, and the score."""
+    from riddim import critique
+
+    song = compose("dubstep_140", seed=3)  # clean
+    d = song_to_dict(song)
+    assert d["checks"] == [] and d["score"] == 1.0
+
+    broken = compose("roots_dub", seed=23)
+    broken.arrangement.sections[3].ramp = 0.0   # a build that never climbs
+    broken.arrangement.sections[2].energy = 0.9  # a loud hole
+    d = song_to_dict(broken)
+    assert d["score"] < 1.0
+    assert any("never climbs" in c["message"] for c in d["checks"])
+    assert any("loud" in c["message"] for c in d["checks"])
+    # Every finding the panel draws has a fix to offer, and the serialised
+    # shape the page's buttons read.
+    for c in d["checks"]:
+        assert {"where", "message", "severity", "fixes"} <= set(c)
+        assert c["fixes"], c
+        assert c["fixes"][0]["kind"] in ("twist", "roll")
+
+
+def test_revise_is_a_no_op_when_clean():
+    state = State(SongParams(profile="roots_dub", seed=5))  # clean
+    song = state.song
+    assert state.revise() is song
+    assert not state.history
+
+
+def test_revise_fixes_a_broken_take_and_stays_on_the_trail():
+    """'fix all' runs the critic's loop through the take model: each applied
+    twist is a step the maker can undo, and a step that would not improve the
+    take is never pushed at all."""
+    from riddim import critique
+
+    state = State(SongParams(profile="roots_dub", seed=23))
+    state.params.sections[3].ramp = 0.0     # build_2
+    state.params.sections[2].energy = 0.9   # dub_out
+    state.recompose(state.params)           # a step: the take is broken
+    before = critique.score(state.song)
+    assert before < 1.0
+
+    state.revise()
+    assert critique.score(state.song) == 1.0
+    # Recompose (1) plus one step per applied fix (3) - bounded by max_steps.
+    assert 1 < len(state.history) <= 1 + 8
+    # Undoing the last fix brings a finding back.
+    state.undo()
+    assert critique.score(state.song) < 1.0
+
+
 def test_song_payload_carries_the_readback_shape():
     state = _state()
     state.mutate([Op("bpm", 4)])

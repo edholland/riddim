@@ -27,6 +27,61 @@ def _post(base, path, body):
         return json.loads(r.read())
 
 
+def test_check_and_revise_endpoints():
+    """The check panel over the wire: the song payload carries the critic's
+    view, a section twist breaks it through the steering surface, revise
+    cures it, and the cures are steps the trail can walk back."""
+    state = State(SongParams(profile="roots_dub", seed=23))
+    Handler.state = state
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    port = server.server_address[1]
+    base = f"http://127.0.0.1:{port}"
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        song = _get(base, "/api/song")
+        assert song["checks"] == [] and song["score"] == 1.0
+
+        # Break a build and a hole through the steering surface...
+        broken = _post(base, "/api/mutate",
+                        {"ops": [{"path": "sections.3.ramp", "to": 0.0},
+                                 {"path": "sections.2.energy", "to": 0.9}]})
+        assert broken["score"] < 1.0
+        ramp = next(c for c in broken["checks"] if "never climbs" in c["message"])
+        # The shape the page's fix button reads.
+        assert ramp["fixes"][0]["kind"] == "twist"
+        assert ramp["fixes"][0]["ops"][0]["path"] == "sections.3.ramp"
+
+        # ...and the revision loop cures it over the wire.
+        fixed = _post(base, "/api/revise", {})
+        assert fixed["score"] == 1.0
+        assert fixed["checks"] == []
+
+        # The fixes were steps on the trail: undo walks back into a finding.
+        undone = _post(base, "/api/undo", {})
+        assert undone["score"] < fixed["score"]
+        assert undone["checks"]
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_revise_on_a_clean_song_is_a_no_op():
+    state = State(SongParams(profile="roots_dub", seed=5))  # clean
+    Handler.state = state
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    port = server.server_address[1]
+    base = f"http://127.0.0.1:{port}"
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        song = _get(base, "/api/song")
+        out = _post(base, "/api/revise", {})
+        assert out["seed"] == song["seed"] and out["score"] == 1.0
+        assert out["can_undo"] is False  # no dead steps on the trail
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
 def test_steering_endpoints_end_to_end():
     state = State(SongParams(profile="dubstep_140", seed=23))
     Handler.state = state

@@ -42,6 +42,9 @@ def _add_compose_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--check", action="store_true",
                         help="run the self-critic over the song and print "
                              "what is not doing its job")
+    parser.add_argument("--fix", action="store_true",
+                        help="run the critic's revision loop: apply its "
+                             "suggested fixes until the song is clean")
 
 
 def _build(args):
@@ -62,16 +65,55 @@ def _print_check(song) -> None:
     from . import critique
 
     findings = critique.critique(song)
-    print("\ncheck:")
+    print(f"\ncheck: {critique.score(song):.2f}")
     if not findings:
         print("  clean")
         return
     for f in findings:
         print(f"  [{f.severity:<7}] {f.where:<8} {f.message}")
+        for fx in f.fixes:
+            note = f"  ({fx.why})" if fx.why else ""
+            print(f"              -> try: {fx.describe()}{note}")
+
+
+def _apply_fix(song):
+    """The revision loop: worst finding, apply its fix, recompose, re-critique
+    - until the song is clean or a step stops improving the score. The song
+    keeps its seed throughout; only its own flaws move."""
+    from . import critique
+
+    song, steps = critique.revise(song)
+    if not steps:
+        print("\nfix: already clean")
+        return song
+    plural = "s" if len(steps) != 1 else ""
+    print(f"\nfix: {len(steps)} step{plural}")
+    for i, st in enumerate(steps, 1):
+        kept = "" if st.applied else "   (rejected - score did not improve)"
+        print(f"  {i}. {st.finding.where}: {st.finding.message}")
+        print(f"     -> {st.fix.describe()}   {st.score_before:.2f} -> {st.score_after:.2f}{kept}")
+    return song
+
+
+def _print_ranked(ranked: list) -> None:
+    from . import critique
+
+    for rank, (song, sc) in enumerate(ranked, 1):
+        fs = critique.critique(song)
+        first = f"{fs[0].where}: {fs[0].message}" if fs else "clean"
+        key = str(song.scale) if song.scale is not None else "?"
+        prog = song.harmony.progression.name if song.harmony is not None else "?"
+        print(
+            f"  {rank}  seed {song.seed:<5} {key:<15} {prog:<22} "
+            f"{len(song.arrangement.sections)} sections {song.bars:>3} bars  "
+            f"score {sc:.2f}  [{first[:44]}]"
+        )
 
 
 def cmd_compose(args) -> int:
     song = _build(args)
+    if args.fix:
+        song = _apply_fix(song)
     print(song.summary())
     print()
     print(song.arrangement.describe(song.bpm))
@@ -96,6 +138,8 @@ def cmd_plan(args) -> int:
     from .deluge import render
 
     song = _build(args)
+    if args.fix:
+        song = _apply_fix(song)
     print(song.summary())
     print()
     print(song.arrangement.describe(song.bpm))
@@ -112,6 +156,8 @@ def cmd_send(args) -> int:
     from .deluge.client import Deluge, DelugeError
 
     song = _build(args)
+    if args.fix:
+        song = _apply_fix(song)
     print(song.summary())
     print()
 
@@ -176,6 +222,48 @@ def cmd_ports(args) -> int:
     print("inputs:")
     for name in mido.get_input_names():
         print(f"  {name}")
+    return 0
+
+
+def cmd_batch(args) -> int:
+    """Compose a batch, let the critic score it, and rank.
+
+    Selection pressure with the engine's own knowledge: same profile, a run
+    of consecutive seeds (deterministic), each scored by how well it does
+    its job. No model, no dataset - just the rules voting."""
+    from . import critique
+
+    ranked = []
+    for seed in range(args.seed, args.seed + args.count):
+        args.seed = seed
+        ranked.append((_build(args), 0.0))
+    for i, (song, _) in enumerate(ranked):
+        ranked[i] = (song, critique.score(song))
+    ranked.sort(key=lambda t: (-t[1], t[0].seed))
+
+    print(f"{args.profile}: {args.count} songs, scored by the critic")
+    top = ranked[: max(1, args.top)]
+    _print_ranked(top)
+
+    if args.fix:
+        plural = "s" if len(top) != 1 else ""
+        print(f"\nrevising the top {len(top)}")
+        fixed = []
+        for song, sc in top:
+            song, steps = critique.revise(song)
+            fixed.append((song, critique.score(song)))
+            print(f"  seed {song.seed}: {sc:.2f} -> {fixed[-1][1]:.2f}  "
+                  f"({len(steps)} step{'s' if len(steps) != 1 else ''})")
+        fixed.sort(key=lambda t: (-t[1], t[0].seed))
+        print("ranked after fixing:")
+        _print_ranked(fixed)
+        top = fixed
+
+    if args.out:
+        from .render import midifile
+
+        path = midifile.write(top[0][0], args.out)
+        print(f"\nwrote {path}")
     return 0
 
 
@@ -277,6 +365,37 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = subs.add_parser("ports", help="list MIDI ports")
     p.set_defaults(func=cmd_ports)
+
+    p = subs.add_parser(
+        "batch", help="compose a batch of songs, ranked by the critic's score")
+    p.add_argument(
+        "--profile", default="roots_dub",
+        help="roots_dub | steppers_dub | dubstep_140 | dubby_halftime "
+             "(aliases: dub, steppers, dubstep, halftime)",
+    )
+    p.add_argument("--key", default=None,
+                   help="e.g. 'G minor', 'D1 phrygian'. Omit to let the profile choose.")
+    p.add_argument("--seed", type=int, default=1,
+                   help="first seed; the batch runs consecutive seeds from it")
+    p.add_argument("--count", type=int, default=20,
+                   help="how many to compose and score")
+    p.add_argument("--top", type=int, default=5,
+                   help="how many to show (and to fix with --fix)")
+    p.add_argument("--bars", type=int, default=None,
+                   help="total length; sections scale proportionally")
+    p.add_argument("--progression", default=None,
+                   help="force a progression by name (see `library`)")
+    p.add_argument("--template", default=None, choices=("dub", "dubstep"),
+                   help="override the profile's section template")
+    p.add_argument("--all-deluge", action="store_true",
+                   help="keep every part on Deluge synths instead of "
+                        "sending the bass and chords out to the Coral")
+    p.add_argument("--name", default="", help="song name")
+    p.add_argument("--fix", action="store_true",
+                   help="run the revision loop over the top songs")
+    p.add_argument("--out", default=None,
+                   help="write the best song's MIDI here")
+    p.set_defaults(func=cmd_batch)
 
     p = subs.add_parser("ui", help="open the web UI to preview, tweak and regenerate")
     p.add_argument("--port", type=int, default=8765)

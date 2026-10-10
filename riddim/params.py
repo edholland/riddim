@@ -24,6 +24,7 @@ from typing import Any
 from .arrange.structure import StructureParams
 from .theory.bassline import BassParams
 from .theory.groove import DrumSpec
+from .theory.melody import LeadParams
 
 PARTS = ("drums", "perc", "sub", "chords", "pad", "lead")
 # Also seeded separately, so they can be redrawn alone.
@@ -46,6 +47,10 @@ class SectionSpec:
     progression: str | None = None
     # How much this section climbs through its own span, 0..1.
     ramp: float = 0.0
+    # Which rung of the development ladder this section plays. -1 = follow
+    # the schedule (the ladder climbs toward the middle and comes home);
+    # 0..10 picks a rung from `melody.DEVELOPMENTS` explicitly.
+    development: int = -1
 
 
 @dataclass
@@ -67,6 +72,7 @@ class SongParams:
     sections: list[SectionSpec] | None = None   # explicit override of structure
     drums: DrumSpec | None = None
     bass: BassParams | None = None
+    lead: LeadParams | None = None
     # Per-part seeds. Missing entries are derived from `seed`.
     seeds: dict[str, int] = field(default_factory=dict)
 
@@ -139,6 +145,8 @@ def _decode(cls, data):
             v = _decode(DrumSpec, v)
         elif f.name == "bass":
             v = _decode(BassParams, v)
+        elif f.name == "lead":
+            v = _decode(LeadParams, v)
         elif f.name == "sections":
             v = [SectionSpec(**s) for s in v] if v is not None else None
         elif f.name in _FROZENSET_FIELDS:

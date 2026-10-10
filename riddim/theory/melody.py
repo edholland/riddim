@@ -85,6 +85,25 @@ class Motif:
         return len(self.tones)
 
 
+@dataclass
+class LeadParams:
+    """Every knob of the lead generator.
+
+    The lead is a developed motif, and these are the musical quantities that
+    shape that motif: how often it speaks, how far off the grid, how wide it
+    thinks, which register it lives in, how it leans between steps and leaps,
+    how much it fills its gaps, and the shape it climbs and falls.
+    """
+
+    density: float = 0.35       # fraction of 16ths that carry a note
+    syncopation: float = 0.35   # how far the rhythm leans off the grid
+    span: float = 5.0           # range in scale degrees, 3..10
+    octave: float = 0.0         # register, in whole octaves, -1..+1
+    step_bias: float = 0.70     # scale steps vs leaps
+    ornament: float = 0.25      # chance a third-gap gets a passing note
+    contour: str = "arch"       # the shape the line climbs and falls
+
+
 # --------------------------------------------------------------------------
 # Contour
 # --------------------------------------------------------------------------
@@ -134,11 +153,12 @@ def generate(
     scale: Scale | None = None,
     rng: random.Random | None = None,
     step_bias: float = 0.75,
+    ornament_amount: float = 0.0,
     name: str = "",
 ) -> Motif:
     """Put degrees onto a rhythm, following a contour.
 
-    Three constraints keep it musical:
+    Four constraints keep it musical:
 
     - **Step bias.** Most motion is by one scale step. Melodies that leap
       constantly sound like arpeggiator output.
@@ -148,6 +168,9 @@ def generate(
     - **Chord tones on strong beats.** If a chord is supplied, notes on
       metrically strong steps are pulled onto chord tones, so the melody
       agrees with the harmony where it counts and is free elsewhere.
+    - **Velocity with a shape.** Notes follow the contour and the bar -
+      strong beats and the top of the line are loud, the tail is quiet, with
+      a little humanization. A flat-velocity melody is a sequence, not a tune.
     """
     rng = rng or random.Random()
     hits = rhythm.sorted_hits()
@@ -189,10 +212,18 @@ def generate(
         if abs(last_leap) < 3:
             last_leap = 0
 
-        tones.append(Tone(degree, hit.step, hit.length, hit.velocity))
+        # Velocity with a shape: the bar's metric weight plus the contour's
+        # direction, with a little humanize so no two notes sit at the level.
+        weight = metric_weight(int(hit.step), rhythm.steps_per_bar) / 4.0
+        vel = 55 + 30 * weight + 25 * sample_contour(contour, position)
+        vel = max(40, min(127, int(vel + rng.uniform(-6, 6))))
+        tones.append(Tone(degree, hit.step, hit.length, vel))
         previous = degree
 
-    return Motif(tones, rhythm.length, rhythm.steps_per_bar, name)
+    motif = Motif(tones, rhythm.length, rhythm.steps_per_bar, name)
+    if ornament_amount > 0:
+        motif = ornament(motif, ornament_amount, rng)
+    return motif
 
 
 def nearest_chord_degree(degree: int, chord: Chord, scale: Scale) -> int:
@@ -382,29 +413,42 @@ def octave_drop(motif: Motif, scale: Scale, octaves: int = -1) -> Motif:
 # A menu of (name, function) development moves, ordered roughly by how far
 # they take you from the original. The arranger walks this list as a song
 # progresses so that later sections are further from the source material.
+#
+# The octave moves are no-ops in the menu itself: `develop` applies the
+# actual octave when it is given a scale (a Motif does not know its own
+# scale, so the menu cannot). Without a scale they read as a restatement.
 DEVELOPMENTS = (
     ("statement", lambda m, rng: m.copy()),
     ("thinned", lambda m, rng: thin_tones(m, 0.7, rng)),
     ("displaced", lambda m, rng: displace(m, 2)),
     ("transposed", lambda m, rng: transpose(m, rng.choice([-2, 2, 3]))),
     ("ornamented", lambda m, rng: ornament(m, 0.5, rng)),
+    ("dropped", lambda m, rng: m.copy()),
     ("fragmented", lambda m, rng: fragment(m, 0.5)),
     ("inverted", lambda m, rng: invert(m)),
+    ("raised", lambda m, rng: m.copy()),
     ("augmented", lambda m, rng: augment(m, 2.0)),
     ("retrograde", lambda m, rng: retrograde(m)),
 )
 
+_OCTAVE_STAGES = {"dropped": -1, "raised": 1}
+
 
 def develop(
-    motif: Motif, stage: int, rng: random.Random | None = None
+    motif: Motif, stage: int, rng: random.Random | None = None, scale: Scale | None = None
 ) -> tuple[Motif, str]:
     """Return the motif transformed for a given development stage.
 
     Stage 0 is the plain statement; higher stages wander further. Returns the
     name of the transformation too, so the arrangement can be explained.
+    With a scale, the octave stages move the line a whole octave - the move
+    that makes later sections land in a different register.
     """
     rng = rng or random.Random()
     name, fn = DEVELOPMENTS[stage % len(DEVELOPMENTS)]
     result = fn(motif, rng)
+    octaves = _OCTAVE_STAGES.get(name, 0)
+    if octaves and scale is not None:
+        result = octave_drop(result, scale, octaves)
     result.name = f"{motif.name}:{name}" if motif.name else name
     return result, name

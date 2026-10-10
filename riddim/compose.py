@@ -55,6 +55,7 @@ class Material:
     bass_cells: list[rhythm.Pattern]              # [verse cell, peak cell]
     bass_pitch_seed: float
     lead_style: str
+    lead: melody.LeadParams
     swing: float
     # One progression per section, in section order (may repeat).
     progressions: tuple = ()
@@ -67,7 +68,9 @@ class Material:
             f"sync={d.kick_syncopation:.2f} | stabs {groove.describe(self.stab)} | "
             f"bass dens={self.bass.density:.2f} sync={self.bass.syncopation:.2f} "
             f"approach={self.bass.approach:.2f} contour={self.bass.contour} "
-            f"answer={self.bass.answer_bars} | lead={self.lead_style}"
+            f"answer={self.bass.answer_bars} | lead={self.lead_style} "
+            f"{self.lead.contour} dens={self.lead.density:.2f} "
+            f"span={int(self.lead.span)} oct={int(self.lead.octave):+d}"
             + (f" | harmony {' / '.join(distinct)}" if len(distinct) > 1 else "")
         )
 
@@ -156,14 +159,16 @@ def compose(
     return song
 
 
-def regenerate(song: Song, part: str, rig: Rig | None = None) -> Song:
+def regenerate(song: Song, part: str, rig: Rig | None = None, rng=None) -> Song:
     """A new take on one part; every other part is byte-identical.
 
     `part` may also be "structure" or "harmony", which redraw those and
-    clear the resolved values so they are generated afresh.
+    clear the resolved values so they are generated afresh. A maker clicking
+    re-roll wants fresh entropy (the default); a caller that must reproduce
+    its output - the critic's revision loop - passes its own `rng`.
     """
     params = song.params.copy()
-    params.reseed(part)
+    params.reseed(part, rng)
     if part == "structure":
         # A redraw means a new shape, not the same shape with new lengths.
         params.sections = None
@@ -202,7 +207,8 @@ def _resolve_scale(params: SongParams, prof: Profile, rng: random.Random) -> Sca
 def _section_spec(s: Section) -> SectionSpec:
     return SectionSpec(s.name, s.bars, s.energy, list(s.active),
                        s.dub_throw, s.direction,
-                       progression=s.progression, ramp=s.ramp)
+                       progression=s.progression, ramp=s.ramp,
+                       development=s.development)
 
 
 def _resolve_structure(params: SongParams, prof: Profile, rng: random.Random) -> Arrangement:
@@ -213,7 +219,12 @@ def _resolve_structure(params: SongParams, prof: Profile, rng: random.Random) ->
             sections.append(Section(
                 name=spec.name, bars=spec.bars, energy=spec.energy,
                 active=tuple(r for r in structure.ROLES if r in spec.active),
-                development=i, direction=spec.direction, start_bar=cursor,
+                # -1 on the spec means "follow the schedule": the ladder
+                # climbs to the song's middle and comes home, so the outro
+                # restates the statement instead of premiering the retrograde.
+                development=(i if spec.development is None or spec.development < 0
+                             else spec.development),
+                direction=spec.direction, start_bar=cursor,
                 dub_throw=spec.dub_throw,
                 progression=spec.progression, ramp=spec.ramp,
             ))
@@ -311,25 +322,48 @@ def _resolve_material(
                         bass_rng),
     ]
 
-    # Lead.
+    # Lead. The params are drawn from the *shared* rng, exactly the bass's
+    # pattern (params.bass = bassline.params_for_feel(feel, rng, ...)): one
+    # resolution draw, written back, so a recompose reads them instead of
+    # redrawing. The bass's own stream must stay put - whatever the lead
+    # resolves, it may not shift bass_rng, or the pitch seed drawn from it
+    # would differ between a first compose and a recompose, and the song
+    # would stop reproducing. lead_rng - the lead's own seed - is left to the
+    # motif alone, so a re-roll of the lead keeps the character (the params)
+    # and draws a new line, the same way a re-roll of the sub works.
     if params.lead_style is None:
         params.lead_style = rng.choice(prof.lead_styles)
+    if params.lead is None:
+        params.lead = melody.LeadParams(
+            density=rng.uniform(0.18, 0.45),
+            syncopation=rng.uniform(0.0, 0.7),
+            span=rng.choice((4, 5, 6, 7, 8, 9)),
+            octave=rng.choice((-1, 0, 0, 1)),
+            step_bias=rng.uniform(0.5, 0.85),
+            ornament=rng.uniform(0.0, 0.5),
+            contour=rng.choice(sorted(melody.CONTOURS)),
+        )
+    lead = params.lead
     lead_rng = random.Random(params.seed_for("lead"))
-    motif_rhythm = rhythm.euclid(lead_rng.choice((3, 5, 5, 7)), STEPS_PER_BAR,
-                                 rotation=lead_rng.choice((0, 0, 2)))
+    # The param values, resolved into the motif: density into pulse count,
+    # syncopation into rotation, octave into the centre of the range.
+    pulses = max(2, int(round(lead.density * STEPS_PER_BAR)))
+    rotation = int(round(lead.syncopation * 8))
+    motif_rhythm = rhythm.euclid(pulses, STEPS_PER_BAR, rotation=rotation)
     motif = melody.generate(
         motif_rhythm,
-        contour=lead_rng.choice(("arch", "descending", "falling_tail", "zigzag", "terraced")),
-        span=lead_rng.choice((4, 5, 6)), centre=0,
+        contour=lead.contour,
+        span=int(lead.span), centre=int(lead.octave) * scale.size,
         chord=plan.events[0].chord if plan.events else None,
         scale=scale, rng=lead_rng, name="motif",
+        step_bias=lead.step_bias, ornament_amount=lead.ornament,
     )
 
     return Material(
         scale=scale, plan=plan, voiced=voiced, motif=motif,
         drums=params.drums, drum_bars=[bar_a, bar_b], stab=stab,
         bass=params.bass, bass_cells=cells, bass_pitch_seed=bass_rng.random(),
-        lead_style=params.lead_style, swing=params.swing or 0.0,
+        lead_style=params.lead_style, lead=params.lead, swing=params.swing or 0.0,
         progressions=tuple(progs),
     )
 
@@ -616,7 +650,7 @@ def _build_lead(part, section, prof, m: Material, rng):
     bar while it is active.
     """
     style = m.lead_style
-    developed, _ = melody.develop(m.motif, section.development, rng)
+    developed, _ = melody.develop(m.motif, section.development, rng, scale=m.scale)
     density = structure.density_for(section.energy, "lead")
     velocity = lambda v: structure.velocity_for(section.energy, v)  # noqa: E731
 
@@ -636,8 +670,11 @@ def _build_lead(part, section, prof, m: Material, rng):
                     # long tones collapse onto one note.
                     if slot == 0:
                         degree = melody.nearest_chord_degree(degree, ev.chord, m.scale)
+                # Long tones do not read the motif's velocity shape; give
+                # them their own, with a little humanize so they do not stack
+                # at one level.
                 _emit(part, [(m.scale.note(degree), slot * (STEPS_PER_BAR // per_bar),
-                              hold, velocity(78))],
+                              hold, velocity(78 + rng.randint(-8, 8)))],
                       bar_tick, low=prof.lead.low, high=prof.lead.high)
         return
 

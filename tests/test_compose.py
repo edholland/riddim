@@ -686,6 +686,79 @@ def test_regenerate_changes_only_that_part(role):
             assert same, f"regenerating {role} also changed {part.role}"
 
 
+def test_recompose_reproduces_the_lead_exactly():
+    """The pinned form of the twist model for the lead: after one compose the
+    params describe the character of the lead completely, so feeding them back
+    must give the same line, note for note. The classic break was the param
+    resolution draws shifting the stream the motif was generated from - a
+    first compose and a recompose drew different cells."""
+    for seed in (1, 3, 12, 77, 300):
+        song = compose("dubstep_140", seed=seed)
+        lead = song.part("lead")
+        if lead is None or not lead.notes:
+            continue
+        again = compose(params=song.params.copy())
+        assert again.part("lead").sorted_notes() == lead.sorted_notes(), (
+            f"seed {seed}: the lead did not reproduce")
+        # Every other part with it: the whole song is a function of its params.
+        for part in song.parts:
+            if part.role != "lead":
+                assert part.sorted_notes() == again.part(part.role).sorted_notes(), (
+                    f"seed {seed}: {part.role} moved on a plain recompose")
+
+
+def test_regenerate_lead_keeps_character_new_line():
+    """A re-roll of the lead is a new take of the same cell, not a new cell:
+    the rhythm shape (where in the bar the cell speaks) is preserved by the
+    params, and only the line moves. Every other part is byte-identical."""
+    import random
+
+    from riddim.compose import _resolve_material, regenerate
+
+    for seed in (1, 5, 9):
+        song = compose("dubstep_140", seed=seed)
+        if song.part("lead") is None or not song.part("lead").notes:
+            continue
+        new = regenerate(song, "lead")
+        for part in song.parts:
+            if part.role == "lead":
+                assert part.sorted_notes() != new.part("lead").sorted_notes(), (
+                    f"seed {seed}: the lead was not regenerated")
+            else:
+                assert part.sorted_notes() == new.part(part.role).sorted_notes(), (
+                    f"seed {seed}: re-rolling the lead moved {part.role}")
+
+        # The cell itself, resolved from the params: the rhythm the cell
+        # speaks on is fixed by the params (density into pulse count,
+        # syncopation into rotation), so a new take keeps the same skeleton -
+        # only the line moves. Ornament may add passing notes between the
+        # hits, so the check is "every hit of the pattern is still there",
+        # not "the tone lists are equal".
+        from riddim.theory import rhythm
+
+        prof = profile_mod.get(song.params.profile)
+        shared = random.Random(song.params.seed)
+        baseline = _resolve_material(
+            song.params.copy(), prof, song.scale, song.arrangement, shared)
+        p2 = song.params.copy()
+        p2.seeds["lead"] = random.Random(seed).randrange(1, 10**9)
+        mat = _resolve_material(p2, prof, song.scale, song.arrangement, shared)
+
+        pulses = max(2, int(round(mat.lead.density * 16)))
+        rotation = int(round(mat.lead.syncopation * 8))
+        skeleton = {round(h.step, 3) for h in
+                    rhythm.euclid(pulses, 16, rotation=rotation).sorted_hits()}
+        for take in (baseline, mat):
+            got = {round(t.step, 3) for t in take.motif.tones}
+            assert skeleton <= got, (
+                f"seed {seed}: the cell stopped speaking its own rhythm")
+        # A new take is a new draw from the lead's stream: a small cell can
+        # even land on the same degrees, but it is never the same line - the
+        # shaped velocities are drawn from the stream and will not coincide.
+        assert baseline.motif.tones != mat.motif.tones, (
+            f"seed {seed}: the new take is the same line")
+
+
 def test_params_round_trip_through_json():
     from riddim.params import SongParams
 

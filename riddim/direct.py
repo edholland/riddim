@@ -38,6 +38,8 @@ class Knob:
     value: float
     step: float = 0.01
     kind: str = "float"
+    choices: tuple | None = None
+    labels: tuple | None = None
 
     def clamp(self, v: float) -> float:
         v = max(self.low, min(self.high, v))
@@ -45,6 +47,35 @@ class Knob:
             v = int(round(v))
         return v
 
+    def describe(self) -> str:
+        if self.kind == "choice":
+            return self.label
+        return self.path
+
+
+# Choice knob registry: paths -> (choices, labels)
+_LEAD_STYLES = {
+    "call_response": "call_response",
+    "long_tones": "long_tones",
+    "riff": "riff",
+}
+
+_LEAD_CONTOURS = {
+    "arch": "arch",
+    "valley": "valley",
+    "ascending": "ascending",
+    "descending": "descending",
+    "static": "static",
+    "zigzag": "zigzag",
+    "terraced": "terraced",
+    "falling_tail": "falling_tail",
+}
+
+# Choice bounds (paths -> (choices, labels))
+_CHOICE_BOUNDS = {
+    "lead_style": (list(_LEAD_STYLES.values()), list(_LEAD_STYLES.values())),
+    "lead.contour": (list(_LEAD_CONTOURS.values()), list(_LEAD_CONTOURS.values())),
+}
 
 _BOUNDS = {
     "drums.kick_density": (0.0, 0.5),
@@ -65,6 +96,12 @@ _BOUNDS = {
     "stab_syncopation": (0.0, 1.0),
     "bpm": (60.0, 180.0),
     "bars_per_chord": (1.0, 8.0),
+    "lead.density": (0.1, 0.6),
+    "lead.syncopation": (0.0, 1.0),
+    "lead.span": (3.0, 10.0),
+    "lead.octave": (-1.0, 1.0),
+    "lead.step_bias": (0.0, 1.0),
+    "lead.ornament": (0.0, 1.0),
 }
 
 _DUMPS = ("kick_density", "kick_syncopation", "snare_ghosts",
@@ -80,6 +117,9 @@ def _sub_defaults(group: str):
     if group == "bass":
         from .theory.bassline import BassParams
         return BassParams()
+    if group == "lead":
+        from .theory.melody import LeadParams
+        return LeadParams()
     if group == "structure":
         from .arrange.structure import StructureParams
         return StructureParams()
@@ -94,6 +134,10 @@ def _parts(path: str):
         return "drums", path
     if path in _BASES:
         return "bass", path
+    # Handle choice knobs (lead_style, lead.contour)
+    if path in _CHOICE_BOUNDS:
+        group, leaf = path.split(".", 1)
+        return group, leaf
     return None, path
 
 
@@ -108,10 +152,43 @@ def _container(params, group):
     return obj
 
 
+# Per-section fields, steerable as 'sections.<i>.<field>'. These are a
+# variable-length family, so they sit outside the fixed knob surface and the
+# readback, and are compared directly in diff(). Bars snap to the phrasing:
+# a section that is not a multiple of 4 fights the fill and the phrase.
+_SECTION_FIELDS = {"energy": (0.05, 1.0), "ramp": (0.0, 1.0), "bars": (4.0, 64.0)}
+
+
+def _section_ref(path: str):
+    """The (index, field) behind a 'sections.<i>.<field>' path, or None."""
+    if not path.startswith("sections."):
+        return None
+    bits = path.split(".")
+    if len(bits) != 3 or bits[2] not in _SECTION_FIELDS:
+        return None
+    try:
+        return int(bits[1]), bits[2]
+    except ValueError:
+        return None
+
+
 def read_knob(params: SongParams, path: str) -> float:
     """The current value of a knob. `key` resolves to the tonic pitch class."""
     if path == "key":
         return parse_key(params.key or "G minor").root % 12
+    # Handle choice knobs (lead_style, lead.contour) - return index
+    if path in _CHOICE_BOUNDS:
+        choices, labels = _CHOICE_BOUNDS[path]
+        val = getattr(params.lead, path.split(".")[1], 0)
+        if val in choices:
+            return choices.index(val)
+        return 0.0
+    sec = _section_ref(path)
+    if sec is not None:
+        i, field = sec
+        if params.sections is None or not 0 <= i < len(params.sections):
+            return 0.0
+        return float(getattr(params.sections[i], field))
     group, leaf = _parts(path)
     obj = _container(params, group)
     val = getattr(obj, leaf, 0.0)
@@ -129,6 +206,17 @@ def set_knob(params: SongParams, path: str, value: float) -> None:
         _set_key_root(params, int(round(value)))
         return
     from dataclasses import replace
+    sec = _section_ref(path)
+    if sec is not None:
+        i, field = sec
+        if params.sections is None or not 0 <= i < len(params.sections):
+            return
+        lo, hi = _SECTION_FIELDS[field]
+        v = max(lo, min(hi, float(value)))
+        if field == "bars":
+            v = max(4, int(round(v)) // 4 * 4)
+        params.sections[i] = replace(params.sections[i], **{field: v})
+        return
     group, leaf = _parts(path)
     if group is None:
         setattr(params, leaf, value)
@@ -163,11 +251,22 @@ def knob(params: SongParams, path: str) -> Knob | None:
     if path == "key":
         root = parse_key(params.key or "G minor").root % 12
         return Knob("key", "key", "global", 0, 11, root, 1, "key")
+    # Handle choice knobs (lead_style, lead.contour)
+    if path in _CHOICE_BOUNDS:
+        choices, labels = _CHOICE_BOUNDS[path]
+        cur = read_knob(params, path)
+        # Convert the curve index to the label
+        label = labels[cur]
+        return Knob(path, label, path.split(".")[0], 0.0, len(choices)-1, cur,
+                    step=1.0, kind="choice", choices=choices, labels=labels)
     lo, hi = _BOUNDS.get(path, (None, None))
     if lo is None:
         return None
+    # Counts, not percentages: whole-step sliders for what is a whole number.
+    step, kind = (1, "int") if path in (
+        "bpm", "bars_per_chord", "lead.span", "lead.octave") else (0.01, "float")
     return Knob(path, path.split(".")[-1], path.split(".")[0], lo, hi,
-                read_knob(params, path))
+                read_knob(params, path), step, kind)
 
 
 def knobs(params: SongParams) -> dict[str, Knob]:
@@ -297,6 +396,13 @@ INTENTS = {
     "phrygian": [Op("mode", to="phrygian")],
     "phrygian_dominant": [Op("mode", to="phrygian_dominant")],
     "more_phrygian": [Op("mode", to="phrygian")],
+    # Lead intents
+    "lead_busier": [Op("lead.density", 0.05), Op("lead.syncopation", 0.05)],
+    "lead_thinner": [Op("lead.density", -0.05), Op("lead.syncopation", -0.05)],
+    "lead_higher": [Op("lead.octave", 1.0)],
+    "lead_lower": [Op("lead.octave", -1.0)],
+    "lead_syncopated": [Op("lead.syncopation", 0.2)],
+    "lead_straighter": [Op("lead.syncopation", -0.2)],
 }
 
 INTENT_ALIASES = {
@@ -413,6 +519,15 @@ def diff(a: SongParams, b: SongParams) -> list[Delta]:
         va, vb = read_knob(a, path), read_knob(b, path)
         if abs(va - vb) > 1e-6:
             out.append(Delta(path, round(va, 3), round(vb, 3)))
+    # Section fields are steerable too, but the section list is variable-length,
+    # so they are compared directly rather than through the fixed knob surface.
+    # (progression is a name, not a number, and the section editor shows it.)
+    if a.sections is not None and b.sections is not None:
+        for i, (sa, sb) in enumerate(zip(a.sections, b.sections)):
+            for f in _SECTION_FIELDS:
+                va, vb = float(getattr(sa, f)), float(getattr(sb, f))
+                if abs(va - vb) > 1e-6:
+                    out.append(Delta(f"sections.{i}.{f}", round(va, 3), round(vb, 3)))
     out.sort(key=lambda d: -abs(d.to_value - d.from_value))
     return out
 

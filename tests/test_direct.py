@@ -116,11 +116,63 @@ def test_knobs_cover_the_song_and_round_trip():
     assert "bass.density" in ks and "key" in ks and "bpm" in ks
     for k in ks.values():
         assert k.low <= k.value <= k.high
+    # The page's sliders trust the step and kind the server serves: counts
+    # (bpm, bars per chord) are whole numbers, percentages are not.
+    assert ks["bpm"].kind == "int" and ks["bpm"].step == 1
+    assert ks["bars_per_chord"].kind == "int"
+    assert ks["tension"].kind == "float"
     # Write a knob on a copy and read it back.
     p = s0.params.copy()
     set_knob(p, "bass.density", 0.5)
     assert read_knob(p, "bass.density") == 0.5
     assert read_knob(s0.params, "bass.density") != 0.5
+
+
+# -- sections: a variable-length family of steerable fields ----------------
+
+def test_section_ops_apply_to_a_copy():
+    s0 = _song()
+    assert s0.params.sections  # a resolved compose writes the specs back
+    p1 = apply_ops(s0.params, [Op("sections.1.ramp", to=0.7)])
+    assert p1 is not s0.params
+    assert p1.sections[1].ramp == 0.7
+    # The caller's specs are untouched - a new object, a new list entry.
+    assert s0.params.sections[1].ramp != 0.7
+    assert s0.params.sections[1] is not p1.sections[1]
+
+
+def test_section_ops_clamp_and_snap_to_the_phrase():
+    p = _song().params
+    p1 = apply_ops(p, [Op("sections.0.energy", to=5.0)])
+    assert p1.sections[0].energy == 1.0  # clamped to the window
+    p2 = apply_ops(p, [Op("sections.0.energy", to=0.0)])
+    assert p2.sections[0].energy == 0.05
+    p3 = apply_ops(p, [Op("sections.0.bars", to=10.0)])
+    assert p3.sections[0].bars == 8  # a section is a phrase: multiple of 4
+    # A relative nudge reads the value first, like every other knob.
+    p4 = apply_ops(p, [Op("sections.0.ramp", delta=0.1)])
+    assert p4.sections[0].ramp == pytest.approx(min(1.0, p.sections[0].ramp + 0.1))
+
+
+def test_section_read_knob_and_out_of_range():
+    s0 = _song()
+    assert read_knob(s0.params, "sections.0.ramp") == s0.params.sections[0].ramp
+    # Past the end there is no section, and there is no crash.
+    assert read_knob(s0.params, "sections.99.ramp") == 0.0
+    assert read_knob(s0.params, "sections.0.bars") == float(s0.params.sections[0].bars)
+    # Writing out of range is a no-op, not an error.
+    q = apply_ops(s0.params, [Op("sections.99.ramp", to=0.5)])
+    assert diff(s0.params, q) == []
+
+
+def test_diff_sees_section_changes():
+    p = _song().params
+    q = apply_ops(p, [Op("sections.2.ramp", to=0.9), Op("sections.2.energy", to=0.2)])
+    paths = {d.path for d in diff(p, q)}
+    assert paths == {"sections.2.ramp", "sections.2.energy"}
+    ramp = next(d for d in diff(p, q) if d.path == "sections.2.ramp")
+    assert ramp.from_value == pytest.approx(p.sections[2].ramp)
+    assert ramp.to_value == pytest.approx(0.9)
 
 
 # -- readback --------------------------------------------------------------

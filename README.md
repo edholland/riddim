@@ -38,6 +38,13 @@ Use the `riddim-cli` launcher in the repo root — it works from any directory:
 # curve lies
 ./riddim-cli compose --profile dubstep --seed 40 --check
 
+# Same, but let the critic fix what it finds: apply its fixes until the song
+# is clean or a step stops helping, printing the trail
+./riddim-cli compose --profile dubstep --seed 40 --check --fix
+
+# Compose a batch, let the critic rank it, keep the best one
+./riddim-cli batch --profile dubstep --count 30 --top 5 --fix --out best.mid
+
 # Send it into the Deluge session, ready to jam
 ./riddim-cli send --profile dub --seed 42
 
@@ -199,9 +206,17 @@ The same knowledge that keeps the generators musical runs in reverse over a
 finished song and says plainly where it is not doing its job: a part listed in
 a section but silent there, notes outside a register window, a bass that never
 puts a root under a fast-changing chord, a peak that is not the loudest thing,
-a build that never climbs, a hole that is loud. It reports, it does not
-rewrite — the findings are the `--check` output, and the fixing is the
-maker's call.
+a build that never climbs, a hole that is loud.
+
+It reports, and it *proposes*. Every finding carries the change that would
+cure it, in the steering vocabulary: a **twist** for what a knob can fix (the
+harmonic rhythm, a section's energy or ramp) and a **re-roll** for what only
+a new take can (a silent part, a note outside its window). `--fix` runs the
+revision loop — worst finding, apply its fix, recompose, re-critique — until
+the song is clean or a step stops improving its score, and prints the trail,
+rejected steps included. A twist keeps every seed frozen, so a fix moves the
+song a little; a step that would not improve it is not kept. The UI has the
+same loop as a check panel with a fix button per finding, and **fix all**.
 
 ## The UI
 
@@ -212,8 +227,9 @@ maker's call.
 Standard library only. The page shows the structure as an editable timeline
 (add, remove, reorder, resize, set energy, toggle which roles play, name a
 section's own progression, set how hard it ramps), the steering surface, a
-piano roll per part with the chord tones shaded, and in-browser playback.
-Export MIDI or send to the Deluge from the header.
+piano roll per part with the chord tones shaded, a check panel with the
+critic's findings and a fix button for each, and in-browser playback. Export
+MIDI or send to the Deluge from the header.
 
 The readback is at note level: besides the parts that moved, it counts notes
 *added* and *removed* per part, and the piano roll shades added notes and
@@ -263,7 +279,7 @@ arrange/    structure — sections, energy curve, density and brightness
 profile.py  genre settings
 compose.py  the pipeline: key → progression → material → sections → Song
 direct.py   steering — knobs, ops, word intents, the trail, the readback
-critique.py the self-critic: the engine's knowledge run in reverse (--check)
+critique.py the self-critic: findings, fixes, the score, the revision loop
 song.py     Note / Part / Song / Rig — the boundary between theory and MIDI
 render/     standard MIDI file output
 deluge/     the AI SysEx protocol, client, and session-clip renderer

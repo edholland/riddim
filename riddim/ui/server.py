@@ -32,7 +32,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from .. import profile as profile_mod
+from .. import critique, profile as profile_mod
 from ..compose import compose
 from ..direct import Op, apply_ops, diff as params_diff, direct as parse_direct
 from ..direct import knobs as read_knobs
@@ -159,6 +159,34 @@ class State:
             self.params, self.song = snap.params, snap.song
             return self.song
 
+    def revise(self, max_steps: int = 8) -> Song:
+        """The critic's revision loop, run as the page's take model.
+
+        Twist fixes go through mutate (steps on the trail - undoable), roll
+        fixes through regenerate (a new take). A step that does not improve
+        the score is undone for twists - the take must not rot.
+        """
+        for _ in range(max_steps):
+            chosen = critique.next_fix(self.song)
+            if chosen is None:
+                return self.song
+            _finding, fix = chosen
+            before = critique.score(self.song)
+            if fix.kind == "twist":
+                # Try it on a copy first: a twist that does not improve the
+                # take is never applied, so the trail holds no dead steps.
+                trial = compose(params=apply_ops(self.params, list(fix.ops)))
+                if critique.score(trial) - before < 0.01:
+                    return self.song
+                self.mutate(list(fix.ops))
+            else:
+                # A roll is a new take either way - the A/B baseline moves,
+                # and the maker can compare or reset by hand.
+                self.regenerate(fix.part)
+                if critique.score(self.song) - before < 0.01:
+                    return self.song
+        return self.song
+
 
 def _changed(state: State, song: Song) -> dict:
     """What moved since the take began - for the page's readback.
@@ -243,6 +271,8 @@ def song_to_dict(song: Song, state: State | None = None) -> dict:
         },
         "params": song.params.to_dict(),
         "ticks_per_bar": TICKS_PER_BAR,
+        "checks": [asdict(f) for f in critique.critique(song)],
+        "score": round(critique.score(song), 2),
     }
     if state is not None:
         d["can_undo"] = bool(state.history)
@@ -360,6 +390,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(song_to_dict(self.state.undo(), self.state))
             if self.path == "/api/redo":
                 return self._json(song_to_dict(self.state.redo(), self.state))
+            if self.path == "/api/revise":
+                steps = int(body.get("max_steps", 8))
+                return self._json(song_to_dict(self.state.revise(steps), self.state))
             if self.path == "/api/send":
                 return self._json(self._send(body))
             self.send_error(404)
