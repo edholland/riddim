@@ -248,6 +248,16 @@ stopped and the Deluge on a main view (not in a menu) - otherwise the
 firmware answers `BUSY` and the command says so. `--overwrite` replaces
 songs of the same name; `--dry-run` walks the set without a Deluge.
 
+### Saving from the UI
+
+After **→ deluge**, **💾 save** saves the song on the Deluge as
+`<session> NN <title>` (e.g. `FRI 03 Iron Frequency`). The session box
+(default: today's date, `MMDD`) keeps a night's songs together on the card,
+and the number keeps them in the order you made them - the Deluge lists songs
+alphabetically. The counter lives in `~/.config/riddim/sessions.json`, so it
+carries on after a restart; a name already on the card takes the next number,
+never an overwrite. Needs the save/load firmware (`ai-save-load`).
+
 ## Template songs
 
 **The Deluge has no SysEx command for setting a MIDI clip's output channel.**

@@ -120,6 +120,8 @@
   <button id="reroll" title="a brand new song - starts a new take">⟳ new take</button>
   <button id="midi">↓ midi</button>
   <button id="send">→ deluge</button>
+  <input id="session" title="session: saves are named '<session> NN title', so a night's songs stay together and in order on the card" style="width:62px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:4px 6px;font:inherit">
+  <button id="save" title="save the song now on the Deluge as '<session> NN title' (never overwrites)">💾 save</button>
   <span id="status"></span>
 </header>
 <div id="changed-bar"></div>
@@ -799,9 +801,25 @@ $('regen-structure').onclick=async()=>{ setSong(await api('/api/regenerate',{par
 
 // ---------------------------------------------------------------- midi / deluge
 $('midi').onclick=()=>{ window.location='/api/midi'; };
+async function delugePort(){
+  const ports=(await api('/api/ports')).outputs; if(!ports.length){ status('no MIDI ports - is the Deluge on?',true); return null; }
+  return ports.find(p=>/Port 3/.test(p))||ports[0];
+}
+// Saves are named "<session> NN title": the session keeps a night's songs
+// together on the card, the number keeps them in the order they were made.
+(async()=>{ try{ const s=await api('/api/session'); $('session').value=s.session; $('save').title=`save as "${s.session} ${String(s.next).padStart(2,'0')} …" (never overwrites)`; }catch(e){} })();
+$('save').onclick=async()=>{
+  const port=await delugePort(); if(!port) return;
+  const session=$('session').value.trim();
+  status('saving on the Deluge…');
+  const r=await api('/api/save',{port, session});
+  if(r.error){ status(r.error,true); return; }
+  $('session').value=r.session;
+  $('save').title=`save as "${r.session} ${String(r.next).padStart(2,'0')} …" (never overwrites)`;
+  status('saved SONGS/'+r.name+'.XML');
+};
 $('send').onclick=async()=>{
-  const ports=(await api('/api/ports')).outputs; if(!ports.length){ status('no MIDI ports - is the Deluge on?',true); return; }
-  const port=ports.find(p=>/Port 3/.test(p))||ports[0];
+  const port=await delugePort(); if(!port) return;
   const rows=prompt('Template rows (row 1 = top of screen), or blank to create new instruments:', 'sub=1,chords=2,lead=3,pad=4,drums=5,perc=6');
   if(rows===null) return;
   status('sending to '+port+'…');

@@ -1053,3 +1053,30 @@ def test_ui_live_mode_keeps_every_take_live():
     p = st.params.copy()
     p.profile, p.structure, p.sections = "dubstep_140", None, None
     assert st.recompose(p).arrangement.sections[0].name == "groove"
+
+
+def test_ui_save_names_songs_by_session(tmp_path, monkeypatch):
+    """The UI's save names a song '<session> NN title', counts on from where
+    the session left off, and skips numbers already on the card."""
+    from riddim.ui import server
+    from riddim.deluge import client
+    from riddim.deluge.client import Reply
+    from riddim.deluge.sysex import Status, Command
+    monkeypatch.setattr(server, "SESSIONS", tmp_path / "sessions.json")
+    taken = {"FRI 01"}
+    saved = []
+
+    def fake_save(self, name, overwrite=False):
+        if any(name.startswith(t) for t in taken):
+            return Reply(Command.SAVE_SONG, Status.FILE_EXISTS, [])
+        saved.append(name)
+        return Reply(Command.SAVE_SONG, Status.OK, [])
+    monkeypatch.setattr(client.Deluge, "save_song", fake_save)
+    monkeypatch.setattr(client.Deluge, "ping", lambda self: True)
+    monkeypatch.setattr(client.Deluge, "open", lambda self: self)
+    handler = server.Handler.__new__(server.Handler)
+    server.Handler.state = server.State(SongParams(profile="uk_garage", seed=3))
+    r1 = handler._save({"session": "FRI"})
+    r2 = handler._save({"session": "FRI"})
+    assert r1["name"].startswith("FRI 02 ") and r2["name"].startswith("FRI 03 ")
+    assert server.session_info() == {"session": "FRI", "next": 4}

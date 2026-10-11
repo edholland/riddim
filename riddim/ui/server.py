@@ -362,6 +362,8 @@ class Handler(BaseHTTPRequestHandler):
                 d = song_to_dict(self.state.baseline)
                 d["knobs"] = [asdict(k) for k in read_knobs(self.state.base_params).values()]
                 return self._json(d)
+            if self.path == "/api/session":
+                return self._json(session_info())
             if self.path == "/api/ports":
                 import mido
                 return self._json({"outputs": mido.get_output_names()})
@@ -406,9 +408,44 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(song_to_dict(self.state.revise(steps), self.state))
             if self.path == "/api/send":
                 return self._json(self._send(body))
+            if self.path == "/api/save":
+                return self._json(self._save(body))
             self.send_error(404)
         except Exception as exc:
             self._json({"error": str(exc)}, 500)
+
+    def _save(self, body: dict) -> dict:
+        """Save what is on the Deluge as `<session> <NN> <title>` - the
+        session keeps a night's songs together on the card, the number keeps
+        them in the order they were made. Never overwrites: a name already on
+        the card takes the next number."""
+        from ..corpus import title_for
+        from ..deluge import sysex
+        from ..deluge.client import Deluge
+        from ..deluge.sysex import Status
+
+        session = sysex.song_name(body.get("session") or default_session(), limit=12)
+        title = body.get("title") or title_for(self.state.song)
+        n = _next_number(session)
+        with Deluge(output=body.get("port"), input=body.get("port")) as deluge:
+            if not deluge.ping():
+                return {"error": "Deluge did not answer the ping"}
+            for _ in range(100):
+                name = sysex.song_name(f"{session} {n:02d} {title}")
+                reply = deluge.save_song(name, overwrite=False)
+                if reply is None:
+                    return {"error": "no reply from the Deluge - is the save/load firmware on it?"}
+                if reply.status == Status.FILE_EXISTS:
+                    n += 1
+                    continue
+                if not reply.ok:
+                    hints = {Status.BUSY: "finish recording/overdubs first",
+                             Status.NEEDS_UI_SAVE: "uses recorded or collected samples - save it from "
+                                                   "the Deluge's Save menu once"}
+                    return {"error": f"save failed: {reply.status.name}. {hints.get(reply.status, '')}"}
+                _set_next_number(session, n + 1)
+                return {"name": name, "session": session, "next": n + 1}
+        return {"error": "no free number in this session"}
 
     def _send(self, body: dict) -> dict:
         from ..deluge import render
@@ -441,3 +478,38 @@ def serve(port: int = 8765, open_browser: bool = True, params: SongParams | None
         pass
     finally:
         server.server_close()
+
+
+# Sessions: the counter that numbers a session's saves, kept on this machine
+# so it survives a restart of the UI.
+SESSIONS = Path.home() / ".config" / "riddim" / "sessions.json"
+
+
+def default_session() -> str:
+    import datetime
+    return datetime.date.today().strftime("%m%d")
+
+
+def _sessions() -> dict:
+    try:
+        return json.loads(SESSIONS.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def _next_number(session: str) -> int:
+    return int(_sessions().get(session, 1))
+
+
+def _set_next_number(session: str, n: int) -> None:
+    data = _sessions()
+    data[session] = n
+    data["_last"] = session
+    SESSIONS.parent.mkdir(parents=True, exist_ok=True)
+    SESSIONS.write_text(json.dumps(data, indent=1))
+
+
+def session_info() -> dict:
+    data = _sessions()
+    session = data.get("_last") or default_session()
+    return {"session": session, "next": int(data.get(session, 1))}
