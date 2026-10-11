@@ -224,6 +224,16 @@ class Deluge:
             return None
         return reply.status != Status.BAD_LENGTH
 
+    def arm_section(self, start: int = 0, park: int = 23) -> Reply | None:
+        return self.slow_command(sysex.arm_section(start, park), sysex.Command.ARM_SECTION,
+                                 f"arm section {start}", timeout=5.0)
+
+    def arm_for_save(self, song) -> Reply | None:
+        """Before a save: the track's first section armed, the template's
+        empty clips parked just past the track's last section."""
+        sections = len(song.arrangement.sections) if song.arrangement else 1
+        return self.arm_section(0, min(23, sections))
+
     def load_song(self, name: str) -> Reply | None:
         return self.slow_command(sysex.load_song(name), sysex.Command.LOAD_SONG, f"load {name}")
 

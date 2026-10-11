@@ -432,6 +432,12 @@ class Handler(BaseHTTPRequestHandler):
                 return {"error": "Deluge did not answer the ping"}
             if deluge.supports_save_load() is False:
                 return {"error": "the Deluge is running firmware without the save/load commands - flash build/Release/deluge.bin from the ai-save-load branch (./dbt loadfw)"}
+            # Play starts the music: the first section armed, the template's
+            # empty clips parked out of the way.
+            armed = deluge.arm_for_save(self.state.song)
+            if armed is not None and armed.status == Status.BAD_LENGTH:
+                return {"error": "this firmware predates ARM_SECTION - flash the latest "
+                                 "ai-save-load build so saved songs start on their music"}
             for _ in range(100):
                 name = sysex.song_name(f"{session} {n:02d} {title}")
                 reply = deluge.save_song(name, overwrite=False)

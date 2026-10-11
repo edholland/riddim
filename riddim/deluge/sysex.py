@@ -39,6 +39,7 @@ class Command(IntEnum):
     SET_SIDECHAIN = 18
     SAVE_SONG = 19
     LOAD_SONG = 20
+    ARM_SECTION = 21
 
 
 class Status(IntEnum):
@@ -245,6 +246,15 @@ def song_name(name: str, limit: int = 40) -> str:
 def save_song(name: str, overwrite: bool = False) -> list[int]:
     """Save the current song as SONGS/<name>.XML (custom firmware 19)."""
     return frame([Command.SAVE_SONG, 1 if overwrite else 0] + ascii7(song_name(name), limit=60))
+
+
+def arm_section(start: int = 0, park: int = 23) -> list[int]:
+    """Make `start` the section that plays when play is pressed; park empty
+    clips (a template's) in section `park`, inactive (custom firmware 21)."""
+    for v in (start, park):
+        if not 0 <= v < 24:
+            raise ValueError(f"section {v} out of range 0..23")
+    return frame([Command.ARM_SECTION, start, park])
 
 
 def load_song(name: str) -> list[int]:

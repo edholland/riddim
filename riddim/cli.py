@@ -295,6 +295,10 @@ def cmd_set(args) -> int:
                 print(f"   sent: {report.clips} clips, {report.notes} notes"
                       + (f", {len(report.failures)} failures"
                          if report.failures and not args.dry_run else ""))
+                armed = deluge.arm_for_save(song)
+                if armed is not None and not armed.ok:
+                    print(f"   arm first section: {armed.status.name} (the song may start on "
+                          f"the template's empty clips)")
                 r = deluge.save_song(name, overwrite=args.overwrite)
                 if r is not None and not r.ok:
                     failures += 1

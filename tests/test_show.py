@@ -1066,12 +1066,20 @@ def test_ui_save_names_songs_by_session(tmp_path, monkeypatch):
     taken = {"FRI 01"}
     saved = []
 
+    calls = []
+
     def fake_save(self, name, overwrite=False):
+        calls.append("save")
         if any(name.startswith(t) for t in taken):
             return Reply(Command.SAVE_SONG, Status.FILE_EXISTS, [])
         saved.append(name)
         return Reply(Command.SAVE_SONG, Status.OK, [])
+
+    def fake_arm(self, song):
+        calls.append("arm")
+        return Reply(Command.ARM_SECTION, Status.OK, [])
     monkeypatch.setattr(client.Deluge, "save_song", fake_save)
+    monkeypatch.setattr(client.Deluge, "arm_for_save", fake_arm)
     monkeypatch.setattr(client.Deluge, "ping", lambda self: True)
     monkeypatch.setattr(client.Deluge, "supports_save_load", lambda self: True)
     monkeypatch.setattr(client.Deluge, "open", lambda self: self)
@@ -1081,6 +1089,11 @@ def test_ui_save_names_songs_by_session(tmp_path, monkeypatch):
     r2 = handler._save({"session": "FRI"})
     assert r1["name"].startswith("FRI 02 ") and r2["name"].startswith("FRI 03 ")
     assert server.session_info() == {"session": "FRI", "next": 4}
+    # the first section is armed before every save, so play starts the music
+    assert calls[0] == "arm" and calls.count("arm") == 2
+
+    from riddim.deluge import sysex
+    assert sysex.arm_section(0, 7)[len(sysex.HEADER):] == [21, 0, 7]
 
 
 def test_old_firmware_is_named_not_failed(monkeypatch):

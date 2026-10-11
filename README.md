@@ -242,8 +242,10 @@ onto the card with one command:
 ./riddim-cli set --dir show --live --prefix "SET1 "
 ```
 
-For each track it loads the template, writes the track's clips into it and
-saves it as `SONGS/<NN title>.XML`, then moves on. The transport must be
+For each track it loads the template, writes the track's clips into it,
+arms the track's first section and parks the template's empty clips out of the
+way (firmware `ARM_SECTION`, 21) - so a loaded song starts its music the moment
+you press play - and saves it as `SONGS/<NN title>.XML`, then moves on. The transport must be
 stopped and the Deluge on a main view (not in a menu) - otherwise the
 firmware answers `BUSY` and the command says so. `--overwrite` replaces
 songs of the same name; `--dry-run` walks the set without a Deluge.
