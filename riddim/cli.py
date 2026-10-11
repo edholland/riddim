@@ -420,7 +420,7 @@ def cmd_render(args) -> int:
 def cmd_ui(args) -> int:
     from .ui.server import serve
 
-    serve(port=args.port, open_browser=not args.no_browser)
+    serve(port=args.port, open_browser=not args.no_browser, live=args.live)
     return 0
 
 
@@ -623,6 +623,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = subs.add_parser("ui", help="open the web UI to preview, tweak and regenerate")
     p.add_argument("--port", type=int, default=8765)
     p.add_argument("--no-browser", action="store_true")
+    p.add_argument("--live", action="store_true",
+                   help="every song is a live track: short loops, straight in at energy")
     p.set_defaults(func=cmd_ui)
 
     p = subs.add_parser("library", help="print the theory library")

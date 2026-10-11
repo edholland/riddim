@@ -218,6 +218,9 @@ mode - the same hook, key, harmony and groove:
 | `drop_2` | 16 | the bigger drop, the whole band |
 | `exit` | 8 | a groove to leave on, not a fade |
 
+`./riddim-cli ui --live` makes every take, re-roll and redrawn structure in the
+UI a live track.
+
 No long intro, no outro fade: in jam mode every section loops until you
 launch the next, so you hold energy as long as you like and bring it down
 only when you mean to.

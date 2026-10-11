@@ -81,15 +81,22 @@ def _ops(body: dict, params: SongParams | None = None) -> list[Op]:
 class State:
     """The one song the page is steering, with its trail."""
 
-    def __init__(self, params: SongParams | None = None):
+    def __init__(self, params: SongParams | None = None, live: bool = False):
         self.lock = threading.Lock()
+        # Live mode: every song the page makes is a live track (short loops,
+        # straight in at energy) - new takes, re-rolls, a redrawn structure.
+        self.live = live
         self.params = params or SongParams(profile="dubstep_140", seed=random.randrange(1, 10**6))
-        self.song: Song = compose(params=self.params)
+        self.song: Song = self._compose(self.params)
+        self.params = self.song.params
         # The take: the song twists are steering, and the params it started from.
         self.baseline: Song = self.song
         self.base_params: SongParams = self.params
         self.history: list[_Snap] = []
         self.future: list[_Snap] = []
+
+    def _compose(self, params: SongParams) -> Song:
+        return compose(params=params, live=self.live)
 
     # -- take bookkeeping ------------------------------------------------
 
@@ -111,8 +118,8 @@ class State:
         """A wholesale params edit (arrange/advanced panel) - a step, not a retake."""
         with self.lock:
             self._push()
-            self.params = params
-            self.song = compose(params=params)
+            self.song = self._compose(params)
+            self.params = self.song.params
             return self.song
 
     def mutate(self, ops: list[Op]) -> Song:
@@ -121,8 +128,8 @@ class State:
             if not ops:
                 return self.song
             self._push()
-            self.params = apply_ops(self.params, ops)
-            self.song = compose(params=self.params)
+            self.song = self._compose(apply_ops(self.params, ops))
+            self.params = self.song.params
             return self.song
 
     def regenerate(self, part: str) -> Song:
@@ -130,6 +137,8 @@ class State:
         from ..compose import regenerate
         with self.lock:
             song = regenerate(self.song, part)
+            if self.live and not (song.params.structure and song.params.structure.live):
+                song = self._compose(song.params)
             return self._retake(song.params, song)
 
     def reroll(self, keep: dict) -> Song:
@@ -140,7 +149,8 @@ class State:
             for k, v in keep.items():
                 if hasattr(fresh, k) and v not in (None, ""):
                     setattr(fresh, k, v)
-            return self._retake(fresh, compose(params=fresh))
+            song = self._compose(fresh)
+            return self._retake(song.params, song)
 
     def undo(self) -> Song:
         with self.lock:
@@ -417,11 +427,12 @@ class Handler(BaseHTTPRequestHandler):
                 "failures": report.failures}
 
 
-def serve(port: int = 8765, open_browser: bool = True, params: SongParams | None = None):
-    Handler.state = State(params)
+def serve(port: int = 8765, open_browser: bool = True, params: SongParams | None = None,
+          live: bool = False):
+    Handler.state = State(params, live=live)
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     url = f"http://127.0.0.1:{port}"
-    print(f"riddim ui at {url}  (ctrl-c to stop)")
+    print(f"riddim ui at {url}{'  [live tracks]' if live else ''}  (ctrl-c to stop)")
     if open_browser:
         threading.Timer(0.5, lambda: webbrowser.open(url)).start()
     try:

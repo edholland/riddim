@@ -1041,3 +1041,15 @@ def test_set_walks_a_corpus_dry(tmp_path):
     entries = corpus.build(2, ["roots_dub", "uk_garage"], candidates=1, fix=False, live=True)
     corpus.write(entries, str(tmp_path))
     assert cli.main(["set", "--dir", str(tmp_path), "--dry-run"]) == 0
+
+
+def test_ui_live_mode_keeps_every_take_live():
+    from riddim.ui.server import State
+    from riddim.direct import Op as _Op
+    st = State(SongParams(profile="uk_garage", seed=7), live=True)
+    assert st.song.params.structure.live
+    assert st.reroll({}).params.structure.live
+    assert st.mutate([_Op("hook.density", to=0.7)]).params.structure.live
+    p = st.params.copy()
+    p.profile, p.structure, p.sections = "dubstep_140", None, None
+    assert st.recompose(p).arrangement.sections[0].name == "groove"
