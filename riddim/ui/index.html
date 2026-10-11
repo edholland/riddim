@@ -812,7 +812,7 @@ $('save').onclick=async()=>{
   const port=await delugePort(); if(!port) return;
   const session=$('session').value.trim();
   status('saving on the Deluge…');
-  const r=await api('/api/save',{port, session});
+  let r; try{ r=await api('/api/save',{port, session}); }catch(e){ return; }   // api() already showed the error
   if(r.error){ status(r.error,true); return; }
   $('session').value=r.session;
   $('save').title=`save as "${r.session} ${String(r.next).padStart(2,'0')} …" (never overwrites)`;

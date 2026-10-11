@@ -1073,6 +1073,7 @@ def test_ui_save_names_songs_by_session(tmp_path, monkeypatch):
         return Reply(Command.SAVE_SONG, Status.OK, [])
     monkeypatch.setattr(client.Deluge, "save_song", fake_save)
     monkeypatch.setattr(client.Deluge, "ping", lambda self: True)
+    monkeypatch.setattr(client.Deluge, "supports_save_load", lambda self: True)
     monkeypatch.setattr(client.Deluge, "open", lambda self: self)
     handler = server.Handler.__new__(server.Handler)
     server.Handler.state = server.State(SongParams(profile="uk_garage", seed=3))
@@ -1080,3 +1081,26 @@ def test_ui_save_names_songs_by_session(tmp_path, monkeypatch):
     r2 = handler._save({"session": "FRI"})
     assert r1["name"].startswith("FRI 02 ") and r2["name"].startswith("FRI 03 ")
     assert server.session_info() == {"session": "FRI", "next": 4}
+
+
+def test_old_firmware_is_named_not_failed(monkeypatch):
+    """Firmware without the save/load commands answers an unknown command
+    with BAD_LENGTH; the probe says so, and the UI's save reports it as
+    'flash the save/load firmware' instead of a bare status."""
+    from riddim.ui import server
+    from riddim.deluge import client
+    from riddim.deluge.client import Reply
+    from riddim.deluge.sysex import Status, Command
+    d = client.Deluge(dry_run=True)
+    monkeypatch.setattr(client.Deluge, "send",
+                        lambda self, data, expect=None: Reply(Command.LOAD_SONG, Status.BAD_LENGTH, []))
+    assert d.supports_save_load() is False
+    monkeypatch.setattr(client.Deluge, "send",
+                        lambda self, data, expect=None: Reply(Command.LOAD_SONG, Status.FILE_NOT_FOUND, []))
+    assert d.supports_save_load() is True
+    monkeypatch.setattr(client.Deluge, "open", lambda self: self)
+    monkeypatch.setattr(client.Deluge, "ping", lambda self: True)
+    monkeypatch.setattr(client.Deluge, "supports_save_load", lambda self: False)
+    handler = server.Handler.__new__(server.Handler)
+    server.Handler.state = server.State(SongParams(profile="uk_garage", seed=3))
+    assert "flash" in handler._save({"session": "FRI"})["error"]

@@ -430,6 +430,8 @@ class Handler(BaseHTTPRequestHandler):
         with Deluge(output=body.get("port"), input=body.get("port")) as deluge:
             if not deluge.ping():
                 return {"error": "Deluge did not answer the ping"}
+            if deluge.supports_save_load() is False:
+                return {"error": "the Deluge is running firmware without the save/load commands - flash build/Release/deluge.bin from the ai-save-load branch (./dbt loadfw)"}
             for _ in range(100):
                 name = sysex.song_name(f"{session} {n:02d} {title}")
                 reply = deluge.save_song(name, overwrite=False)

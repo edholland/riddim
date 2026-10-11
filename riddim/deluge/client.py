@@ -214,6 +214,16 @@ class Deluge:
             print(f"  !! {label}: {getattr(reply.status, 'name', reply.status)}")
         return reply
 
+    def supports_save_load(self) -> bool | None:
+        """Whether the firmware has the save/load commands (19/20): ask it to
+        load a song that cannot exist. The save/load firmware answers
+        FILE_NOT_FOUND; older firmware does not know the command and answers
+        BAD_LENGTH. None if there is no reply port to tell."""
+        reply = self.send(sysex.load_song("RIDDIM PROBE NO SUCH SONG"), sysex.Command.LOAD_SONG)
+        if reply is None:
+            return None
+        return reply.status != Status.BAD_LENGTH
+
     def load_song(self, name: str) -> Reply | None:
         return self.slow_command(sysex.load_song(name), sysex.Command.LOAD_SONG, f"load {name}")
 

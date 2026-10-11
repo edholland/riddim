@@ -277,6 +277,11 @@ def cmd_set(args) -> int:
             if not args.dry_run and not deluge.ping():
                 print("Deluge did not answer the ping.", file=sys.stderr)
                 return 1
+            if not args.dry_run and deluge.supports_save_load() is False:
+                print("error: the Deluge is running firmware without the save/load "
+                      "commands - flash build/Release/deluge.bin from the firmware "
+                      "fork's ai-save-load branch (./dbt loadfw).", file=sys.stderr)
+                return 1
             for (title, song), name in zip(tracks, names):
                 print(f"\n== {name}")
                 r = deluge.load_song(args.template)
