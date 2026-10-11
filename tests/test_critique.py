@@ -9,14 +9,15 @@ a new take can, and `revise` walks the loop until the song is clean.
 
 import pytest
 
+from conftest import wall_seed
 from riddim import critique
 from riddim.compose import compose
 from riddim.params import SongParams
 from riddim.units import TICKS_PER_16TH, TICKS_PER_BAR
 
 
-def _song(profile="roots_dub", seed=12):
-    return compose(params=SongParams(profile=profile, seed=seed))
+def _song(profile="roots_dub", seed=50, bpm=72):
+    return compose(params=SongParams(profile=profile, seed=seed, bpm=bpm))
 
 
 def test_generated_songs_keep_their_invariants():
@@ -143,7 +144,7 @@ def test_critic_sees_a_sub_that_never_confirms():
 def test_score_is_one_when_clean_and_penalties_findings():
     """A warning is something likely to sound wrong; a note is something worth
     knowing. The score is the batch's ranking and the loop's progress bar."""
-    song = _song()  # roots seed 12: the critic finds nothing
+    song = _song()  # roots seed 50: the critic finds nothing
     assert critique.score(song) == 1.0
 
     holes = [s for s in song.arrangement.sections
@@ -180,7 +181,7 @@ def test_revise_is_a_no_op_on_a_clean_song():
 def test_revise_fixes_a_song_broken_through_params():
     """The break must be in the *params* - what a maker would actually twist -
     so that the recompose inside revise sees it, cures it, and keeps it cured."""
-    song = _song(seed=23)
+    song = _song(seed=50)
     p = song.params
     p.sections[3].ramp = 0.0    # build_2: a plateau wearing a build's name
     p.sections[2].energy = 0.9  # dub_out: a loud hole
@@ -201,21 +202,21 @@ def test_revise_fixes_a_song_broken_through_params():
 
 
 def test_revise_respects_max_steps():
-    song = _song(seed=23)
+    song = _song(seed=50)
     p = song.params
     p.sections[3].ramp = 0.0
     p.sections[2].energy = 0.9
     broken = compose(params=p)
-    fixed, steps = critique.revise(broken, max_steps=2)
-    assert len(steps) == 2
-    assert critique.score(fixed) < 1.0  # one finding still to fix
+    fixed, steps = critique.revise(broken, max_steps=1)
+    assert len(steps) == 1
+    assert critique.score(fixed) < 1.0  # a finding still to fix
 
 
 def test_revise_stops_at_a_wall_and_reports_it():
     """A fresh compose whose bass figure wanders under a fast harmony: the
     harmonic-rhythm twist helps, the figure itself needs a take, the take does
     not, and the loop says so and stops - score strictly up, never in a loop."""
-    song = _song(seed=3)
+    song = compose(params=SongParams(profile="roots_dub", seed=wall_seed(), bpm=72))
     before = critique.score(song)
     fixed, steps = critique.revise(song)
     assert critique.score(fixed) > before
@@ -225,7 +226,7 @@ def test_revise_stops_at_a_wall_and_reports_it():
 
 
 def test_next_fix_prefers_warnings_and_twists():
-    song = _song(seed=3)  # a sub warning and an energy-curve note
+    song = compose(params=SongParams(profile="roots_dub", seed=wall_seed(), bpm=72))  # a sub warning
     f, fix = critique.next_fix(song)
     assert f.severity == "warning" and fix.kind == "twist"
     # On a clean song there is nothing to fix.

@@ -21,14 +21,19 @@ import random
 from dataclasses import asdict, dataclass, field, fields, is_dataclass, replace
 from typing import Any
 
+from .arrange.dynamics import DynamicsParams
+from .arrange.interplay import InterplayParams
 from .arrange.structure import StructureParams
 from .theory.bassline import BassParams
 from .theory.groove import DrumSpec
+from .theory.hook import HookParams
 from .theory.melody import LeadParams
 
 PARTS = ("drums", "perc", "sub", "chords", "pad", "lead")
 # Also seeded separately, so they can be redrawn alone.
-EXTRA_SEEDS = ("structure", "harmony")
+# The hook is the song's theme: re-rolling it is a new tune over the same
+# band, and every part that answers it follows.
+EXTRA_SEEDS = ("structure", "harmony", "hook")
 
 
 @dataclass
@@ -62,17 +67,24 @@ class SongParams:
     bpm: int | None = None
     tension: float | None = None      # harmony tension target 0..1
     bars_per_chord: float | None = None
+    chord_size: int | None = None     # 3 triads, 4 sevenths (voiced rootless)
     progression: str | None = None    # a library name, or "generate"
     swing: float | None = None
     lead_style: str | None = None     # call_response | long_tones | riff
     stab_density: float | None = None # per felt beat, 0..1
     stab_syncopation: float | None = None
+    # A named skank from the profile's library, or "generated".
+    stab_pattern: str | None = None
     # Structured sub-parameters. None = draw.
     structure: StructureParams | None = None
     sections: list[SectionSpec] | None = None   # explicit override of structure
     drums: DrumSpec | None = None
     bass: BassParams | None = None
     lead: LeadParams | None = None
+    # The theme, how the band talks around it, and how tension is built.
+    hook: HookParams | None = None
+    interplay: InterplayParams | None = None
+    dynamics: DynamicsParams | None = None
     # Per-part seeds. Missing entries are derived from `seed`.
     seeds: dict[str, int] = field(default_factory=dict)
 
@@ -147,6 +159,12 @@ def _decode(cls, data):
             v = _decode(BassParams, v)
         elif f.name == "lead":
             v = _decode(LeadParams, v)
+        elif f.name == "hook":
+            v = _decode(HookParams, v)
+        elif f.name == "interplay":
+            v = _decode(InterplayParams, v)
+        elif f.name == "dynamics":
+            v = _decode(DynamicsParams, v)
         elif f.name == "sections":
             v = [SectionSpec(**s) for s in v] if v is not None else None
         elif f.name in _FROZENSET_FIELDS:

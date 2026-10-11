@@ -135,6 +135,66 @@ PROGRESSIONS: tuple[Progression, ...] = (
         "Dm-G. The major IV is what makes Dorian sound like Dorian - the "
         "natural 6th. Bright-dark, very Massive Attack.",
     ),
+    # Dorian, garage's minor: the major IV and the climbing ii are its
+    # colours. Every one of these sounds warm under minor-ninth stabs.
+    Progression(
+        "dorian_i_IV_bVII", (0, 3, 6), ("dorian",), 0.5,
+        "Dm-G-C. The dorian turnaround: the major IV lifts, the bVII brings "
+        "it home.",
+    ),
+    Progression(
+        "dorian_i_bVII_IV", (0, 6, 3), ("dorian",), 0.55,
+        "Dm-C-G. Down a step, then the bright IV - the soul and garage "
+        "descent.",
+    ),
+    Progression(
+        "dorian_climb", (0, 1, 2, 3), ("dorian",), 0.6,
+        "Dm-Em-F-G. Four chords climbing by step - every one a minor ninth "
+        "or a major add9 in garage voicing. Travels without leaving home.",
+    ),
+    Progression(
+        "dorian_i_v_bVII_IV", (0, 4, 6, 3), ("dorian",), 0.6,
+        "Dm-Am-C-G. Hollow v, then the bright end: bVII and IV.",
+    ),
+    Progression(
+        "dorian_i_bIII_IV", (0, 2, 3), ("dorian",), 0.5,
+        "Dm-F-G. Up through the relative major to the dorian IV.",
+    ),
+    # Minor: the big-room and roots staples.
+    Progression(
+        "epic_minor", (0, 5, 2, 6), ("minor",), 0.6,
+        "Dm-Bb-F-C. The anthem loop: falls a third, rises to the relative "
+        "major, lands on the bVII. Pure lift.",
+    ),
+    Progression(
+        "minor_circle", (0, 3, 6, 2), ("minor",), 0.55,
+        "Dm-Gm-C-F. Round the circle of fifths to the relative major - the "
+        "progression every soul ballad borrows.",
+    ),
+    Progression(
+        "i_v_bVI_bVII", (0, 4, 5, 6), ("minor",), 0.6,
+        "Dm-Am-Bb-C. Climbs from the hollow v to the bVII and back home.",
+    ),
+    Progression(
+        "i_iv_v", (0, 3, 4), ("minor", "dorian"), 0.5,
+        "Dm-Gm-Am. All minor, all modal - no leading tone, no resolution.",
+    ),
+    Progression(
+        "i_bVI_iv_V", (0, 5, 3, 4), ("minor", "harmonic_minor"), 0.8,
+        "Dm-Bb-Gm-A. Falls through the bVI and iv to a major V: the "
+        "cadence a drop resolves.",
+        major_degrees=(4,),
+    ),
+    Progression(
+        "i_iv_V", (0, 3, 4), ("harmonic_minor",), 0.75,
+        "Am-Dm-E. The minor-key cadence, with harmonic minor's real "
+        "dominant.",
+    ),
+    Progression(
+        "i_V_bVI_V", (0, 4, 5, 4), ("harmonic_minor",), 0.85,
+        "Am-E-F-E. Rocks between the dominant and its upper neighbour - the "
+        "half-step above the dominant is the menace.",
+    ),
 )
 
 BY_NAME = {p.name: p for p in PROGRESSIONS}
@@ -266,14 +326,82 @@ def realise(
     i = 0
     while tick < total_ticks:
         degree = progression.degrees[i % len(progression.degrees)]
-        built = chord_mod.stacked(scale, degree, size=size, skip=skip)
-        if degree in progression.major_degrees:
-            built = chord_mod.with_major_third(built)
+        built = build_chord(scale, degree, size, skip, progression.major_degrees)
         length = min(ticks_per_chord, total_ticks - tick)
         events.append(ChordEvent(built, tick, length, label=built.symbol()))
         tick += length
         i += 1
 
+    return HarmonyPlan(scale, progression, events)
+
+
+def build_chord(scale: Scale, degree: int, size: int, skip: int = 2,
+                majors: tuple[int, ...] = ()) -> Chord:
+    """One chord of a progression. Asked for sevenths, a degree whose seventh
+    is a *major* seventh stays a triad: that seventh sits a semitone under
+    the root, and a tune landing on the root grinds against it. The m7 and
+    the dominant 7 are the colours of this music; maj7 is someone else's."""
+    built = chord_mod.stacked(scale, degree, size=size, skip=skip)
+    if degree in majors:
+        built = chord_mod.with_major_third(built)
+    if size >= 4 and skip == 2:
+        seventh = (scale.note(degree + 6) - scale.note(degree)) % 12
+        ninth = (scale.note(degree + 8) - scale.note(degree)) % 12 if size >= 5 else None
+        keep = [0, 2, 4]
+        # The ninth is garage's colour - the m9 of every Rhodes stab - but
+        # only the major ninth: a flat nine is a semitone over the root.
+        if seventh != 11:
+            keep.append(6)
+        if ninth == 2:
+            keep.append(8)
+        if len(keep) < size:
+            built = chord_mod.Chord(tuple(scale.note(degree + d) for d in keep), degree, scale)
+            if degree in majors:
+                built = chord_mod.with_major_third(built)
+    return built
+
+
+def tension_chord(scale: Scale, size: int = 3) -> Chord:
+    """The chord that leans hardest on the tonic: the phrygian bII where the
+    mode has one (a semitone above home - the dubstep move), otherwise the
+    dominant with its third raised to the leading tone (borrowed from
+    harmonic minor), whatever the mode."""
+    if scale.name in ("phrygian", "phrygian_dominant"):
+        return build_chord(scale, 1, size)
+    return build_chord(scale, 4, size, majors=(4,))
+
+
+def realise_cycle(
+    scale: Scale,
+    progression: Progression,
+    bars: int,
+    cycle_bars: int,
+    size: int = 3,
+    skip: int = 2,
+) -> HarmonyPlan:
+    """Lay a progression out so one cycle spans exactly `cycle_bars`.
+
+    Used where a hook sings over the changes: when the chord cycle and the
+    phrase are the same length, every pass of the hook meets the same chords
+    and comes out the same - which is what makes it a hook. Bars are shared
+    out evenly and the remainder goes to the last chord, the turnaround that
+    holds before the cycle comes round (i-bVI-V over eight bars is 2-2-4).
+    """
+    n = len(progression.degrees)
+    if cycle_bars < n:
+        return realise(scale, progression, bars, cycle_bars / n, size, skip)
+    base = cycle_bars // n
+    lengths = [base] * n
+    lengths[-1] += cycle_bars - base * n
+    events: list[ChordEvent] = []
+    tick, total, i = 0, bars * TICKS_PER_BAR, 0
+    while tick < total:
+        degree = progression.degrees[i % n]
+        built = build_chord(scale, degree, size, skip, progression.major_degrees)
+        length = min(lengths[i % n] * TICKS_PER_BAR, total - tick)
+        events.append(ChordEvent(built, tick, length, label=built.symbol()))
+        tick += length
+        i += 1
     return HarmonyPlan(scale, progression, events)
 
 
@@ -527,3 +655,96 @@ def enumerate_progressions(scale: Scale, max_length: int = 4) -> list[Progressio
         walk([0], length)
     out.sort(key=lambda p: (p.tension, len(p.degrees), p.name))
     return out
+
+
+def develop(progression: Progression, scale: Scale, rng: random.Random) -> Progression:
+    """The progression stated, then developed: A followed by A'.
+
+    A later drop that replays the first one's loop for thirty-two bars is a
+    repeat, not a return. Here the second half of the cycle substitutes one
+    or two chords - a third-related chord that keeps two of the original's
+    notes (so the tune still fits), or a cadence that bends: the dominant
+    where the loop went home, the deceptive bVI where it went to the
+    dominant. The first chord stays: the return is still recognisable.
+    """
+    degs = list(progression.degrees)
+    majors = set(progression.major_degrees)
+    size = scale.size
+
+    def usable(d: int) -> bool:
+        # No diminished triads as substitutes: they need resolving, and a
+        # loop does not resolve them.
+        c = chord_mod.triad(scale, d % size)
+        ivs = sorted({(p - c.root_pc) % 12 for p in c.pitches})
+        return ivs != [0, 3, 6]
+
+    if len(degs) == 1:
+        # A drone develops into a neighbour: home, home, home, away.
+        away = rng.choice([d for d in (5, 6, 3) if usable(d)] or [0])
+        dev = [degs[0], degs[0], degs[0], away]
+        degs = [degs[0]] * 4
+    else:
+        dev = list(degs)
+        slots = list(range(1, len(dev)))
+        rng.shuffle(slots)
+        want, made = (2 if len(dev) >= 4 else 1), 0
+        for j in slots:
+            if made >= want:
+                break
+            d = dev[j] % size
+            if j == len(dev) - 1 and d != 4:
+                options = [4]                     # the loop's last chord leans home
+                majors.add(4)
+            elif j == len(dev) - 1:
+                options = [5]                     # deceptive: V becomes bVI
+            else:
+                options = [(d + 2) % size, (d - 2) % size]
+            # Fallbacks where the mode's own chords there are diminished
+            # (phrygian's v): the subdominant side, a fourth away.
+            options += [6, 3] if j == len(dev) - 1 else [(d + 3) % size, (d - 3) % size]
+            options = [o for o in dict.fromkeys(options) if usable(o) and o != dev[j - 1]
+                       and (j + 1 >= len(dev) or o != dev[j + 1]) and o not in (0, d)]
+            options = options[:2] if j < len(dev) - 1 else options[:1]
+            if options:
+                dev[j] = rng.choice(options)
+                made += 1
+    all_degs = tuple(degs) + tuple(dev)
+    maj = tuple(sorted(d for d in majors if d in all_degs))
+    names = []
+    for d in all_degs:
+        c = chord_mod.triad(scale, d % size)
+        if d in maj:
+            c = chord_mod.with_major_third(c)
+        names.append(roman(scale, d % size, c))
+    return Progression("-".join(names), all_degs, progression.modes,
+                       min(1.0, progression.tension + 0.1),
+                       "Developed: the loop, then the loop with its chords bent.", maj)
+
+
+def sits_on(pc: int, chord: Chord) -> bool:
+    """Whether a melody note sits well over a chord: a chord tone (the root
+    counts - the bass plays it), or one of the chord's *available tensions*
+    - the ninth; the eleventh over a minor chord; the sixth; the flat seventh
+    over a chord without a major seventh, the major seventh over a major one
+    without a flat seventh. Not the notes a semitone against the chord's
+    third or fifth: the eleventh over a major third, the flat six, the
+    tritone, the flat nine."""
+    root = chord.root_pc
+    pcs = chord.pitch_classes() | {root}
+    pc %= 12
+    if pc in pcs:
+        return True
+    iv = (pc - root) % 12
+    minor = (root + 3) % 12 in pcs and (root + 4) % 12 not in pcs
+    major = (root + 4) % 12 in pcs
+    if iv == 2:
+        return True
+    if iv == 5:
+        return minor
+    if iv == 9:
+        return (root + 8) % 12 not in pcs        # not against an augmented fifth
+    if iv == 10:
+        return (root + 11) % 12 not in pcs
+    if iv == 11:
+        return major and (root + 10) % 12 not in pcs
+    return False

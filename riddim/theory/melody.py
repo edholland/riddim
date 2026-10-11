@@ -34,10 +34,17 @@ class Tone:
     step: float
     length: float = 1.0
     velocity: int = 90
+    # A chromatic alteration in semitones. Zero almost always: the one place
+    # a melody leaves the scale is to agree with a chord that has left it -
+    # the raised leading tone under a borrowed major V.
+    alter: int = 0
 
     @property
     def end(self) -> float:
         return self.step + self.length
+
+    def midi(self, scale: Scale) -> int:
+        return scale.note(self.degree) + self.alter
 
 
 @dataclass
@@ -66,7 +73,7 @@ class Motif:
     def notes(self, scale: Scale) -> list[tuple[int, float, float, int]]:
         """Realise to (midi, step, length, velocity)."""
         return [
-            (scale.note(t.degree), t.step, t.length, t.velocity)
+            (t.midi(scale), t.step, t.length, t.velocity)
             for t in self.sorted_tones()
         ]
 
@@ -87,21 +94,22 @@ class Motif:
 
 @dataclass
 class LeadParams:
-    """Every knob of the lead generator.
+    """How the lead *plays* the hook - the performance, not the notes.
 
-    The lead is a developed motif, and these are the musical quantities that
-    shape that motif: how often it speaks, how far off the grid, how wide it
-    thinks, which register it lives in, how it leans between steps and leaps,
-    how much it fills its gaps, and the shape it climbs and falls.
+    The hook decides what is sung; these decide how it is delivered, and
+    every one is a different sound: a staccato lead with hard accents and
+    octave flicks is a dubstep riff; the same notes legato, sliding, with
+    grace notes and printed echoes are a dub melodica.
     """
 
-    density: float = 0.35       # fraction of 16ths that carry a note
-    syncopation: float = 0.35   # how far the rhythm leans off the grid
-    span: float = 5.0           # range in scale degrees, 3..10
-    octave: float = 0.0         # register, in whole octaves, -1..+1
-    step_bias: float = 0.70     # scale steps vs leaps
-    ornament: float = 0.25      # chance a third-gap gets a passing note
-    contour: str = "arch"       # the shape the line climbs and falls
+    octave: float = 0.0     # register, in whole octaves, -1..+1
+    gate: float = 0.7       # 0 staccato .. 1 legato
+    slide: float = 0.2      # share of step moves played as glides (overlapping, for a mono synth)
+    accent: float = 0.5     # velocity contrast between the riff's strong and weak notes
+    grace: float = 0.2      # grace notes flicked into strong notes from a step below
+    flick: float = 0.1      # weak notes popped up an octave - the dubstep lead's yoyo
+    echo: float = 0.3       # dub echoes of the last note, printed into the breaths
+    ornament: float = 0.15  # trills on long notes
 
 
 # --------------------------------------------------------------------------
@@ -365,13 +373,16 @@ def ornament(
         gap = b.degree - a.degree
         room = b.step - a.end
         if abs(gap) == 2 and room >= 0 and a.length >= 0.5 and rng.random() < amount:
-            mid_step = a.step + a.length / 2
+            # Halfway, on the sixteenth grid: a 2.5-step note's midpoint is
+            # a sixty-fourth off the beat, which is out of time, not a feel.
+            half = max(1, int(a.length // 2))
+            mid_step = a.step + half
             if mid_step < b.step:
                 out_tones.append(
                     Tone(
                         a.degree + (1 if gap > 0 else -1),
                         mid_step,
-                        max(0.25, a.length / 2),
+                        max(0.5, min(a.length - half, b.step - mid_step)),
                         max(1, a.velocity - 15),
                     )
                 )

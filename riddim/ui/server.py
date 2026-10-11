@@ -58,16 +58,17 @@ class _Snap:
         self.song = song
 
 
-def _ops(body: dict) -> list[Op]:
+def _ops(body: dict, params: SongParams | None = None) -> list[Op]:
     """Turn the page's requested changes into ops.
 
     The page sends absolute targets from its sliders: {"path", "to"} or
-    relative nudges: {"path", "delta"}.
+    relative nudges: {"path", "delta"}, or words - an intent, or a mutation,
+    which needs the current params to know where it is mutating from.
     """
     ops: list[Op] = []
     for item in body.get("ops") or []:
         if isinstance(item, str):
-            ops.extend(parse_direct(item))
+            ops.extend(parse_direct(item, params))
         elif isinstance(item, dict) and item.get("path"):
             ops.append(Op(
                 item["path"],
@@ -285,7 +286,7 @@ def options() -> dict:
     return {
         "profiles": list(profile_mod.PROFILES),
         "feels": list(FEELS),
-        "lead_styles": ["call_response", "long_tones", "riff"],
+        "lead_styles": ["hook", "call_response", "riff", "long_tones"],
         "contours": ["static", "arch", "valley", "ascending", "descending",
                      "zigzag", "terraced", "falling_tail"],
         "progressions": sorted(harmony.BY_NAME),
@@ -380,7 +381,7 @@ class Handler(BaseHTTPRequestHandler):
                 params = SongParams.from_dict(body["params"])
                 return self._json(song_to_dict(self.state.recompose(params), self.state))
             if self.path == "/api/mutate":
-                song = self.state.mutate(_ops(body))
+                song = self.state.mutate(_ops(body, self.state.params))
                 return self._json(song_to_dict(song, self.state))
             if self.path == "/api/regenerate":
                 return self._json(song_to_dict(self.state.regenerate(body["part"]), self.state))

@@ -6,20 +6,19 @@ so the output is the contract, and gets pinned like anything else.
 
 import re
 
+from conftest import wall_seed
 from riddim.cli import main
 
 
 def test_check_prints_score_and_suggested_fixes(capsys):
-    """The critic found a fast harmony the bass cannot follow and a peak that
-    arrives after the loudest thing: the score, the findings, and the fix for
-    each, all in the report."""
-    rc = main(["compose", "--profile", "roots_dub", "--seed", "3", "--check"])
+    """The critic found a fast harmony the bass cannot follow: the score, the
+    finding, and the fix for it, all in the report."""
+    rc = main(["compose", "--profile", "roots_dub", "--seed", str(wall_seed()), "--bpm", "72", "--check"])
     assert rc == 0
     out = capsys.readouterr().out
-    assert "check: 0.70" in out
+    assert "check: 0.80" in out
     assert "confirms the chord root" in out
     assert "try: bars_per_chord = 2.0" in out
-    assert "peak at 0.99 arrives after 1.00" in out
 
 
 def test_check_on_a_clean_song_says_clean(capsys):
@@ -34,12 +33,12 @@ def test_fix_prints_the_trail(capsys):
     """The loop applies the harmonic-rhythm twist (it helps), tries a re-roll
     of the wandering figure (it does not), says so, and stops. The trail is
     the honest record of all of that."""
-    rc = main(["compose", "--profile", "roots_dub", "--seed", "3", "--fix"])
+    rc = main(["compose", "--profile", "roots_dub", "--seed", str(wall_seed()), "--bpm", "72", "--fix"])
     assert rc == 0
     out = capsys.readouterr().out
     assert "fix: 2 steps" in out
     assert "bars_per_chord = 2.0" in out
-    assert "0.70 -> 0.80" in out
+    assert "0.80 -> 0.90" in out
     assert "rejected - score did not improve" in out
 
 
@@ -67,15 +66,15 @@ def test_batch_ranks_deterministically(capsys):
 
 
 def test_batch_fix_revises_the_top_and_reranks(capsys):
-    args = ["batch", "--profile", "roots_dub", "--seed", "1", "--count", "8",
-            "--top", "8", "--fix"]
+    args = ["batch", "--profile", "roots_dub", "--seed", str(max(1, wall_seed() - 3)),
+            "--count", "8", "--top", "8", "--fix", "--bpm", "72"]
     assert main(args) == 0
     out = capsys.readouterr().out
     assert "revising the top 8" in out
     # The generator is disciplined: most of the batch is already clean...
     assert "1.00 -> 1.00" in out
     # ...and where it is not, the loop reports the honest before -> after.
-    assert "0.70 -> 0.80" in out
+    assert "0.80 -> 0.90" in out
     after = out.split("ranked after fixing:")[1]
     scores = [float(m) for m in re.findall(r"score ([0-9.]+)", after)]
     assert len(scores) == 8

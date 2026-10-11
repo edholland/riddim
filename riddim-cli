@@ -17,4 +17,7 @@ else
     python=python3
 fi
 
-exec env PYTHONPATH="$here${PYTHONPATH:+:$PYTHONPATH}" "$python" -m riddim "$@"
+# This checkout goes first on the import path, ahead of the current
+# directory - run from inside another checkout, `-m` would import that one's
+# package and serve its code.
+exec "$python" -c 'import runpy, sys; sys.path.insert(0, sys.argv.pop(1)); sys.argv[0] = "riddim"; runpy.run_module("riddim", run_name="__main__", alter_sys=True)' "$here" "$@"

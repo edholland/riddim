@@ -6,3 +6,9 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+show/
+variations/
+*.wav
+*.m4a
+.claude/
+show_build.log

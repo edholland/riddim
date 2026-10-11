@@ -8,6 +8,100 @@ from a dataset; every note comes from a rule you can read, argue with and
 change. That is the point — when a bassline is wrong you can find the line
 that made it wrong.
 
+## Show prep: from nothing to a set
+
+```bash
+# 1. Compose a show: 48 tracks across the six feels, each the best of 10
+#    candidates, revised by the critic, ordered as a set, with audio previews
+./riddim-cli corpus --count 48 --candidates 10 --audio --out show
+
+# 2. Audition: open show/setlist.md, play the .m4a previews, keep favourites
+
+# 3. Mould a favourite: variations that keep it itself
+./riddim-cli vary --params show/07_tower_archive.json --how hook   --count 6 --out v
+./riddim-cli vary --params show/07_tower_archive.json --how mutate --count 6 --out v
+#    --how: mutate | hook | groove | arrangement | structure | drums | bass | wild
+
+# 4. Steer one by hand in the UI (every knob below, plus words: "catchier",
+#    "bigger drop", "tighter", "mutate hook"...)
+./riddim-cli ui
+
+# 5. Put it on the Deluge - the .json rebuilds the exact song
+./riddim-cli send --params show/07_tower_archive.json --mode song
+```
+
+Every track in a corpus is written as `.mid` (audition in any DAW), `.json`
+(its complete params — `send`, `compose`, `render` and `vary` all take
+`--params`), `.txt` (key, tempo, structure, hook, player notes) and, with
+`--audio`, an `.m4a` preview. `setlist.md` / `setlist.csv` order the set:
+tempo blocks from 72bpm roots through steppers and half-time into 140, keys
+chained a step at a time round the circle of fifths (Camelot codes printed),
+each block climbing in energy.
+
+**Kit rows.** The drum kit now uses two more rows: **42 crash** (the impact
+on every drop and phrase) and **43 riser** (a noise sweep or reverse cymbal,
+one long note through the end of each build). Load sounds there, or pass
+`send --no-fx-rows` to leave them out.
+
+## What makes the music work
+
+The brief: parts that talk to each other, complete structure and dynamics,
+tension that builds, clear roles, and real hooks. Each is a module:
+
+| | Where | The idea |
+|---|---|---|
+| **The hook** | `theory/hook.py` | Built from a **motive**: a rhythmic idiom (dotted 3-3-2, stabs, pickups, long-short, offbeat, three-against-four, flowing, syncopated) with a pitch shape, stated again and again across a unit and moved along a contour — the riff's identity. Four units in a real form — *sentence* (a a′ b c, the b climbing to the one high point), *period* (a x a y), *riff* (a a a a′), *call-and-answer* (a — a′ —); units end open until the last closes; a breath in every unit; the mode's colour tone once. 32 candidates are fitted to the real chords and scored on soundness **and on matching the dials** — so a dial moves the hook, rather than the selector averaging it away. |
+| **The performance** | `compose._build_lead` | How the lead plays the hook: gate (staccato riff ↔ legato song), slides (overlapping notes, so a mono synth glides), accents, grace notes flicked in from below, octave flicks, trills and mordents, and dub echoes printed into the breaths. Each decision is seeded by the note's position, so changing the hook does not reshuffle how the untouched notes are played. |
+| **The theme plan** | `arrange/interplay.py` | What the hook does in each section: a quiet tease at the end of the intro; its head climbing a step at a time through the build and doubling in speed into the drop; the whole hook, literal, in the first drop (decorated, then lifted an octave, in later drops); the first half at half speed over a breakdown. |
+| **Kinds of lead** | `theory/hook.PHRASINGS`, `compose.lead_params_for` | Each song draws what *kind* of lead it has - **call** (figure, held note, space), **riff** (an ostinato), **song** (a singable line of mixed note values), **stabs** (one or two punchy hits, home-leap-home-leap), **drone** (two or three long notes a unit), **arp** (chord tones rolling), **chop** (a garage vocal chop: a stuttered syllable, a step, a clipped vowel) - and each is played its own way (stabs short and hard with octave flicks, song and drone legato and sliding). `hook.phrasing` is a dial; words: `arp`, `stabby`, `singing`, `drone`, `ostinato`. |
+| **Phrasing** | `theory/hook.py` | A unit is a *call*: one statement of the motive by default (density adds a second or third), each a quick figure that lands on a **held note** — the note a listener sings — then the answer space. No back-to-back blips. |
+| **Call and reply** | `arrange/interplay._respond`, `compose._sub_reply` | Every answer space is handed to a responder, bass and chords taking turns: the **sub** plays the call's figure back in bass moves (root, third, fifth, octave, b7 below), the **chords** stab it with the voicing lifted where it rises; their ordinary pattern steps aside in the window so the reply is heard, and the lead's printed echo keeps out of answered space. In the call-and-response style the call holds through its own breath and the whole next unit is the reply. `interplay.answer` sets how many calls get one. |
+| **The conversation** | `arrange/interplay.py`, `compose.py` | The sub doubles the hook's rhythm (strong beats on the root, the rest in unison with the tune) on the passes the lead sits out, and sometimes under it; chord stabs duck out of the lead's onsets and answer its breaths with the hook's own rhythm; the bass picks up into the next call; the pad's top voice is a guide-tone counter-line moving against the tune. |
+| **Room for each part** | `compose._yield_to_lead`, `_build_chords`, `_build_pad` | Complementary rhythm: in a beat where the lead plays a figure, the bass keeps only its note on the beat and holds it, and the skank keeps one stab; they move again when the lead holds or rests. When pad and stabs play together the pad drops to a single moving voice instead of doubling the chord. All scaled by `interplay.space`. |
+| **Variety between songs** | `groove.FEELS`, `profile.bpm_range`, `structure._phases` | Each song draws its tempo from the genre's range, its drum feel from the whole family (one-drop, flyer, pickup, rockers; steppers, skip; half-time, push, double-kick, tresillo, sparse, roll), its skank from the named library or the generator (`stab_pattern` is a dial), and its shape from a grammar that now includes groove sections. |
+| **On the grid** | everywhere | Every note is written dead on the grid - no swing, no timing humanisation, no laid-back snare (velocity still varies). Feel is set on the Deluge, whose swing moves every clip together; swing printed into the notes would fight it. |
+| **Idiomatic kit** | `groove.drums` | Hats come from a drummer's ladder of figures - offbeat chick, eighths, eighths with a skip, running sixteenths (half-time stops at the skip) - chosen by `hat_density`, accented on or off the beat by `hat_offbeat_bias`. Ghost snares and rims take the positions a player reaches for, not random sixteenths. The shaker sits on the offbeat eighths. The one-drop's empty beat 1 is never filled by a locked kick. |
+| **The rhythm section locks** | `compose._lock_kick`, `compose._on_eighths` | The bass is written first and the drums follow it: the genre's anchor kicks stay (one-drop on 3, half-time on 1, steppers on the beat) and every other kick lands on a bass note. The sub plays on the eighth-note grid only - a sub on the in-between sixteenths, swung late, is heard as out of time. The groove repeats bar for bar - each drum voice keeps one pattern per section (varied only on the A′ bar, fills and builds), and the kick locks to where the bass *usually* plays in the section, not to every reply - because a kit that reshuffles every bar is heard as out of time. A fill never talks over the lead singing into the next phrase. Fills are short: a beat of sixteenths into a drop, every sixteen bars at most inside a section. |
+| **Songs that develop** | `compose._approach`, `compose._layers`, `hook.contrast_params` | Builds end on a tension chord - the dominant with its leading tone, or the phrygian bII - so the drop's downbeat resolves (`dynamics.cadence`). Long drops unfold by eight-bar block: hats and shaker held back at first, a stripped block of drums, bass and tune, then everything (`dynamics.layering`). Later drops bring a **B-theme** - the hook's rhythm and kind, contour turned round, and the opposite character (a busy hook gets a singing second theme, a sparse one a busier answer), starting a third away if it would open on the hook's note - for one pass before the hook returns (`hook.contrast`). Intros arrive in layers (the beat lands halfway); outros strip to the foundation. |
+| **Development, not repetition** | `harmony.develop`, `compose._bass_turnaround`, `_build_chords`, `interplay._sequenced` | Phrases have ends: bar 4 of every eight bends the bass figure and the stabs anticipate the coming chord on the & of 4; bar 8 turns the bass around (fifth, seventh, a step into the next root) and leaves the last beat to the drums. In the second half of a long drop the stab voicing lifts an inversion. Later drops *return and develop*: the first drop's loop, then the loop with one or two chords bent (a third-related substitute, the dominant where it went home, the deceptive bVI) - each later drop differently - with the harmonic rhythm quickening if the developed cycle would not fit; and one pass in four of the hook is sequenced, its restatement climbing a third. The last drop can **lift** into a new key (`dynamics.lift`; words `key lift`, `no lift`): up a tone or a semitone, from the approach bars - which become the new key's dominant - to the end, every pitched part together. A mid-song **breakdown is the bridge**: it gets its own progression, one the drop and the riddim never use, while intro and outro keep the rest chord so the song opens and closes on the same ground. **Phrase dynamics**: hats, shaker, ghost snares and chord stabs breathe with the eight-bar phrase - lean on its first downbeat, ease off, push into the turnaround, the hats opening up as it goes - while kick, backbeat and sub never move. The pad's moving top voice **suspends** across chord changes - the old note held into the new chord and resolved down a step a beat or two later, the 4-3 and 9-8 of every chorale (how often: `interplay.counter`). A tune may sing a chord's **available tensions** - the ninth, the eleventh over a minor chord, the sixth, the seventh - which the hook auditions, the listener and the critic all count as agreeing (`harmony.sits_on`), but never a note a semitone against the chord's third or fifth. **Dub throws**: in a dub-out - band stripped to drums and bass - a lone skank is let through every couple of bars, short and hard on an offbeat, so the chords' delay send fills the bar; at the end of each eight a scrap of the hook's head on the lead. The section then features what it throws (the Deluge gets a clip for it) while the song's recipe keeps the dub-out bare. **Hats at three levels**: the accent, the other eighths at a medium touch, the in-between sixteenths ghosted (the garage skip just audible). **Phrase-final lengthening**: the note a figure lands on - the one a breath follows - is held out however short `lead.gate` clips the run before it (stab leads excepted), so a staccato riff arrives instead of stopping. **The lead's register is a melody's register**: it sits above what the chords actually play (not the top of their window, which put tunes a fourth too high), may dip beside the stabs for a few notes, and is kept from living more than an octave above them; octave-up leads are drawn rarely. **Builds approach the climax without spending it**: the climbing fragment stops a step below the hook's high point (starting lower where the figure already sits high), and builds play no octave flicks. **The last drop is the whole band**: with two or more drops, the pad joins the last one - the only place all six parts play - and it arrives whole, holding nothing back in its first block. **The coda remembers the tune**: the outro's lead plays the hook's cell, then just its head, softer, and is silent for the last bars; the final hit lands in the song's key (its new key, after a lift). **The bass states every chord change**: a reply carried over the barline never takes the next bar's downbeat, and a one-drop bass that skips the one lands a new chord's root with the kick on beat 3. **Builds tighten**: over the last bars of a ramped build the hats climb the ladder a rung, then two, under the snare roll, until the floor drops out of the last bar. **Call and answer**: where the chords answer the lead they play its figure, say it again quieter as a call-back where the breath is long, and then the skank comes back - the answer takes only the room it needs. **The first drop establishes the hook** - it sings every pass (all but one in a long drop); later drops may rest it and hand it to the bass. A garage chop comes round every bar. The hook sings **over** the bass, not on it: on strong beats it takes the chord's third, fifth or seventh and keeps the root for its cadence. |
+| **A set, not one song** | `harmony.PROGRESSIONS`, `compose._resolve_scale` | Keys come from all twelve tonics (the tonic folds into the sub register, so every key fits) - more keys for the set ordering's harmonic mixing too. The progression library carries each mode's real vocabulary - dorian's i-IV-bVII, i-bVII-IV, the climbing i-ii-bIII-IV; minor's anthem i-bVI-bIII-bVII and the circle i-iv-bVII-bIII; harmonic minor's i-iv-V and i-V-bVI-V - so no one drop progression takes more than a quarter of a genre's songs. The chop's stutter follows `hook.repeat`: none, the double hit, a triple. |
+| **Kinds of bassline** | `compose._bass_style` | Each song draws a bass style - **walk** (a melodic line), **sustain** (one big held note a bar, the dubstep drop sub), **pulse** (the root on every beat, steppers), **bounce** (root and octave in eighths), **sparse** (strong beats, held), **skip** (the 2-step bass: root with the kick on 1, an octave pop on the & of 2, the root again with the late kick, a pickup every other bar) - weighted by genre. `bass.style` is a dial; words: `held bass`, `walking bass`, `pulsing bass`, `bouncing bass`, `sparse bass`, `skippy bass`. |
+| **UK garage** | `groove.TWO_STEP…`, `profile.UK_GARAGE`, `DARK_GARAGE` | Dubstep's other parent. Kits have an **idiom** - `roots` or `garage`. The garage kit: 2-step kicks (on 1 and the & of 3, or the late sixteenth after it, never on beats 2-4 - extra kicks that would land there are refused), hats that skip in pairs into the backbeat (and never climb to running sixteenths, where the skip disappears), ghost snares pushing into the one, rimshots on the in-between sixteenths, a running sixteenth shaker for the Deluge's swing to shuffle. **Minor-ninth** chords (`chord_size` 5: major ninths only - never a flat nine - and a maj7 degree keeps its ninth as an add9), organ stabs that dance round the kick, the skip bassline, and the **chop** lead - a stuttered syllable, a step, a clipped vowel, a sampler cutting up a vocal. Garage arrangements stop more than they build: shorter rolls, more mid-drop switch-ups, the chords playing almost throughout. `uk_garage` (130-136) is the whole idiom; `dark_garage` (134-140) is the proto-dubstep record - 2-step kit, deep sub, dark minor and phrygian harmony, dubstep's arrangement. And dubstep inherits: its pool includes half-time kits with the 2-step's late kick and skipping hats (`half_time_skip`, `half_time_garage`), organ stabs, ninths, the skip bass and the chop. Words: `garage` / `ukg` (garage the song up in its own meter: the 2-step kit or its half-time cousin, skip bass, ninths, organ stabs, chop lead), `2-step`, `skippy`, `4x4`, `ninths`, `organ`, `vocal chop`. `drum_feel` is a select over every named feel. |
+| **Tension & release** | `arrange/dynamics.py` | Builds roll — snare in quarters, eighths, sixteenths, thirty-seconds — over a riser; the floor drops out of the last bar; the band stops dead for the drop gap; the drop lands on a crash; long drops break for half a bar at their phrase ends; drops escalate so the last is the biggest; the whole song ends on a hit. |
+| **Roles & register** | `compose._theme` | The hook is placed as a block (its leap intact) just above the chord window; chords voice rootless over the bass; maj7s stay triads so the tune never grinds on the root. |
+| **Harmony that serves the hook** | `theory/harmony.realise_cycle` | Where the hook sings, the chord cycle is laid to the phrase length, so every pass meets the same chords and comes back note for note. Borrowed chords lend their tones: over a major V the tune raises its seventh with the chord. |
+| **The listener** | `analyze.py` | Hook strength, chord fit, clashes, register, space, answers, contrast, arc, tension, length, hook presence — one 0..1 score that ranks a batch. Across 64 songs it averages ~0.92 (the original engine scored ~0.72 on the same measure). |
+
+### The dials
+
+Every one of these is a knob in the UI and a path for `Op` / the trail /
+the critic's fixes:
+
+| group | knobs |
+|---|---|
+| `hook` (what is sung) | `rhythm` (idiom) · `form` · `contour` · `density` · `syncopation` · `motion` (steps ↔ leaps) · `repeat` (repeated notes / re-strikes) · `leap` · `span` · `climax` · `repetition` · `colour` · `breath` · `unit_bars` · `candidates` |
+| `lead` (how it is played) | `lead_style` (hook · call_response · riff · long_tones) · `octave` · `gate` · `slide` · `accent` · `grace` · `flick` · `echo` · `ornament` |
+| `interplay` | `presence` (how much the lead sings) · `answer` (fill its gaps) · `lock` (sub takes the hook's rhythm) · `counter` (pad counter-line) · `space` (stabs duck the lead) |
+| `dynamics` | `roll` · `riser` · `drop_gap` (beats) · `impact` · `switch_up` · `fills` |
+| harmony | `tension` · `bars_per_chord` · `chord_size` (3 triads / 4 sevenths) · key · mode |
+
+`tests/test_show.py::test_every_lead_dial_moves_the_lead_its_own_way` holds
+every lead and hook dial to that: low to high, each must move its own audible
+feature (note count, syncopation, interval size, repeats, range, length,
+accent contrast, glides, pitch) in its own direction.
+
+Words resolve to moves on them: `punchier`, `smoother`, `staccato`,
+`legato`, `slidier`, `more echo`, `flicks`, `grace notes`, `trills`,
+`leapier`, `steppier`, `more repeats`, `dotted`, `stabs`, `pickup`,
+`triplet`, `offbeat`, `flowing`, `catchier`, `wider hook`, `riff`,
+`call response`, `long tones`, `more hook`, `chattier`, `tighter`,
+`more counter`, `bigger drop`, `more build`, `more breaks`, `sevenths`... and
+**mutation** — `mutate`, `mutate hook`, `mutate groove`, `mutate arrangement`,
+`wild` — is a random twist across a group of knobs with every seed frozen: the
+song moves somewhere new and stays itself, on the trail, undoable. **New
+hook** (UI button, or `vary --how hook`) redraws only the hook's seed: a new
+tune over the same band, and every part that answers it follows.
+
 ## Why it is built this way
 
 Four things are hard about writing this music, and each maps to one module:
@@ -53,6 +147,9 @@ Use the `riddim-cli` launcher in the repo root — it works from any directory:
 
 # Print the whole theory library: progressions, bass figures, riddims, claves
 ./riddim-cli library
+
+# Hear it without the rig: a WAV preview of any song (numpy + scipy)
+./riddim-cli render --profile dubstep --seed 7 --out preview.wav
 ```
 
 `python -m riddim ...` also works, but **only from the repo root** — from
@@ -206,7 +303,9 @@ The same knowledge that keeps the generators musical runs in reverse over a
 finished song and says plainly where it is not doing its job: a part listed in
 a section but silent there, notes outside a register window, a bass that never
 puts a root under a fast-changing chord, a peak that is not the loudest thing,
-a build that never climbs, a hole that is loud.
+a build that never climbs, a hole that is loud. It also knows the show rules: a hook too weak to
+be one (re-roll the hook), a peak nobody carries the hook in, a lead buried
+in the stabs' register, a drop with no roll, gap or impact.
 
 It reports, and it *proposes*. Every finding carries the change that would
 cure it, in the steering vocabulary: a **twist** for what a knob can fix (the
@@ -230,6 +329,18 @@ section's own progression, set how hard it ramps), the steering surface, a
 piano roll per part with the chord tones shaded, a check panel with the
 critic's findings and a fix button for each, and in-browser playback. Export
 MIDI or send to the Deluge from the header.
+
+The sound panel has one tab per area - **tune, lead sound, drums, bass,
+chords, song, arrangement** - each with a sentence on what it shapes, the
+steering words that apply to it as buttons, and its main controls. Every
+slider names its two ends ("staccato ... legato"); hover a control for what it
+does. The finer controls fold away under each tab. A tab marked ● has a
+control moved in this take, and so does the control itself.
+
+Transport: **space** plays and pauses (pause keeps the place), **←/→** jump
+to the previous / next section, **Home** goes to the start, **Esc** stops.
+Click anywhere on the ruler or the parts to jump to that bar; double-click a
+section in the structure to play from it.
 
 The readback is at note level: besides the parts that moved, it counts notes
 *added* and *removed* per part, and the piano roll shades added notes and
@@ -264,7 +375,10 @@ and you want to move it. The model, in `direct.py`:
 ## Profiles
 
 `roots_dub` (72bpm one-drop), `steppers_dub` (78, four-to-the-floor),
-`dubby_halftime` (88), `dubstep_140` (140 written / 70 felt).
+`dubby_halftime` (88), `uk_garage` (132, 2-step), `dark_garage` (138,
+proto-dubstep: 2-step kit under a dubstep arrangement), `dubstep_140`
+(140 written / 70 felt). A corpus runs them in that order - sound system,
+garage, dubstep: the music's family tree as a set.
 
 A profile is one frozen dataclass in `profile.py` holding tempo, drum style,
 register windows, harmonic rhythm and preferred bass figures. Genre-specific
@@ -274,14 +388,19 @@ not editing the engine.
 ## Layout
 
 ```
-theory/     pitch, scale, chord, voicing, harmony, rhythm, melody, bassline, fill
-arrange/    structure — sections, energy curve, density and brightness
+theory/     pitch, scale, chord, voicing, harmony, rhythm, melody, bassline,
+            fill, hook (forms, candidates, the hook score)
+arrange/    structure — sections, kinds, energy curve, lengths
+            interplay — the theme plan and who answers whom
+            dynamics — rolls, risers, drop gaps, impacts, switch-ups
 profile.py  genre settings
-compose.py  the pipeline: key → progression → material → sections → Song
-direct.py   steering — knobs, ops, word intents, the trail, the readback
+compose.py  the pipeline: key → progression → hook → plan → parts → Song
+direct.py   steering — knobs, choice knobs, ops, word intents, mutation, trail
 critique.py the self-critic: findings, fixes, the score, the revision loop
+analyze.py  the listener: musical measures and one score to rank by
+corpus.py   a show: best-of-N songs, set ordering, variations, files
 song.py     Note / Part / Song / Rig — the boundary between theory and MIDI
-render/     standard MIDI file output
+render/     standard MIDI file output, and an audio preview synth
 deluge/     the AI SysEx protocol, client, and session-clip renderer
 ui/         the steering page (standard library only)
 ```

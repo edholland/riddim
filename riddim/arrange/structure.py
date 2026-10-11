@@ -219,6 +219,7 @@ FAMILIES = {
     "dub": ("dub", "dub_version", "dub_direct"),
     "dubstep": ("dubstep", "dubstep_single_drop", "dubstep_cold_open",
                 "dubstep_patient"),
+    "garage": ("dubstep", "dubstep_single_drop", "dubstep_patient"),
 }
 
 
@@ -384,6 +385,35 @@ def mutate(
 # Energy -> parameters
 # --------------------------------------------------------------------------
 
+# What a section *does* in the song. Everything that shapes tension - the
+# hook's treatment, the build roll, the gap before a drop, the impact on its
+# downbeat - asks this rather than the name, so a section the UI renamed
+# still behaves. Names win where they are explicit; energy decides the rest.
+KINDS = ("intro", "build", "peak", "release", "body", "outro")
+_KIND_PREFIXES = (
+    ("intro", "intro"), ("outro", "outro"), ("build", "build"),
+    ("peak", "peak"), ("drop", "peak"), ("dub_out", "release"),
+    ("breakdown", "release"), ("break", "release"), ("version", "body"),
+    ("groove", "body"),
+    ("riddim", "body"),
+)
+
+
+def kind_of(section: Section) -> str:
+    """The section's job: intro, build, peak, release, body or outro."""
+    name = section.name.lower()
+    for prefix, kind in _KIND_PREFIXES:
+        if name.startswith(prefix):
+            if kind == "body" and section.energy >= 0.8:
+                return "peak"
+            return kind
+    if section.energy >= 0.8:
+        return "peak"
+    if section.energy <= 0.35:
+        return "release"
+    return "body"
+
+
 def density_for(energy: float, role: str) -> float:
     """How full a part should be at a given energy, 0..1.
 
@@ -466,6 +496,9 @@ class StructureParams:
     chords_threshold: float = 0.35
     drums_threshold: float = 0.12
     energy_jitter: float = 0.06
+    # Chance of a groove section before a build - the riddim settling in
+    # before it climbs. Changes the shape of a record more than any length.
+    grooves: float = 0.0
     # Roles left out of the whole song. A record with no lead, or no pad, is
     # a different record - this is the strongest single variation there is.
     omit: tuple[str, ...] = ()
@@ -479,6 +512,9 @@ _PHASE = {
     "dub_out":   ((0.22, 0.38), (8, 8, 16)),
     "breakdown": ((0.10, 0.25), (8, 8, 16)),
     "outro":     ((0.15, 0.30), (4, 8, 8)),
+    # A groove: the riddim playing with the tune over it, at a level - not
+    # building, not peaking. Records breathe in these.
+    "groove":    ((0.50, 0.68), (8, 16, 16)),
 }
 
 
@@ -492,9 +528,14 @@ def _phases(p: StructureParams, rng) -> list[str]:
     else:
         if p.intro:
             seq.append("intro")
+        if rng.random() < p.grooves:
+            seq.append("groove")
         seq += ["build", "peak"]
         for _ in range(p.peaks - 1):
-            seq += [_release(p, rng), "build", "peak"]
+            seq.append(_release(p, rng))
+            if rng.random() < p.grooves:
+                seq.append("groove")
+            seq += ["build", "peak"]
     seq.append("outro")
     return seq
 
@@ -532,6 +573,13 @@ def _roles_for(kind: str, energy: float, p: StructureParams) -> tuple[str, ...]:
     elif kind == "peak":
         if energy < 0.95:
             active.discard("pad")
+    if kind in ("intro", "build", "outro") and "lead" not in p.omit:
+        # The hook is teased before it is given: once, quietly, at the end
+        # of the intro, and as a climbing fragment through the build - and
+        # remembered as the song leaves: the outro's cell, then its head,
+        # then nothing (the coda). The theme plan keeps all three sparse -
+        # this only lets the lead be there.
+        active.add("lead")
     active -= set(p.omit)
     if not active:
         active = {"drums"} - set(p.omit) or {"sub"}
@@ -545,6 +593,7 @@ _DIRECTION = {
     "dub_out": "Drums and bass only. Throw the last stab into the delay.",
     "breakdown": "Rhythm section out. Harmony and space.",
     "outro": "Strip to the foundation and fade.",
+    "groove": "The riddim at a level, the tune over it. Settle before the climb.",
 }
 
 
@@ -587,7 +636,7 @@ def generate(
                 bars = 16 if scaled >= 12 else 8
             else:
                 bars = 32 if scaled >= 24 else 16
-        elif scaled < 6:
+        elif short and scaled < 6:
             bars = 4
         elif short:
             bars = max(4, int(round(scaled / 4.0)) * 4)
@@ -615,41 +664,147 @@ def generate(
         ))
         cursor += bars
         dev += 1
+    # Drops escalate: each peak clears the one before, so the last drop is
+    # the biggest thing in the record. Same energies, re-dealt in order.
+    peaks = [s for s in sections if kind_of(s) == "peak"]
+    for s, e in zip(peaks, sorted(s.energy for s in peaks)):
+        s.energy = e
+    # And the last drop is the one place the whole band plays: the pad
+    # joins it (unless the song goes without one) - the final chorus earns
+    # a layer nothing before it had.
+    if len(peaks) >= 2 and "pad" not in p.omit:
+        last = peaks[-1]
+        last.active = tuple(r for r in ROLES if r in set(last.active) | {"pad"})
+    if not short:
+        _fit_length(sections, p.total_bars)
     return Arrangement(sections, name)
 
 
-def params_for_family(family: str, rng) -> StructureParams:
-    """Draw structure parameters for a genre family. Ranges, not templates."""
+# Which sections grow first when snapping left a song short, and how far.
+# Peaks are the record, so they take the first sixteen; then the intro and
+# outro grow to sixteen (room to mix in and out); builds stop at sixteen
+# because a roll covers eight and a longer climb stops climbing.
+_GROW = (("peak", 32, 16), ("intro", 16, 8), ("outro", 16, 8),
+         ("body", 32, 8), ("release", 16, 8), ("build", 16, 8))
+
+
+def _fit_length(sections: list[Section], target: int) -> None:
+    """Grow (or trim) sections until the song is within a phrase of
+    `target` bars, then re-lay the start bars."""
+    caps = {k: cap for k, cap, _ in _GROW}
+    for s in sections:
+        cap = caps.get(kind_of(s))
+        if cap is not None and s.bars > cap:
+            s.bars = cap
+    total = sum(s.bars for s in sections)
+    guard = 0
+    while total < target - 4 and guard < 32:
+        guard += 1
+        grown = False
+        for kind, cap, by in _GROW:
+            cands = [s for s in sections if kind_of(s) == kind and s.bars + by <= cap]
+            if cands:
+                pick = min(cands, key=lambda s: s.bars)
+                pick.bars += by
+                total += by
+                grown = True
+                break
+        if not grown:
+            break
+    # And trim one that came out long: a slow tempo makes the same bars a
+    # longer record. Peaks keep sixteen, everything else keeps eight.
+    while total > target + 8:
+        cands = [s for s in sections
+                 if s.bars > (16 if kind_of(s) == "peak" else 8)]
+        if not cands:
+            break
+        pick = max(cands, key=lambda s: (s.bars, kind_of(s) != "peak"))
+        pick.bars -= 8
+        total -= 8
+    cursor = 0
+    for s in sections:
+        s.start_bar = cursor
+        cursor += s.bars
+
+
+def _bars_for_minutes(rng, bpm: int | None, lo: float, hi: float, default) -> int:
+    if not bpm:
+        return rng.choice(default)
+    minutes = rng.uniform(lo, hi)
+    return max(48, int(round(minutes * bpm / 4 / 8)) * 8)
+
+
+def params_for_family(family: str, rng, bpm: int | None = None) -> StructureParams:
+    """Draw structure parameters for a genre family. Ranges, not templates.
+
+    Given the tempo, the length is drawn in *minutes* - three and a half to
+    five and a bit - and turned into bars, so a 72bpm dub and an 88bpm
+    half-time track are both records you can play out.
+    """
     if family == "dubstep":
+        # 128-176 bars at 140 is 3:40-5:00 - a record you can play out, with
+        # sixteen-bar intros and outros a DJ (or the next track) can mix over.
+        # Anything shorter snaps sections to four bars, which at this tempo
+        # is seven seconds: a sketch, not a song. Two drops is the form; a
+        # long track earns a third, a cold open always gets a second.
+        total = _bars_for_minutes(rng, bpm, 3.7, 5.0, (128, 144, 144, 160))
+        cold = rng.random() < 0.2
+        peaks = 3 if total >= 168 and rng.random() < 0.5 else 2
+        if not cold and total <= 136 and rng.random() < 0.15:
+            peaks = 1
         return StructureParams(
-            total_bars=rng.choice((56, 64, 72, 80)),
-            peaks=rng.choices((1, 2), (2, 3))[0],
-            intro=rng.random() < 0.7,
-            cold_open=rng.random() < 0.25,
+            total_bars=total,
+            peaks=peaks,
+            intro=not cold and rng.random() < 0.85,
+            cold_open=cold,
             release=rng.choice(("breakdown", "breakdown", "dub_out", "mixed")),
             long_peak=rng.random() < 0.3,
             sub_threshold=0.75, lead_threshold=rng.uniform(0.45, 0.6),
             perc_threshold=rng.uniform(0.55, 0.8), chords_threshold=0.4,
             omit=_draw_omit(rng),
+            grooves=rng.choice((0.0, 0.25, 0.5)),
         )
+    if family == "garage":
+        # A garage record is built for the mix: a drum intro to blend over,
+        # two drops of the bassline, a breakdown for the hook to carry, and
+        # the bass dropping out and slamming back as the main trick. The
+        # chords play almost throughout - the Rhodes is the record's warmth.
+        total = _bars_for_minutes(rng, bpm, 3.8, 5.2, (128, 144, 160))
+        return StructureParams(
+            total_bars=total,
+            peaks=3 if total >= 160 and rng.random() < 0.5 else 2,
+            intro=rng.random() < 0.9,
+            cold_open=False,
+            release=rng.choice(("breakdown", "breakdown", "mixed")),
+            long_peak=rng.random() < 0.25,
+            sub_threshold=rng.uniform(0.45, 0.6), lead_threshold=rng.uniform(0.4, 0.55),
+            perc_threshold=rng.uniform(0.4, 0.6), chords_threshold=0.25,
+            omit=_draw_omit(rng),
+            grooves=rng.choice((0.25, 0.5, 0.5)),
+        )
+    total = _bars_for_minutes(rng, bpm, 3.6, 5.4, (72, 80, 96, 104))
+    cold = rng.random() < 0.12
     return StructureParams(
-        total_bars=rng.choice((64, 72, 80, 96)),
-        peaks=rng.choices((1, 2, 3), (2, 3, 1))[0],
-        intro=rng.random() < 0.8,
-        cold_open=rng.random() < 0.15,
+        total_bars=total,
+        peaks=max(2 if cold else 1, rng.choices((1, 2, 3), (2, 4, 1))[0]),
+        intro=not cold and rng.random() < 0.8,
+        cold_open=cold,
         release=rng.choice(("dub_out", "dub_out", "mixed")),
         long_peak=rng.random() < 0.2,
         sub_threshold=0.15, lead_threshold=rng.uniform(0.5, 0.7),
         perc_threshold=rng.uniform(0.45, 0.65), chords_threshold=0.35,
         pad_threshold=rng.choice((0.0, 0.6)),
         omit=_draw_omit(rng),
+        grooves=rng.choice((0.25, 0.5, 0.75)),
     )
 
 
 def _draw_omit(rng) -> tuple[str, ...]:
     """Which roles this song goes without. The lead only rarely."""
     out = []
-    if rng.random() < 0.12:
+    # Rare: the hook is the song, and a show set wants it sung. When the
+    # lead is left out the bass carries the hook through the peaks.
+    if rng.random() < 0.04:
         out.append("lead")
     if rng.random() < 0.3:
         out.append("pad")

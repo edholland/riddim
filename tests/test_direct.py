@@ -180,9 +180,9 @@ def test_diff_sees_section_changes():
 def test_diff_orders_by_magnitude_and_sees_nothing_when_unchanged():
     p = _song().params
     assert diff(p, p.copy()) == []
-    q = apply_ops(p, [Op("tension", 0.3), Op("swing", 0.05)])
+    q = apply_ops(p, [Op("tension", 0.3), Op("stab_density", -0.05)])
     deltas = diff(p, q)
-    assert [d.path for d in deltas] == ["tension", "swing"]
+    assert [d.path for d in deltas] == ["tension", "stab_density"]
 
 
 def test_song_diff_reports_which_parts_moved():

@@ -337,6 +337,13 @@ STAB_PATTERNS: dict[str, dict[str, str]] = {
         "half_skank": "......x.......x.",    # upbeats of 2 and 4 only
         "three_four": "..x.......x...x.",    # skips the & of 2 - a hole
         "late_skank": "......x...x...x.",    # sits out the first upbeat
+        # Garage: organ and Rhodes stabs that dance round the 2-step kick
+        # (on 1 and the & of 3) instead of chopping every upbeat.
+        "organ": "...x..x.......x.",         # 3-3 into the backbeat, then a push
+        "two_step": "......x..x....x.",      # around the late kick
+        "stutter": "......xx......x.",       # the double hit before the snare
+        "dotted": "x..x..x.........",        # the dotted figure off the one
+        "answer_kick": "...x.......x....",   # each hit just after a kick
     },
     "half_time": {
         "offbeats": "....x.......x...",      # the & of each felt beat

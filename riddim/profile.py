@@ -52,11 +52,18 @@ class Profile:
     # 35% chance, combined with the lead only playing in a few sections, it
     # was effectively never heard.
     lead_omit_chance: float = 0.12
-    # How the lead phrases. See compose._build_lead.
-    lead_styles: tuple[str, ...] = ("call_response", "long_tones", "riff")
+    # How the lead delivers the hook. See arrange.interplay.styled: "hook"
+    # sings it as written, "riff" loops the cell with a turnaround,
+    # "call_response" rests every other unit for the band to answer, and
+    # "long_tones" is the half-speed melodica version. Weighted by repetition.
+    lead_styles: tuple[str, ...] = ("hook", "hook", "call_response", "riff", "long_tones")
     # Structure family - see arrange.structure.FAMILIES.
     family: str = "dub"
+    # Swing is set on the Deluge, never written into the notes.
     swing: float = 0.0
+    # The tempo is drawn per song from this range - the same feel at 68 and
+    # at 76 is two different records.
+    bpm_range: tuple[int, int] = (0, 0)
     bars_per_chord: float = 2.0
     chord_size: int = 3
     progression_tension: float = 0.35
@@ -65,7 +72,7 @@ class Profile:
     sub: Register = Register(28, 48)       # E0 .. C2
     chords: Register = Register(55, 79)    # G2 .. G4
     pad: Register = Register(48, 72)       # C2 .. C4
-    lead: Register = Register(67, 91)      # G3 .. G5
+    lead: Register = Register(64, 97)      # E3 .. C#6 - room for a wide hook to keep its shape
     # Arrangement
     section_template: str = "dub"
     bass_note_length: float = 1.0   # multiplier on figure note lengths
@@ -91,6 +98,7 @@ class Profile:
 ROOTS_DUB = Profile(
     name="roots_dub",
     bpm=72,
+    bpm_range=(66, 78),
     modes=("minor", "dorian", "phrygian"),
     drum_styles=("one_drop", "one_drop_flyer", "one_drop_pickup", "rockers"),
     bass_figures=("one_drop_walk", "anticipation", "octave_drop", "rolling_dub",
@@ -100,7 +108,6 @@ ROOTS_DUB = Profile(
                    "late_skank"),
     bars_per_chord_choices=(1.0, 2.0, 2.0, 4.0),
     family="dub",
-    swing=0.16,
     bars_per_chord=2.0,
     progression_tension=0.25,
     section_template="dub",
@@ -112,6 +119,7 @@ ROOTS_DUB = Profile(
 STEPPERS_DUB = Profile(
     name="steppers_dub",
     bpm=78,
+    bpm_range=(74, 84),
     modes=("minor", "dorian"),
     drum_styles=("steppers", "steppers_skip", "rockers"),
     bass_figures=("steppers_pulse", "tresillo_sub", "rolling_dub", "dub_walk",
@@ -120,7 +128,6 @@ STEPPERS_DUB = Profile(
     stab_patterns=("skank", "double_chop", "half_skank"),
     bars_per_chord_choices=(2.0, 2.0, 4.0),
     family="dub",
-    swing=0.1,
     bars_per_chord=2.0,
     progression_tension=0.3,
     section_template="dub",
@@ -131,19 +138,23 @@ STEPPERS_DUB = Profile(
 DUBSTEP_140 = Profile(
     name="dubstep_140",
     bpm=140,
+    bpm_range=(138, 142),
     modes=("minor", "phrygian", "harmonic_minor"),
+    # The last two are dubstep's garage inheritance: the 2-step's late kick
+    # and skipping hats under a half-time snare.
     drum_styles=("half_time", "half_time_push", "half_time_double",
-                 "half_time_tresillo", "half_time_roll"),
+                 "half_time_tresillo", "half_time_roll", "half_time_skip",
+                 "half_time_garage"),
     bass_figures=("half_time_roll", "dotted_push", "octave_bounce",
                   "phrygian_creep", "neighbour_slide", "reese_answer",
                   "descending_walk", "syncopated_stabs", "triplet_halves",
                   "question_answer", "long_then_busy", "drop_and_climb",
                   "tresillo_sub", "half_time_sub"),
     stab_patterns=("offbeats", "push", "single", "answer", "tresillo",
-                   "late_pair"),
+                   "late_pair", "organ", "dotted"),
     bars_per_chord_choices=(2.0, 4.0, 4.0, 8.0),
     family="dubstep",
-    swing=0.0,
+    lead_styles=("hook", "hook", "hook", "riff", "call_response"),
     bars_per_chord=4.0,      # very slow harmony; the sub is the event
     progression_tension=0.6,
     chord_size=3,
@@ -159,15 +170,15 @@ DUBSTEP_140 = Profile(
 DUBBY_HALFTIME = Profile(
     name="dubby_halftime",
     bpm=88,
+    bpm_range=(82, 94),
     modes=("minor", "dorian", "phrygian"),
-    drum_styles=("half_time", "half_time_push", "half_time_sparse"),
+    drum_styles=("half_time", "half_time_push", "half_time_sparse", "half_time_skip"),
     bass_figures=("half_time_roll", "anticipation", "dotted_push",
                   "reese_answer", "minor_third_bounce", "long_then_busy",
                   "half_time_sub", "sparse_stab"),
     stab_patterns=("offbeats", "push", "answer", "late_pair"),
     bars_per_chord_choices=(2.0, 4.0),
     family="dub",
-    swing=0.12,
     bars_per_chord=2.0,
     progression_tension=0.45,
     section_template="dub",
@@ -175,9 +186,62 @@ DUBBY_HALFTIME = Profile(
     note="Between the two. Heavy, slow, trip-hop adjacent.",
 )
 
+UK_GARAGE = Profile(
+    name="uk_garage",
+    bpm=132,
+    bpm_range=(130, 136),
+    # Dorian is the garage minor: the raised sixth is what makes the m9
+    # Rhodes chord sound warm instead of dark.
+    modes=("dorian", "dorian", "minor"),
+    drum_styles=("two_step", "two_step", "two_step_skip", "two_step_roll",
+                 "garage_4x4"),
+    bass_figures=("octave_bounce", "dotted_push", "syncopated_stabs",
+                  "question_answer", "tresillo_sub"),
+    stab_patterns=("organ", "two_step", "stutter", "dotted", "answer_kick"),
+    bars_per_chord_choices=(1.0, 2.0, 2.0),
+    lead_styles=("hook", "hook", "riff", "riff", "call_response"),
+    family="garage",
+    bars_per_chord=2.0,
+    progression_tension=0.4,
+    chord_size=5,
+    sub=Register(28, 52),    # E0 .. E2 - the garage bass moves, so it gets room
+    chords=Register(57, 81),
+    section_template="dubstep",
+    skank_length=1.0,        # an organ stab, not a guitar chop
+    delay_throw_on=("breakdown", "outro"),
+    note="2-step at 132: kick on 1 and the & of 3, hats skipping into the "
+         "backbeat, minor-ninth stabs dancing round the kick, a bass that "
+         "bounces with it and a chopped hook over the top.",
+)
+
+DARK_GARAGE = Profile(
+    name="dark_garage",
+    bpm=138,
+    bpm_range=(134, 140),
+    # Where dubstep came from: 2-step drums, the sound system's sub and
+    # minor-key menace. Horsepower, El-B, the first Skream records.
+    modes=("minor", "phrygian", "minor"),
+    drum_styles=("two_step", "two_step_skip", "two_step_roll"),
+    bass_figures=("dotted_push", "octave_bounce", "phrygian_creep",
+                  "neighbour_slide", "question_answer"),
+    stab_patterns=("organ", "stutter", "answer_kick", "half_skank", "dotted"),
+    bars_per_chord_choices=(2.0, 4.0, 4.0),
+    lead_styles=("hook", "riff", "riff", "call_response"),
+    family="dubstep",
+    bars_per_chord=4.0,
+    progression_tension=0.55,
+    sub=Register(24, 45),
+    chords=Register(55, 76),
+    section_template="dubstep",
+    skank_length=0.6,
+    note="Proto-dubstep at 138: the 2-step kit, a deep sub and dark "
+         "harmony - the garage record that turned into dubstep.",
+)
+
 PROFILES: dict[str, Profile] = {
     p.name: p
-    for p in (ROOTS_DUB, STEPPERS_DUB, DUBSTEP_140, DUBBY_HALFTIME)
+    for p in (ROOTS_DUB, STEPPERS_DUB, DUBSTEP_140, DUBBY_HALFTIME,
+              UK_GARAGE, DARK_GARAGE)
 }
 
 # Short aliases for the command line.
@@ -188,6 +252,12 @@ ALIASES = {
     "dubstep": "dubstep_140",
     "140": "dubstep_140",
     "halftime": "dubby_halftime",
+    "garage": "uk_garage",
+    "ukg": "uk_garage",
+    "2step": "uk_garage",
+    "2-step": "uk_garage",
+    "dark": "dark_garage",
+    "darkgarage": "dark_garage",
 }
 
 

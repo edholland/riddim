@@ -20,7 +20,7 @@ from .theory import bassline, harmony, rhythm
 def _add_compose_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--profile", default="roots_dub",
-        help="roots_dub | steppers_dub | dubstep_140 | dubby_halftime "
+        help="roots_dub | steppers_dub | dubstep_140 | dubby_halftime | uk_garage | dark_garage "
              "(aliases: dub, steppers, dubstep, halftime)",
     )
     parser.add_argument(
@@ -29,6 +29,8 @@ def _add_compose_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--bars", type=int, default=None,
                         help="total length; sections scale proportionally")
+    parser.add_argument("--bpm", type=int, default=None,
+                        help="tempo; omit to draw one from the profile's range")
     parser.add_argument("--seed", type=int, default=None,
                         help="same seed gives the same song")
     parser.add_argument("--progression", default=None,
@@ -45,11 +47,21 @@ def _add_compose_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--fix", action="store_true",
                         help="run the critic's revision loop: apply its "
                              "suggested fixes until the song is clean")
+    parser.add_argument("--params", default=None, metavar="FILE.json",
+                        help="rebuild a song exactly from its saved params "
+                             "(the .json a corpus writes); other song options "
+                             "are ignored")
 
 
 def _build(args):
     rig = ALL_DELUGE if args.all_deluge else Rig()
-    return compose_song(
+    if getattr(args, "params", None):
+        from . import corpus
+        song = corpus.load(args.params, rig=rig)
+        base = args.params.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+        song.name = args.name or base
+        return song
+    song = compose_song(
         profile=args.profile,
         key=args.key,
         bars=args.bars,
@@ -58,7 +70,9 @@ def _build(args):
         template=args.template,
         progression=args.progression,
         name=args.name,
+        bpm=getattr(args, "bpm", None),
     )
+    return song
 
 
 def _print_check(song) -> None:
@@ -158,6 +172,13 @@ def cmd_send(args) -> int:
     song = _build(args)
     if args.fix:
         song = _apply_fix(song)
+    if args.no_fx_rows:
+        # A kit without crash and riser rows: leave those notes behind.
+        from .compose import KIT_ROWS
+        fx = {KIT_ROWS["crash"], KIT_ROWS["riser"]}
+        for part in song.parts:
+            if part.output == "kit":
+                part.notes = [n for n in part.notes if n.midi not in fx]
     print(song.summary())
     print()
 
@@ -267,6 +288,51 @@ def cmd_batch(args) -> int:
     return 0
 
 
+def cmd_corpus(args) -> int:
+    """Compose a show: many songs, best of several seeds each, ordered as a
+    set, written as MIDI + params + plan, with a set list."""
+    from . import corpus
+
+    profiles = [profile_mod.get(p).name for p in args.profiles.split(",")]
+    rig = ALL_DELUGE if args.all_deluge else Rig()
+    print(f"composing {args.count} songs across {', '.join(profiles)} "
+          f"(best of {args.candidates} each)")
+    entries = corpus.build(args.count, profiles, candidates=args.candidates,
+                           seed=args.seed, fix=not args.no_fix, rig=rig, progress=print)
+    path = corpus.write(entries, args.out, audio=args.audio, progress=print)
+    print()
+    print(open(path).read())
+    print(f"wrote {len(entries)} songs to {args.out}/  (set list: {path})")
+    return 0
+
+
+def cmd_vary(args) -> int:
+    """Variations on a song you like: mutate its knobs, or re-roll one of its
+    seeds (hook, groove, structure...), keep the rest. Ranked, written out."""
+    from . import corpus
+
+    rig = ALL_DELUGE if args.all_deluge else Rig()
+    base = _build(args)
+    print(f"varying {base.name}: {args.count} x {args.how}")
+    entries = corpus.variations(base, args.count, args.how, seed=args.vary_seed, rig=rig)
+    for e in entries:
+        print(f"  {e.title:<40} score {e.score:.3f}")
+    path = corpus.write(entries, args.out, audio=args.audio, progress=print)
+    print(f"wrote {len(entries)} variations to {args.out}/  (list: {path})")
+    return 0
+
+
+def cmd_render(args) -> int:
+    """Render a song (or a saved params file) to a WAV for auditioning."""
+    from .render import audio
+
+    song = _build(args)
+    out = args.out or f"{song.name}.wav"
+    audio.write(song, out)
+    print(f"wrote {out}  ({song.arrangement.duration_seconds(song.bpm) / 60:.2f} min)")
+    return 0
+
+
 def cmd_ui(args) -> int:
     from .ui.server import serve
 
@@ -353,6 +419,9 @@ def build_parser() -> argparse.ArgumentParser:
              "song: sections auto-advance and the arrangement plays itself. "
              "none: leave section repeats alone.",
     )
+    p.add_argument("--no-fx-rows", action="store_true",
+                   help="drop the crash (row 42) and riser (row 43) notes, for "
+                        "a drum kit that has no sounds on those rows")
     p.add_argument("--dry-run", action="store_true",
                    help="run the whole send path without opening a port")
     p.add_argument("--verbose", action="store_true")
@@ -370,7 +439,7 @@ def build_parser() -> argparse.ArgumentParser:
         "batch", help="compose a batch of songs, ranked by the critic's score")
     p.add_argument(
         "--profile", default="roots_dub",
-        help="roots_dub | steppers_dub | dubstep_140 | dubby_halftime "
+        help="roots_dub | steppers_dub | dubstep_140 | dubby_halftime | uk_garage | dark_garage "
              "(aliases: dub, steppers, dubstep, halftime)",
     )
     p.add_argument("--key", default=None,
@@ -383,6 +452,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="how many to show (and to fix with --fix)")
     p.add_argument("--bars", type=int, default=None,
                    help="total length; sections scale proportionally")
+    p.add_argument("--bpm", type=int, default=None,
+                   help="tempo; omit to draw one per song from the profile's range")
     p.add_argument("--progression", default=None,
                    help="force a progression by name (see `library`)")
     p.add_argument("--template", default=None, choices=("dub", "dubstep"),
@@ -396,6 +467,43 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--out", default=None,
                    help="write the best song's MIDI here")
     p.set_defaults(func=cmd_batch)
+
+    p = subs.add_parser(
+        "corpus", help="compose a show: many songs, ranked, ordered as a set")
+    p.add_argument("--count", type=int, default=24, help="how many songs")
+    p.add_argument("--profiles", default=",".join(
+        ("roots_dub", "steppers_dub", "dubby_halftime", "uk_garage",
+         "dark_garage", "dubstep_140")),
+                   help="comma-separated profiles to spread the set across")
+    p.add_argument("--candidates", type=int, default=6,
+                   help="seeds auditioned per slot; the best is kept")
+    p.add_argument("--seed", type=int, default=1, help="first seed")
+    p.add_argument("--out", default="show", help="output directory")
+    p.add_argument("--audio", action="store_true",
+                   help="also render a WAV preview of every song (slower)")
+    p.add_argument("--no-fix", action="store_true",
+                   help="skip the critic's revision loop")
+    p.add_argument("--all-deluge", action="store_true",
+                   help="keep every part on Deluge synths")
+    p.set_defaults(func=cmd_corpus)
+
+    p = subs.add_parser(
+        "vary", help="variations on a song: mutate it, or re-roll its hook, groove...")
+    _add_compose_args(p)
+    p.add_argument("--how", default="mutate",
+                   help="mutate | hook | groove | arrangement | structure | drums "
+                        "| bass | wild")
+    p.add_argument("--count", type=int, default=6)
+    p.add_argument("--vary-seed", type=int, default=1,
+                   help="change this for a different batch of variations")
+    p.add_argument("--out", default="variations", help="output directory")
+    p.add_argument("--audio", action="store_true", help="also write audio previews")
+    p.set_defaults(func=cmd_vary)
+
+    p = subs.add_parser("render", help="render a song to a WAV preview")
+    _add_compose_args(p)
+    p.add_argument("--out", default=None, help="write the .wav here")
+    p.set_defaults(func=cmd_render)
 
     p = subs.add_parser("ui", help="open the web UI to preview, tweak and regenerate")
     p.add_argument("--port", type=int, default=8765)

@@ -81,7 +81,94 @@ def critique(song: Song) -> list[Finding]:
     findings += _lead_chord_tones(song)
     findings += _energy_curve(song)
     findings += _monophony(song)
+    findings += _hook(song)
+    if prof is not None:
+        findings += _lead_register(song, prof)
+    findings += _drops(song)
     return findings
+
+
+# Below this the hook is a line, not a hook: a new take of the theme.
+HOOK_FLOOR = 0.72
+
+
+def _hook(song: Song) -> list[Finding]:
+    """The hook must be strong, and it must be heard where it counts.
+
+    A weak hook (by its own score) is a roll of the hook seed - a new tune
+    over the same band. A peak where neither the lead sings nor the sub
+    carries the hook's rhythm is a twist: more presence, or a tighter lock.
+    """
+    from .arrange.structure import kind_of
+    out = []
+    params = song.params
+    if params is None or params.hook is None:
+        return out
+    concept = song.concept or ""
+    if "score=" in concept:
+        try:
+            s = float(concept.split("score=")[1].split()[0])
+        except ValueError:
+            s = 1.0
+        if s < HOOK_FLOOR:
+            out.append(Finding(
+                "lead", f"hook scores {s:.2f} - more a line than a hook", "note",
+                (Fix("roll", part="hook", why="a new hook over the same band"),),
+            ))
+    lead = song.part("lead")
+    sub = song.part("sub")
+    for i, sec in enumerate(song.arrangement.sections):
+        if kind_of(sec) != "peak":
+            continue
+        sung = lead is not None and len(lead.in_bars(sec.start_bar, sec.end_bar)) >= sec.bars // 2
+        carried = sub is not None and sec.plays("sub")
+        if not sung and not carried:
+            out.append(Finding(
+                sec.name, "a peak with no hook in it", "warning",
+                (Fix("twist", (Op("interplay.presence", to=1.0),
+                               Op("interplay.lock", to=0.8)),
+                     why="the lead sings every pass, the sub takes the rest"),),
+            ))
+    return out
+
+
+def _lead_register(song: Song, prof) -> list[Finding]:
+    """The tune sits above the stabs. A lead living inside the chord window
+    is a melody nobody can pick out: lift it an octave."""
+    lead, chords = song.part("lead"), song.part("chords")
+    if lead is None or chords is None or len(lead.notes) < 8 or not chords.notes:
+        return []
+    top = sorted(n.midi for n in chords.notes)[int(len(chords.notes) * 0.9)]
+    inside = sum(1 for n in lead.notes if n.midi <= top) / len(lead.notes)
+    if inside > 0.5 and song.params is not None and song.params.lead is not None \
+            and song.params.lead.octave < 1:
+        return [Finding(
+            "lead", f"{inside:.0%} of the lead sits inside the stabs' register", "note",
+            (Fix("twist", (Op("lead.octave", 1.0),), why="lift the tune clear of the chords"),),
+        )]
+    return []
+
+
+def _drops(song: Song) -> list[Finding]:
+    """A drop is an event: a roll into it, a beat of silence, a crash on it.
+    A peak that arrives with none of that is a level change, not a drop."""
+    from .arrange import dynamics
+    params = song.params
+    if params is None or params.dynamics is None:
+        return []
+    dyn = params.dynamics
+    secs = song.arrangement.sections
+    drops = [s for p, s in zip(secs, secs[1:]) if dynamics.drop_entry(p, s)]
+    if not drops:
+        return []
+    if dyn.roll < 0.15 and dyn.drop_gap <= 0 and dyn.impact < 0.15:
+        return [Finding(
+            drops[0].name, "the drop arrives with no roll, gap or impact", "note",
+            (Fix("twist", (Op("dynamics.roll", to=0.7), Op("dynamics.drop_gap", to=1.0),
+                           Op("dynamics.impact", to=0.8)),
+                 why="roll in, stop for a beat, land on a crash"),),
+        )]
+    return []
 
 
 def _mute_map(song: Song) -> list[Finding]:
@@ -121,6 +208,12 @@ def _registers(song: Song, prof) -> list[Finding]:
             window = profile_mod.register_for(prof, part.role)
         except ValueError:
             continue
+        if part.role == "lead" and song.params is not None and song.params.lead is not None:
+            # The lead's window moves with its register dial (and a flick
+            # may poke five semitones over the top).
+            from .compose import lead_window
+            lo, hi = lead_window(prof, song.params.lead)
+            window = profile_mod.Register(lo, hi + 5)
         bad = [n for n in part.notes if not window.low <= n.midi <= window.high]
         if bad:
             lo = min(n.midi for n in bad)
@@ -148,6 +241,9 @@ def _key(song: Song, prof) -> list[Finding]:
     if song.harmony is not None:
         for ev in song.harmony.events:
             allowed |= ev.chord.pitch_classes()
+            if ev.meta.get("lift"):
+                # after a key lift the new key's scale is the key
+                allowed |= {(pc + ev.meta["lift"]) % 12 for pc in song.scale.pitch_classes}
     out = []
     for part in song.parts:
         if part.output == "kit":
@@ -232,7 +328,7 @@ def _lead_chord_tones(song: Song) -> list[Finding]:
         if ev is None:
             continue
         hits += 1
-        if n.midi % 12 in ev.chord.pitch_classes():
+        if n.midi % 12 in ev.chord.pitch_classes() | {ev.chord.root_pc}:
             on_tone += 1
     if hits >= 8 and on_tone / hits < 0.25:
         return [Finding(

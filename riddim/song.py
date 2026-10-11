@@ -108,6 +108,13 @@ class Song:
     concept: str = ""
     params: object | None = None        # params.SongParams, fully resolved
     notes_for_player: list[str] = field(default_factory=list)
+    # The final hit after the last bar, as (role, Note). Kept off the parts:
+    # the parts are what the Deluge loops, and nothing may run past the
+    # arrangement there. A MIDI file or a WAV ends on it.
+    coda: list = field(default_factory=list)
+
+    def notes_with_coda(self, part: "Part") -> list:
+        return part.sorted_notes() + [n for r, n in self.coda if r == part.role]
 
     def part(self, role: str) -> Part | None:
         for p in self.parts:

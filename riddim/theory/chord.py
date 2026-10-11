@@ -28,6 +28,11 @@ _QUALITY_BY_INTERVALS: dict[tuple[int, ...], str] = {
     (0, 3, 7, 11): "mMaj7",
     (0, 4, 8, 11): "maj7#5",
     (0, 5, 7, 10): "7sus4",
+    (0, 2, 3, 7, 10): "m9",
+    (0, 2, 4, 7, 10): "9",
+    (0, 2, 4, 7, 11): "maj9",
+    (0, 2, 4, 7): "add9",
+    (0, 2, 3, 7): "madd9",
 }
 
 
@@ -77,6 +82,11 @@ class Chord:
             return found
         # A rootless or otherwise incomplete voicing: name it from the full
         # chord the degree implies, and mark that the root is not sounding.
+        # First from the notes actually played plus the missing root - so a
+        # rootless m9 is an m9 - then from the stacked thirds.
+        with_root = _QUALITY_BY_INTERVALS.get(tuple(sorted(set(self.intervals()) | {0})))
+        if with_root is not None and 0 not in self.intervals():
+            return with_root + "(no root)"
         if self.scale is not None:
             full = tuple(sorted({(self.scale.note(self.degree + 2 * i) - self.root_pc) % 12
                                  for i in range(len(self.pitches) + 1)}))

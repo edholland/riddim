@@ -36,7 +36,8 @@ def test_midi_file_round_trips(song, tmp_path):
         for msg in track
         if msg.type == "note_on" and msg.velocity > 0
     )
-    assert ons == song.note_count()
+    # Every part's notes, plus the coda: the final hit the file ends on.
+    assert ons == song.note_count() + len(song.coda)
 
 
 def test_midi_file_tempo_and_markers(song, tmp_path):

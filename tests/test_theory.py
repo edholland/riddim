@@ -625,22 +625,21 @@ def test_fill_shapes_follow_energy():
     low = fill.make(0.2, rng)
     assert set(low) == {"rim"}
     hits = low["rim"].hits
-    assert [h.step for h in hits] == [10.0, 12.0, 14.0]
+    assert [h.step for h in hits] == [12.0, 14.0]
     assert hits[-1].velocity == max(h.velocity for h in hits)
     assert all(h.step >= 8 for h in hits)
 
     mid = fill.make(0.5, rng)
     assert set(mid) == {"snare"}
     hits = mid["snare"].hits
-    assert [h.step for h in hits] == [8.0, 10.0, 12.0, 14.0]
+    assert [h.step for h in hits] == [10.0, 12.0, 14.0]
     assert hits[-1].velocity > hits[0].velocity, "the arc must climb"
     assert all(h.step >= 8 for h in hits)
 
     high = fill.make(0.95, rng)
     assert set(high) == {"snare", "rim"}
-    assert [h.step for h in high["snare"].hits] == [
-        8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0]
+    assert [h.step for h in high["snare"].hits] == [12.0, 13.0, 14.0, 15.0]
     assert high["snare"].hits[-1].velocity == \
         max(h.velocity for h in high["snare"].hits)
-    assert [h.step for h in high["rim"].hits] == [12.0, 14.0]
+    assert [h.step for h in high["rim"].hits] == [14.0]
     assert all(h.step >= 8 for h in high["rim"].hits)

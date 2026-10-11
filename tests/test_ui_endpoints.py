@@ -31,7 +31,7 @@ def test_check_and_revise_endpoints():
     """The check panel over the wire: the song payload carries the critic's
     view, a section twist breaks it through the steering surface, revise
     cures it, and the cures are steps the trail can walk back."""
-    state = State(SongParams(profile="roots_dub", seed=23))
+    state = State(SongParams(profile="roots_dub", seed=50, bpm=72))
     Handler.state = state
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     port = server.server_address[1]

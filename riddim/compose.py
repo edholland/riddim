@@ -21,23 +21,31 @@ part is a new seed for that part and nothing else moves.
 
 from __future__ import annotations
 
+import math
 import random
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 from . import profile as profile_mod
-from .arrange import structure
+from .arrange import dynamics, interplay, structure
+from .arrange.dynamics import DynamicsParams
+from .arrange.interplay import InterplayParams, Line
 from .arrange.structure import Arrangement, Section, StructureParams
 from .params import PARTS, SectionSpec, SongParams
 from .profile import Profile
 from .song import Automation, Note, Part, Rig, Song
 from .theory import (
-    bassline, chord as chord_mod, fill, groove, harmony, melody, pitch, rhythm,
+    bassline, chord as chord_mod, fill, groove, harmony, hook as hook_mod,
+    melody, pitch, rhythm,
 )
+from .theory.rhythm import metric_weight
 from .theory.scale import Scale, parse_key
 from .units import STEPS_PER_BAR, TICKS_PER_16TH, TICKS_PER_BAR
 
 # Deluge kit rows: note 36 is the bottom visible row, one semitone per row up.
-KIT_ROWS = {"kick": 36, "snare": 37, "hat": 38, "rim": 39, "perc": 40, "shaker": 41}
+# Crash and riser are the tension rows: load a crash (or impact) on 42 and a
+# noise sweep or reverse cymbal on 43 of the drum kit.
+KIT_ROWS = {"kick": 36, "snare": 37, "hat": 38, "rim": 39, "perc": 40, "shaker": 41,
+            "crash": 42, "riser": 43}
 
 
 @dataclass
@@ -59,6 +67,32 @@ class Material:
     swing: float
     # One progression per section, in section order (may repeat).
     progressions: tuple = ()
+    # The theme and the conversation around it.
+    hook: hook_mod.Hook | None = None
+    lines: dict = field(default_factory=dict)       # section start_bar -> Line
+    interplay: InterplayParams = InterplayParams()
+    dynamics: DynamicsParams = DynamicsParams()
+    lead_shift: int = 0                             # semitones: hook -> lead window
+    lead_seed: int = 0                              # the lead's own performance stream
+    drum_peak: list = field(default_factory=list)   # [P, P'] - the riddim at full weight
+    echo: tuple = (0.0, 3.0)                        # the hook's rhythm, as an answer
+    sections: list = field(default_factory=list)
+    silences: list = field(default_factory=list)    # (start, end, roles that keep playing)
+    mutes: list = field(default_factory=list)       # (start, end, {(role, row|None)}) held back
+    built: dict = field(default_factory=dict)       # parts written so far, by role
+    lift: tuple = (0, 0)                            # (from tick, semitones): the last drop's key lift
+    seeds: dict = field(default_factory=dict)       # each part's own seed, by role
+
+    def neighbours(self, section: Section) -> tuple[Section | None, Section | None]:
+        i = next((k for k, s in enumerate(self.sections) if s.start_bar == section.start_bar), None)
+        if i is None:
+            return None, None
+        prev = self.sections[i - 1] if i > 0 else None
+        nxt = self.sections[i + 1] if i + 1 < len(self.sections) else None
+        return prev, nxt
+
+    def line(self, section: Section) -> Line:
+        return self.lines.get(section.start_bar) or Line()
 
     def describe(self) -> str:
         d = self.drums
@@ -69,8 +103,11 @@ class Material:
             f"bass dens={self.bass.density:.2f} sync={self.bass.syncopation:.2f} "
             f"approach={self.bass.approach:.2f} contour={self.bass.contour} "
             f"answer={self.bass.answer_bars} | lead={self.lead_style} "
-            f"{self.lead.contour} dens={self.lead.density:.2f} "
-            f"span={int(self.lead.span)} oct={int(self.lead.octave):+d}"
+            f"gate={self.lead.gate:.2f} slide={self.lead.slide:.2f} "
+            f"accent={self.lead.accent:.2f} oct={int(self.lead.octave):+d}"
+            + (f" | hook {self.hook.params.form} [{self.hook.form_string()}] "
+               f"{self.hook.params.rhythm} {self.hook.contour} "
+               f"score={self.hook.score:.2f}" if self.hook else "")
             + (f" | harmony {' / '.join(distinct)}" if len(distinct) > 1 else "")
         )
 
@@ -89,6 +126,7 @@ def compose(
     progression: str | None = None,
     name: str = "",
     params: SongParams | None = None,
+    bpm: int | None = None,
 ) -> Song:
     """Build a complete song. Deterministic for a given params/seed.
 
@@ -104,6 +142,7 @@ def compose(
             seed=random.randrange(1, 1_000_000) if seed is None else seed,
             key=key,
             progression=progression,
+            bpm=bpm,
         )
         if bars is not None:
             params.structure = StructureParams(total_bars=bars)
@@ -138,25 +177,173 @@ def compose(
         "drums": _build_drums, "perc": _build_perc, "sub": _build_sub,
         "chords": _build_chords, "pad": _build_pad, "lead": _build_lead,
     }
-    for role in arrangement.roles_used():
+    # Built in listening order: the lead first (everyone makes room for what
+    # it actually plays), then the bass (which the kick locks to), then the
+    # rest. Parts are listed in the usual order.
+    order = ("lead", "sub", "chords", "pad", "drums", "perc")
+    used = arrangement.roles_used()
+    built: dict[str, Part] = {}
+    material.built = built
+    for role in sorted(used, key=lambda r: order.index(r) if r in order else 99):
         dest = rig.for_role(role)
         part = Part(
             role=role, name=role, output=dest.output, channel=dest.channel,
             preset=dest.preset, monophonic=dest.monophonic, comment=dest.comment,
         )
         part_rng = random.Random(params.seed_for(role))
+        material.seeds[role] = params.seed_for(role)
         for section in arrangement.sections:
             if section.plays(role):
                 builders[role](part, section, prof, material, part_rng)
+        _apply_silences(part, material.silences)
+        _apply_mutes(part, material.mutes)
+        # The lead is a sung line whatever synth it lands on: one note at a
+        # time, so an ornament can never stack onto the note it decorates.
         if part.monophonic:
             _enforce_monophony(part)
+        elif role == "lead":
+            _lead_line(part)
         _add_automation(part, role, arrangement, prof)
-        if part.notes:
-            song.parts.append(part)
+        built[role] = part
+    for role in used:
+        if built[role].notes:
+            song.parts.append(built[role])
 
+    _clamp_to_song(song, arrangement)
+    _dub_throws(song, arrangement, material, params)
+    _phrase_dynamics(song, arrangement)
+    _lift(song, material, prof)
+    _button(song, arrangement, material, prof)
     song.concept = material.describe()
     song.notes_for_player = _performance_notes(prof, material, arrangement, song)
     return song
+
+
+def _clamp_to_song(song: Song, arrangement) -> None:
+    """Nothing rings past the arrangement: a pickup in the last bar leans
+    into the final hit (the coda) rather than over it."""
+    end = arrangement.length_ticks
+    for part in song.parts:
+        part.notes = [n if n.end <= end else replace(n, length=end - n.start)
+                      for n in part.notes if n.start < end]
+
+
+def _dub_throws(song: Song, arrangement, m: Material, params: SongParams) -> None:
+    """The engineer's throws in a dub-out: with the band stripped to drums
+    and bass, a lone skank is let through every couple of bars - one stab on
+    an offbeat, short and hard, so the delay send (the chords' channel sits
+    on it) is what fills the bar - and at the end of each eight, a scrap of
+    the hook's head on the lead. The dub sound is the echo of what is not
+    being played."""
+    chords = next((p for p in song.parts if p.role == "chords"), None)
+    lead = next((p for p in song.parts if p.role == "lead"), None)
+    for i, sec in enumerate(arrangement.sections):
+        if not sec.name.startswith("dub_out") or sec.plays("chords"):
+            continue
+        rng = random.Random(f"{params.seed}:throws:{i}")
+        thrown = set()
+        for bar in range(1, sec.bars, 2):
+            if bar == sec.bars - 1:
+                continue                       # the bar before the next entry stays clear
+            tick = (sec.start_bar + bar) * TICKS_PER_BAR
+            if chords is not None and rng.random() < 0.75:
+                ev = m.voiced.at(tick)
+                if ev is not None:
+                    st = rng.choice((6, 14)) if bar % 4 == 1 else rng.choice((2, 10))
+                    for n in ev.chord.pitches:
+                        chords.add(Note(n, tick + st * TICKS_PER_16TH, TICKS_PER_16TH // 2 + 6, 104))
+                    thrown.add("chords")
+            if lead is not None and m.hook is not None and bar % 8 == 7 and sec.bars >= 8:
+                head = [t for t in m.hook.cell.tones if t.step < 6][:3]
+                base = head[0].step if head else 0
+                for t in head:
+                    lead.add(Note(t.midi(m.scale) + m.lead_shift,
+                                  tick + int((4 + t.step - base) * TICKS_PER_16TH),
+                                  TICKS_PER_16TH, 92))
+                if head:
+                    thrown.add("lead")
+        # The section now features what it throws - so the Deluge gets a clip
+        # for it - while the song's recipe (its section specs) is untouched:
+        # a recompose builds the dub-out bare and throws again.
+        if thrown:
+            sec.active = tuple(r for r in structure.ROLES if r in set(sec.active) | thrown)
+
+
+# Loudness across an eight-bar phrase: lean on its first downbeat, ease off,
+# hold, then push into the turnaround. Small - a player's shaping, not an
+# automation ride.
+_PHRASE_ARC = (1.05, 0.96, 0.99, 0.98, 1.02, 0.97, 1.01, 1.07)
+
+
+def _phrase_dynamics(song: Song, arrangement) -> None:
+    """Shape the time-keepers' velocity by where they sit in the phrase.
+
+    Hats, shaker, ghost snares and the chord stabs breathe with the phrase:
+    the first bar leans in, the middle relaxes, the eighth bar pushes, and
+    across the phrase the hats open up a little. The kick, the backbeat and
+    the sub do not move - they are the floor. Timing is never touched."""
+    hat, shaker, snare = KIT_ROWS["hat"], KIT_ROWS["shaker"], KIT_ROWS["snare"]
+    for part in song.parts:
+        if part.role not in ("drums", "perc", "chords"):
+            continue
+        out = []
+        for n in part.notes:
+            sec = arrangement.at_tick(n.start)
+            keeper = part.role == "chords" or n.midi in (hat, shaker) or \
+                (n.midi == snare and n.velocity < 90)      # ghosts, not the backbeat
+            if sec is None or not keeper or sec.bars < 8:
+                out.append(n)
+                continue
+            rel = (n.start - sec.start_tick) // TICKS_PER_BAR
+            pos = rel % 8
+            depth = 0.5 + 0.5 * sec.energy           # peaks breathe more
+            f = 1.0 + (_PHRASE_ARC[pos] - 1.0) * depth
+            if n.midi in (hat, shaker) and part.role != "chords":
+                f *= 1.0 + 0.012 * pos * depth       # the hats open across the phrase
+                within = (n.start % TICKS_PER_BAR) / TICKS_PER_BAR
+                if pos == 7:
+                    f *= 1.0 + 0.08 * within         # and swell through the last bar
+            out.append(replace(n, velocity=max(1, min(127, int(round(n.velocity * f))))))
+        part.notes = out
+
+
+def _lift(song: Song, m: Material, prof) -> None:
+    """Move everything pitched from the lift point to the end up by the
+    lift, and the harmony with it, each part kept inside its register (a
+    sub that would leave its window drops the octave; so does a lead or a
+    chord tone)."""
+    start, k = m.lift
+    if not k:
+        return
+    windows = {"sub": (prof.sub.low, prof.sub.high), "chords": (prof.chords.low, prof.chords.high),
+               "pad": (prof.pad.low, prof.pad.high),
+               "lead": (lead_window(prof, m.lead)[0], lead_window(prof, m.lead)[1] + 5)}
+    for part in song.parts:
+        if part.output == "kit" or part.role not in windows:
+            continue
+        lo, hi = windows[part.role]
+        after = [n for n in part.notes if n.start >= start]
+        shift = k
+        if part.role in ("lead", "sub") and after and max(n.midi for n in after) + k > hi \
+                and min(n.midi for n in after) + k - 12 >= lo:
+            shift = k - 12          # a line moves as one: the whole passage drops the octave
+        moved = []
+        for n in part.notes:
+            if n.start >= start:
+                p = n.midi + shift
+                if p > hi:          # chord tones fold to the next inversion down
+                    p -= 12
+                n = replace(n, midi=max(lo, p))
+            moved.append(n)
+        part.notes = moved
+    new_scale = Scale(m.scale.root + k, m.scale.name)
+    events = []
+    for ev in song.harmony.events:
+        if ev.start >= start:
+            c = chord_mod.Chord(tuple(p + k for p in ev.chord.pitches), ev.chord.degree, new_scale)
+            ev = chord_mod.ChordEvent(c, ev.start, ev.length, c.symbol(), dict(ev.meta, lift=k))
+        events.append(ev)
+    song.harmony = harmony.HarmonyPlan(song.harmony.scale, song.harmony.progression, events)
 
 
 def regenerate(song: Song, part: str, rig: Rig | None = None, rng=None) -> Song:
@@ -191,16 +378,24 @@ def _resolve_scale(params: SongParams, prof: Profile, rng: random.Random) -> Sca
         if len(params.key.split()) == 1:
             scale = Scale(scale.root, rng.choice(prof.modes))
     else:
-        root = rng.choice([pitch.parse_note(n) for n in ("G1", "A1", "D1", "E1", "F1")])
+        # Any of the twelve: the tonic is folded into the sub register below,
+        # so every key fits. Drawn from its own stream (the shared one still
+        # takes its old draw, so nothing downstream moves).
+        rng.choice((0, 1, 2, 3, 4))
+        root = 33 + random.Random(f"{params.seed}:key").randrange(12)
         scale = Scale(root, rng.choice(prof.modes))
     # Anchor the tonic at the bottom of the sub register: the bassline is
     # built from degrees above the root and needs room to move up.
     root = pitch.transpose_into(scale.root, prof.sub.low, prof.sub.low + 11)
     scale = Scale(root, scale.name)
     params.key = f"{pitch.note_name(scale.root)} {scale.name}"
-    params.bpm = params.bpm or prof.bpm
-    if params.swing is None:
-        params.swing = prof.swing
+    if not params.bpm:
+        lo, hi = prof.bpm_range if prof.bpm_range[1] else (prof.bpm, prof.bpm)
+        params.bpm = random.Random(f"{params.seed}:bpm").randint(lo, hi)
+    # Everything is written dead on the grid. Swing and feel are the
+    # Deluge's job: its own swing setting moves every clip together, where
+    # swing written into the notes fights it and drifts against it.
+    params.swing = 0.0
     return scale
 
 
@@ -235,7 +430,7 @@ def _resolve_structure(params: SongParams, prof: Profile, rng: random.Random) ->
     # like a part.
     srng = random.Random(params.seed_for("structure"))
     if params.structure is None:
-        params.structure = structure.params_for_family(prof.family, srng)
+        params.structure = structure.params_for_family(prof.family, srng, params.bpm or prof.bpm)
     arrangement = structure.generate(params.structure, srng, name=prof.family)
     params.sections = [_section_spec(s) for s in arrangement.sections]
     return arrangement
@@ -253,6 +448,16 @@ def _resolve_material(
             min(0.95, prof.progression_tension + 0.25)), 2)
     if params.bars_per_chord is None:
         params.bars_per_chord = hrng.choice(prof.bars_per_chord_choices)
+    if params.chord_size is None:
+        # Dub mostly skanks on sevenths - voiced rootless, so the stab is the
+        # third, fifth and seventh over the bass's root: the m7 colour of the
+        # genre. Garage lives on the minor ninth - the Rhodes chord - and
+        # dubstep, mostly hard plain triads, sometimes keeps garage's ninths.
+        # Own stream, so it cannot move the harmony draws above.
+        crng = random.Random(f"{params.seed}:chordsize")
+        params.chord_size = crng.choice({"dub": (3, 4, 4), "garage": (4, 5, 5, 5)}.get(
+            prof.family, (3, 3, 4, 5)))
+    size = int(params.chord_size)
 
     sections = arrangement.sections
     if params.progression and params.progression != "generate":
@@ -273,10 +478,38 @@ def _resolve_material(
     plan_pieces: list[harmony.HarmonyPlan] = []
     voiced_pieces: list[harmony.HarmonyPlan] = []
     previous: chord_mod.Chord | None = None
-    for sec, prog in zip(sections, progs):
-        piece = harmony.realise(
-            scale, prog, sec.bars, params.bars_per_chord, size=prof.chord_size,
-        ).offset(sec.start_tick)
+    # The hook's params are resolved here, before the chords, because where
+    # the hook sings the harmony is laid out to its phrase length.
+    if params.hook is None:
+        params.hook = hook_mod.params_for(prof.feel, random.Random(f"{params.seed}:hookparams"),
+                                          family=prof.family)
+    phrase_bars = params.hook.unit_bars * 4
+    if params.dynamics is None:
+        params.dynamics = dynamics.params_for(
+            prof.family, random.Random(f"{params.seed}:dynamics"))
+    for i, (sec, prog) in enumerate(zip(sections, progs)):
+        cycle = len(prog.degrees) * params.bars_per_chord
+        sings = structure.kind_of(sec) in ("peak", "body") and sec.plays("lead") or \
+            structure.kind_of(sec) == "peak"
+        aligned = cycle > 0 and (abs(cycle % phrase_bars) < 1e-9 or abs(phrase_bars % cycle) < 1e-9)
+        if sings and not aligned and len(prog.degrees) > 1:
+            piece = harmony.realise_cycle(scale, prog, sec.bars, phrase_bars,
+                                          size=size).offset(sec.start_tick)
+        else:
+            # A drop plays its whole cycle at least once: when the chords do
+            # not fit, they move faster - in a developed later drop that is
+            # the harmonic rhythm quickening, itself a development.
+            bpc = params.bars_per_chord
+            if sec.energy >= PEAK_ENERGY:
+                while bpc > 1 and len(prog.degrees) * bpc > sec.bars:
+                    bpc /= 2
+            piece = harmony.realise(
+                scale, prog, sec.bars, bpc, size=size,
+            ).offset(sec.start_tick)
+        nxt = sections[i + 1] if i + 1 < len(sections) else None
+        if nxt is not None and dynamics.drop_entry(sec, nxt) and \
+                random.Random(f"{params.seed}:cadence:{i}").random() < params.dynamics.cadence:
+            piece = _approach(piece, sec, harmony.tension_chord(scale, size))
         led = harmony.voiced(
             piece, prof.chords.low, prof.chords.high,
             rootless=True, centre=prof.chords.centre, first=previous,
@@ -288,9 +521,26 @@ def _resolve_material(
     plan = harmony.merge_section_plans(plan_pieces, core)
     voiced = harmony.merge_section_plans(voiced_pieces, core)
 
+    # The key lift: the last drop of a song with two or more, up a semitone
+    # or a tone, from the approach bars on (they become the new key's
+    # dominant). Decided here, applied to the finished notes.
+    lift = (0, 0)
+    drops = [i for i in range(1, len(sections)) if dynamics.drop_entry(sections[i - 1], sections[i])]
+    lrng = random.Random(f"{params.seed}:lift")
+    if len(drops) >= 2 and lrng.random() < params.dynamics.lift:
+        j = drops[-1]
+        before = sections[j - 1]
+        start = sections[j].start_tick
+        if random.Random(f"{params.seed}:cadence:{j - 1}").random() < params.dynamics.cadence:
+            start = before.start_tick + (before.bars - (2 if before.bars >= 8 else 1)) * TICKS_PER_BAR
+        lift = (start, random.Random(f"{params.seed}:liftsize").choice((1, 2, 2)))
+
     # Drums: a feel varied into a specific spec.
     if params.drums is None:
-        base = groove.FEELS.get(prof.drum_style, groove.HALF_TIME)
+        # The feel is drawn from the idiom's whole family, not just its first
+        # member: one-drop, flyer, pickup and rockers are four records.
+        style = random.Random(f"{params.seed}:feel").choice(prof.drum_styles)
+        base = groove.FEELS.get(style, groove.FEELS.get(prof.drum_style, groove.HALF_TIME))
         params.drums = groove.vary(base, rng, amount=0.15)
     drum_rng = random.Random(params.seed_for("drums"))
     bar_a = groove.drums(params.drums, drum_rng)
@@ -302,15 +552,34 @@ def _resolve_material(
         params.stab_density = round(rng.uniform(0.5, 1.0), 2)
     if params.stab_syncopation is None:
         params.stab_syncopation = round(rng.uniform(0.6, 0.95), 2)
-    stab = groove.generate(
-        groove.stab_spec(feel, params.stab_density, params.stab_syncopation,
-                         note_length=prof.skank_length),
-        random.Random(params.seed_for("chords")),
-    )
+    if params.stab_pattern is None:
+        srng = random.Random(f"{params.seed}:stabpattern")
+        named = [n for n in prof.stab_patterns if n in rhythm.STAB_PATTERNS.get(feel, {})]
+        params.stab_pattern = srng.choice(named) if named and srng.random() < 0.6 else "generated"
+    if params.stab_pattern in rhythm.STAB_PATTERNS.get(feel, {}):
+        stab = rhythm.stab(feel, params.stab_pattern, velocity=92,
+                           note_length=prof.skank_length)
+    else:
+        stab = groove.generate(
+            groove.stab_spec(feel, params.stab_density, params.stab_syncopation,
+                             note_length=prof.skank_length),
+            random.Random(params.seed_for("chords")),
+        )
 
     # Bass.
     if params.bass is None:
         params.bass = bassline.params_for_feel(feel, rng, energy=0.6)
+        srng = random.Random(f"{params.seed}:bassstyle")
+        pool = {"dubstep": (("sustain", 3), ("walk", 3), ("bounce", 2), ("sparse", 2),
+                            ("skip", 2)),
+                "garage": (("skip", 4), ("walk", 3), ("bounce", 2), ("sustain", 1)),
+                "dub": (("walk", 4), ("sparse", 2), ("bounce", 2), ("sustain", 1), ("pulse", 1))}
+        if prof.name == "steppers_dub":
+            pool = {"dub": (("pulse", 3), ("walk", 3), ("bounce", 2))}
+        elif prof.name == "dark_garage":
+            pool = {"dubstep": (("skip", 4), ("walk", 3), ("sustain", 2), ("bounce", 1))}
+        names, weights = zip(*pool.get(prof.family, pool.get("dub")))
+        params.bass = replace(params.bass, style=srng.choices(names, weights)[0])
     bass_rng = random.Random(params.seed_for("sub"))
     cells = [
         groove.generate(params.bass.groove(), bass_rng),
@@ -322,50 +591,324 @@ def _resolve_material(
                         bass_rng),
     ]
 
-    # Lead. The params are drawn from the *shared* rng, exactly the bass's
-    # pattern (params.bass = bassline.params_for_feel(feel, rng, ...)): one
-    # resolution draw, written back, so a recompose reads them instead of
-    # redrawing. The bass's own stream must stay put - whatever the lead
-    # resolves, it may not shift bass_rng, or the pitch seed drawn from it
-    # would differ between a first compose and a recompose, and the song
-    # would stop reproducing. lead_rng - the lead's own seed - is left to the
-    # motif alone, so a re-roll of the lead keeps the character (the params)
-    # and draws a new line, the same way a re-roll of the sub works.
+    # Lead. The style is drawn from the shared stream (as it always was);
+    # the performance dials from their own, so nothing downstream moves.
     if params.lead_style is None:
         params.lead_style = rng.choice(prof.lead_styles)
+        # A sparse kind of lead delivered sparsely vanishes from the drop:
+        # drones, stabs and slow song lines are sung as written, not at
+        # half speed or with every other phrase rested. (Drawn only - a
+        # style the maker chose is kept.)
+        ph = params.hook.phrasing if params.hook else "call"
+        if (ph in ("drone", "stabs") and params.lead_style in ("long_tones", "call_response")) or \
+                (ph == "song" and params.lead_style == "long_tones"):
+            params.lead_style = "hook"
     if params.lead is None:
-        params.lead = melody.LeadParams(
-            density=rng.uniform(0.18, 0.45),
-            syncopation=rng.uniform(0.0, 0.7),
-            span=rng.choice((4, 5, 6, 7, 8, 9)),
-            octave=rng.choice((-1, 0, 0, 1)),
-            step_bias=rng.uniform(0.5, 0.85),
-            ornament=rng.uniform(0.0, 0.5),
-            contour=rng.choice(sorted(melody.CONTOURS)),
-        )
-    lead = params.lead
-    lead_rng = random.Random(params.seed_for("lead"))
-    # The param values, resolved into the motif: density into pulse count,
-    # syncopation into rotation, octave into the centre of the range.
-    pulses = max(2, int(round(lead.density * STEPS_PER_BAR)))
-    rotation = int(round(lead.syncopation * 8))
-    motif_rhythm = rhythm.euclid(pulses, STEPS_PER_BAR, rotation=rotation)
-    motif = melody.generate(
-        motif_rhythm,
-        contour=lead.contour,
-        span=int(lead.span), centre=int(lead.octave) * scale.size,
-        chord=plan.events[0].chord if plan.events else None,
-        scale=scale, rng=lead_rng, name="motif",
-        step_bias=lead.step_bias, ornament_amount=lead.ornament,
-    )
+        params.lead = lead_params_for(prof.family, params.lead_style,
+                                      random.Random(f"{params.seed}:leadparams"),
+                                      params.hook.phrasing if params.hook else "call")
+    motif = melody.Motif([], STEPS_PER_BAR)
+
+    # The riddim at full weight, for the peaks. Drawn after bars A and A' so
+    # it cannot move them.
+    peak_spec = groove.intensify(params.drums)
+    drum_peak = [groove.drums(peak_spec, drum_rng),
+                 groove.drums(groove.vary(peak_spec, drum_rng, 0.1), drum_rng)]
+    # The last drop plays it harder again: the same riddim, more of it.
+    last_spec = groove.intensify(peak_spec, 0.8)
+    drum_peak += [groove.drums(last_spec, drum_rng),
+                  groove.drums(groove.vary(last_spec, drum_rng, 0.1), drum_rng)]
+
+    # The theme, how the band talks around it, and how tension is built.
+    # Each is resolved from its own stream so none can shift another's.
+    if params.interplay is None:
+        params.interplay = interplay.params_for(
+            prof.family, random.Random(f"{params.seed}:interplay"))
+    if params.dynamics is None:
+        params.dynamics = dynamics.params_for(
+            prof.family, random.Random(f"{params.seed}:dynamics"))
+    # The stabs' real ceiling - the highest note any voicing plays, plus the
+    # inversion a lifted stab can climb - not the top of their window: the
+    # lead sits above what the chords actually play, not above where they
+    # could in theory reach, which put every tune a fourth too high.
+    tops = [max(ev.chord.pitches) for ev in voiced.events if ev.chord.pitches]
+    chord_top = min(prof.chords.high, (max(tops) + 3) if tops else prof.chords.high)
+    the_hook, lines, shift = _theme(params, prof, scale, plan, sections, chord_top)
+
+    cell = the_hook.cell.tones if the_hook else []
+    echo = tuple(t.step - cell[0].step for t in cell[:3]) if len(cell) >= 2 else (0.0, 3.0)
 
     return Material(
         scale=scale, plan=plan, voiced=voiced, motif=motif,
         drums=params.drums, drum_bars=[bar_a, bar_b], stab=stab,
         bass=params.bass, bass_cells=cells, bass_pitch_seed=bass_rng.random(),
-        lead_style=params.lead_style, lead=params.lead, swing=params.swing or 0.0,
+        lead_style=params.lead_style, lead=params.lead, swing=0.0,
         progressions=tuple(progs),
+        hook=the_hook, lines=lines, interplay=params.interplay,
+        lead_seed=params.seed_for("lead"),
+        dynamics=params.dynamics, lead_shift=shift, drum_peak=drum_peak,
+        echo=echo, sections=list(sections),
+        silences=_silences(params, sections),
+        mutes=_layers(params, sections),
+        lift=lift,
     )
+
+
+def lead_window(prof, lp) -> tuple[int, int]:
+    """The lead's register window, moved by its octave dial: the dial moves
+    the whole window, so turning it up is always heard - it is never folded
+    back into the profile's default range."""
+    o = 12 * int(round(lp.octave)) if lp is not None else 0
+    return prof.lead.low + o, prof.lead.high + o
+
+
+def lead_params_for(family: str, style: str, rng: random.Random,
+                    phrasing: str = "call") -> melody.LeadParams:
+    """Performance dials by idiom. A 140 lead is short, hard-accented and
+    flicks octaves; a dub lead is legato, slides, grace-noted and echoed."""
+    u = lambda lo, hi: round(rng.uniform(lo, hi), 2)  # noqa: E731
+    if family == "garage":
+        # Garage leads are chopped vocals and organ riffs: clipped, bouncy,
+        # accented, with the odd octave flip and little slide.
+        lp = melody.LeadParams(octave=rng.choice((0, 0, 0, 1)), gate=u(0.5, 0.8),
+                               slide=u(0.05, 0.25), accent=u(0.5, 0.85), grace=u(0.0, 0.15),
+                               flick=u(0.1, 0.3), echo=u(0.1, 0.35), ornament=u(0.0, 0.05))
+    elif family == "dubstep":
+        lp = melody.LeadParams(octave=rng.choice((0, 0, 0, 1)), gate=u(0.65, 0.9),
+                               slide=u(0.15, 0.45), accent=u(0.4, 0.8), grace=u(0.05, 0.25),
+                               flick=u(0.05, 0.25), echo=u(0.0, 0.2), ornament=u(0.0, 0.08))
+    else:
+        lp = melody.LeadParams(octave=0, gate=u(0.8, 1.0),
+                               slide=u(0.25, 0.6), accent=u(0.25, 0.55), grace=u(0.1, 0.35),
+                               flick=u(0.0, 0.08), echo=u(0.15, 0.45), ornament=u(0.02, 0.15))
+    # Each kind of lead is played its own way - this is half of why two
+    # leads sound like two different instruments.
+    if phrasing == "stabs":
+        lp = replace(lp, gate=u(0.12, 0.35), slide=0.0, accent=u(0.7, 1.0),
+                     flick=u(0.2, 0.5), echo=u(0.2, 0.5), ornament=0.0,
+                     octave=rng.choice((0, 0, 1)))
+    elif phrasing == "riff":
+        lp = replace(lp, gate=u(0.3, 0.6), slide=u(0.0, 0.2), accent=u(0.6, 0.9),
+                     grace=u(0.0, 0.15), ornament=0.0)
+    elif phrasing == "chop":
+        # A vocal chop: clipped syllables, hard accents, no slide - the
+        # sampler cutting the phrase, not a singer carrying it.
+        lp = replace(lp, gate=u(0.4, 0.7), slide=0.0, accent=u(0.6, 0.95),
+                     grace=0.0, flick=u(0.05, 0.25), echo=u(0.15, 0.45), ornament=0.0,
+                     octave=rng.choice((0, 0, 1)))
+    elif phrasing == "arp":
+        lp = replace(lp, gate=u(0.35, 0.7), slide=0.0, accent=u(0.4, 0.8),
+                     grace=0.0, flick=0.0, echo=u(0.1, 0.4), ornament=0.0,
+                     octave=rng.choice((0, 0, 1)))
+    elif phrasing in ("song", "drone"):
+        lp = replace(lp, gate=u(0.85, 1.0), slide=u(0.3, 0.7), accent=u(0.2, 0.5),
+                     grace=u(0.15, 0.4), flick=0.0,
+                     ornament=u(0.05, 0.25) if phrasing == "drone" else lp.ornament,
+                     octave=rng.choice((0, 0, 1)) if phrasing == "song" else 0)
+    if style == "long_tones":
+        lp = replace(lp, gate=max(lp.gate, 0.9), flick=0.0)
+    return lp
+
+
+def _approach(piece: harmony.HarmonyPlan, sec: Section, chord) -> harmony.HarmonyPlan:
+    """The last bars of a section that runs into a drop move to a tension
+    chord, so the drop's downbeat is a resolution as well as an impact."""
+    bars = 2 if sec.bars >= 8 else 1
+    cut = sec.start_tick + (sec.bars - bars) * TICKS_PER_BAR
+    events = []
+    for ev in piece.events:
+        if ev.start >= cut:
+            continue
+        if ev.end > cut:
+            ev = chord_mod.ChordEvent(ev.chord, ev.start, cut - ev.start, ev.label, dict(ev.meta))
+        events.append(ev)
+    events.append(chord_mod.ChordEvent(chord, cut, bars * TICKS_PER_BAR, chord.symbol(),
+                                       {"approach": True}))
+    return harmony.HarmonyPlan(piece.scale, piece.progression, events)
+
+
+def _hook_anchor(sections: list[Section]) -> Section:
+    """Where the hook is written against: the first peak (that is where it
+    has to be strongest), else the first section the lead sings in."""
+    for s in sections:
+        if structure.kind_of(s) == "peak":
+            return s
+    for s in sections:
+        if s.plays("lead"):
+            return s
+    return sections[0]
+
+
+def _chords_from(plan: harmony.HarmonyPlan, start_tick: int, offset: float = 0.0):
+    def chord_at(step: float):
+        ev = plan.at(start_tick + int(round((offset + step) * TICKS_PER_16TH)))
+        return ev.chord if ev is not None else None
+    return chord_at
+
+
+def _theme(params: SongParams, prof: Profile, scale: Scale,
+           plan: harmony.HarmonyPlan, sections: list[Section], chord_top: int | None = None):
+    """Write the hook against the first drop's chords, place it in the lead's
+    register, and plan its treatment in every section.
+
+    The hook has its own seed: re-rolling it is a new tune over the same
+    band. The plan is drawn from that seed too, never from a part's stream,
+    so the parts that answer the hook move with it and nothing else does.
+    """
+    hp = params.hook
+    hrng = random.Random(params.seed_for("hook"))
+    anchor = _hook_anchor(sections)
+    the_hook = hook_mod.best(hp, scale, hrng, _chords_from(plan, anchor.start_tick),
+                             hp.unit_bars * 16)
+    # The B-theme: written against the same chords, from its own stream, so
+    # it never moves the hook.
+    hook_b = hook_mod.best(hook_mod.contrast_params(hp), scale,
+                           random.Random(f"{params.seed_for('hook')}:b"),
+                           _chords_from(plan, anchor.start_tick), hp.unit_bars * 16)
+    # A second theme starts somewhere the first does not: if both open on
+    # the same note, B moves up a third (and is refitted to the chords when
+    # it is realised), so it is heard as new from its first note.
+    a0 = next((t.degree for u in the_hook.units for t in u.tones), None)
+    b0 = next((t.degree for u in hook_b.units for t in u.tones), None)
+    if a0 is not None and b0 is not None and (a0 - b0) % scale.size == 0:
+        hook_b = hook_mod.Hook(
+            [hook_mod.Unit(u.role, [replace(t, degree=t.degree + 2) for t in u.tones], u.steps)
+             for u in hook_b.units],
+            hook_b.params, hook_b.unit_steps, hook_b.contour, hook_b.score, hook_b.report)
+
+    # One register for the whole song, set by the hook as written: its mean
+    # sits just above the chord window, so the tune is never inside the
+    # stabs. Moving the phrase as a block keeps its leap - folding note by
+    # note would flatten the very interval people sing back.
+    tones = hook_mod.realise(the_hook, scale, _chords_from(plan, anchor.start_tick))
+    pitches = [t.midi(scale) for t in tones] or [scale.root + 36]
+    mean = sum(pitches) / len(pitches)
+    # Of the octave placements, the one that keeps the most of the tune out
+    # of the stabs (above the chord window) and inside the lead's window -
+    # judged note by note, not by the mean, so a wide hook's low end does
+    # not sink into the chords. Ties go low: a lead should not screech.
+    lo, hi = lead_window(prof, params.lead)
+    floor = (chord_top if chord_top is not None else prof.chords.high) \
+        + 12 * int(round(params.lead.octave))
+    base = 12 * round((floor + 6 - mean) / 12)
+
+    # A few low notes may dip beside the stabs - they are short and the tune
+    # crosses them for a moment - but a tune living far above the chords
+    # screeches: notes more than an octave and a step over the stabs' top
+    # count against a placement as much as notes inside them.
+    ceiling = floor + 14
+
+    def cost(sh):
+        inside = sum(1 for x in pitches if x + sh <= floor)
+        tolerated = max(0, inside - len(pitches) // 4)
+        high = sum(1 for x in pitches if x + sh > ceiling)
+        over = sum(1 for x in pitches if x + sh > hi)
+        under = sum(1 for x in pitches if x + sh < lo)
+        return (tolerated + high + 2 * over + 2 * under, sh)
+    shift = min((base - 12, base, base + 12), key=cost)
+
+    def fits_lift(ts) -> bool:
+        return bool(ts) and max(t.midi(scale) for t in ts) + shift + 12 <= hi
+
+    lines: dict[int, Line] = {}
+    peaks = 0
+    for i, sec in enumerate(sections):
+        kind = structure.kind_of(sec)
+
+        def realise_at(h, off, sec=sec):
+            fitted = hook_mod.realise(h, scale, _chords_from(plan, sec.start_tick, off))
+            return [replace(t, step=t.step + off) for t in fitted]
+
+        line = interplay.plan(
+            kind, sec.bars, the_hook, realise_at, params.lead_style or "hook",
+            params.interplay, peaks, random.Random(f"{params.seed_for('hook')}:{i}"),
+            lead_plays=sec.plays("lead"), fits_lift=fits_lift,
+            roles=tuple(r for r in ("sub", "chords") if sec.plays(r)),
+            hook_b=hook_b,
+        )
+        if kind in ("build", "intro", "outro"):
+            line.tones = hook_mod.fit(line.tones, scale, _chords_from(plan, sec.start_tick))
+        lines[sec.start_bar] = line
+        if kind == "peak":
+            peaks += 1
+    return the_hook, lines, shift
+
+
+HAT, SHAKER = 38, 41
+
+
+def _layers(params: SongParams, sections: list[Section]) -> list:
+    """How a long drop unfolds, eight bars at a time.
+
+    The first block holds the hats and shaker back - the kit arriving in
+    full at bar nine is a lift of its own. In a thirty-two the third block
+    strips to drums, bass and the tune (chords and pad out) before the last
+    block brings everything back. Kick, snare, bass and lead always play:
+    the drop never stops being the drop.
+    """
+    out = []
+    for i, sec in enumerate(sections):
+        kind = structure.kind_of(sec)
+        if kind == "intro" and sec.bars >= 8 and i == 0:
+            # The beat lands halfway: hats, pad and bass set the scene
+            # first, kick and snare arrive at the half - a layer, not a wall.
+            half = (sec.bars // 2) * TICKS_PER_BAR
+            out.append((sec.start_tick, sec.start_tick + half,
+                        {("drums", KIT_ROWS["kick"]), ("drums", KIT_ROWS["snare"]),
+                         ("drums", KIT_ROWS["rim"])}))
+            continue
+        if kind == "outro" and sec.bars >= 8 and i == len(sections) - 1:
+            # Strip to the foundation: hats and shaker go for the last
+            # block; a long outro loses its stabs a block before that.
+            end = sec.start_tick + sec.length_ticks
+            block = 4 * TICKS_PER_BAR if sec.bars < 16 else 8 * TICKS_PER_BAR
+            out.append((end - block, end, {("drums", HAT), ("perc", None)}))
+            if sec.bars >= 16:
+                out.append((end - 2 * block, end, {("chords", None)}))
+            continue
+        if kind != "peak" or sec.bars < 16:
+            continue
+        if random.Random(f"{params.seed}:layers:{i}").random() >= params.dynamics.layering:
+            continue
+        # The last of several drops arrives whole: its first block holds
+        # nothing back (it may still strip and return in its third).
+        last_drop = sum(1 for s in sections if structure.kind_of(s) == "peak") >= 2 and \
+            not any(structure.kind_of(s) == "peak" for s in sections[i + 1:])
+        block = 8 * TICKS_PER_BAR
+        if not last_drop:
+            out.append((sec.start_tick, sec.start_tick + block,
+                        {("drums", HAT), ("perc", None)}))
+        if sec.bars >= 32:
+            out.append((sec.start_tick + 2 * block, sec.start_tick + 3 * block,
+                        {("chords", None), ("pad", None)}))
+    return out
+
+
+def _apply_mutes(part: Part, mutes) -> None:
+    if not mutes:
+        return
+    kept = []
+    for n in part.notes:
+        muted = any(a <= n.start < b and ((part.role, None) in who or (part.role, n.midi) in who)
+                    for a, b, who in mutes)
+        if not muted:
+            kept.append(n)
+    part.notes = kept
+
+
+def _silences(params: SongParams, sections: list[Section]) -> list:
+    """The windows where the band stops: the gap before each drop (everyone)
+    and the switch-ups inside long peaks (everyone but the lead)."""
+    dyn = params.dynamics
+    out = []
+    gap = dynamics.gap_ticks(dyn)
+    for prev, sec in zip(sections, sections[1:]):
+        if gap and dynamics.drop_entry(prev, sec):
+            out.append((sec.start_tick - gap, sec.start_tick, ()))
+    for i, sec in enumerate(sections):
+        for a, b in dynamics.switch_windows(sec, dyn, random.Random(f"{params.seed}:switch:{i}")):
+            out.append((a, b, ("lead",)))
+    return out
 
 
 # The energy boundaries that give a section its own harmonic personality:
@@ -375,10 +918,33 @@ PEAK_ENERGY = 0.8
 HOLE_ENERGY = 0.35
 
 
-def _progression_by_name(name: str, scale: Scale) -> harmony.Progression:
+def _progression_by_name(name: str, scale: Scale, lenient: bool = False) -> harmony.Progression:
     if name in harmony.BY_NAME:
         return harmony.BY_NAME[name]
-    return _parse_roman(name, scale)
+    try:
+        return _parse_roman(name, scale)
+    except ValueError:
+        if not lenient:
+            raise
+        return _parse_roman_by_degree(name, scale)
+
+
+_NUMERALS = ("I", "II", "III", "IV", "V", "VI", "VII")
+
+
+def _parse_roman_by_degree(text: str, scale: Scale) -> harmony.Progression:
+    """A stored progression read in a key that spells it differently (the
+    song changed mode since): each numeral by its scale degree, with the
+    chord this mode builds there - never a diminished one, which a vamp
+    cannot sit on (that degree falls back to the one before)."""
+    degrees = []
+    for token in (n.strip() for n in text.replace(" ", "-").split("-") if n.strip()):
+        core = token.lstrip("b#").rstrip("°+7").upper()
+        d = _NUMERALS.index(core) if core in _NUMERALS else 0
+        if chord_mod.triad(scale, d).quality in ("dim", "aug"):
+            d = degrees[-1] if degrees else 0
+        degrees.append(d)
+    return harmony.Progression(text, tuple(degrees or [0]), (scale.name,), 0.5, "re-read")
 
 
 def _harmony_for_sections(
@@ -411,16 +977,34 @@ def _harmony_for_sections(
     for i, sec in enumerate(sections):
         spec = params.sections[i] if params.sections and i < len(params.sections) else None
         if spec is not None and spec.progression:
-            progs.append(_progression_by_name(spec.progression, scale))
+            progs.append(_progression_by_name(spec.progression, scale, lenient=True))
             continue
         if sec.energy >= PEAK_ENERGY:
             if peak is None:
                 peak = harmony.choose(scale.name, 0.85, hrng, tolerance=0.4)
-            progs.append(peak)
+                progs.append(peak)
+            else:
+                # A later drop returns to the first one's loop, then develops
+                # it - the return is recognisable, and it is not a repeat.
+                # Own stream: nothing else in the harmony moves.
+                peaks_so_far = sum(1 for s in sections[:i] if s.energy >= PEAK_ENERGY)
+                progs.append(harmony.develop(
+                    peak, scale, random.Random(f"{params.seed}:develop:{peaks_so_far}")))
         elif sec.energy <= HOLE_ENERGY:
             if release is None:
                 release = harmony.choose(scale.name, 0.15, hrng)
-            progs.append(release)
+            if 0 < i < len(sections) - 1 and _is_bridge(sec):
+                # A breakdown in the middle of the song is its contrast - the
+                # bridge - and goes somewhere the drop and the riddim never
+                # do. Intro and outro keep the rest chord, so the song still
+                # opens and closes on the same ground. Own stream.
+                avoid = {p.name for p in progs if p is not None} | {release.name}
+                brng = random.Random(f"{params.seed}:bridge")
+                pool = [p for p in harmony.for_mode(scale.name) if p.name not in avoid
+                        and len(p.degrees) >= 2 and 0.2 <= p.tension <= 0.65]
+                progs.append(brng.choice(pool) if pool else release)
+            else:
+                progs.append(release)
         else:
             if base is None:
                 base = harmony.generate_progression(scale, params.tension, hrng)
@@ -433,6 +1017,12 @@ def _harmony_for_sections(
         progs[0],
     )
     return progs, core
+
+
+def _is_bridge(sec: Section) -> bool:
+    """A mid-song breakdown (not a dub-out, which strips the riddim rather
+    than leaving it)."""
+    return sec.name.startswith("breakdown")
 
 
 def _parse_roman(text: str, scale: Scale) -> harmony.Progression:
@@ -480,79 +1070,225 @@ def _emit(part: Part, notes, offset_ticks: int, low=None, high=None) -> None:
 
 
 def _build_drums(part, section, prof, m: Material, rng):
+    dyn = m.dynamics
+    prev, nxt = m.neighbours(section)
+    into_drop = nxt is not None and dynamics.drop_entry(section, nxt)
+    is_drop = prev is not None and dynamics.drop_entry(prev, section)
+    gap = dynamics.gap_ticks(dyn) if into_drop else 0
+    gap_steps = int(round(gap / TICKS_PER_16TH))
+    roll_n = dynamics.roll_bars(dyn, section) if into_drop else 0
+    peak = structure.kind_of(section) == "peak"
+    sub = m.built.get("sub") if section.plays("sub") else None
+    sub_cell = _bass_cell(sub, section) if sub is not None else []
+    # The lead's onsets, section-relative, so the kit can make room for it.
+    lead_on = m.line(section).onsets() if section.plays("lead") else set()
+    # Each voice draws from its own stream per bar, so the kick following a
+    # new bassline cannot nudge a hat's velocity.
+    voice_seed = rng.random()
+    peaks_before = [s for s in m.sections
+                    if s.start_bar < section.start_bar and structure.kind_of(s) == "peak"]
+    later_peak = peak and bool(peaks_before)
+    switch_ends = {b for a, b, _ in m.silences if section.start_tick < b <= section.start_tick
+                   + section.length_ticks and b - a < TICKS_PER_BAR}
+
     for bar in range(section.bars):
         bar_tick = (section.start_bar + bar) * TICKS_PER_BAR
         # A ramped section climbs bar by bar; a flat one sits on its level.
         energy = structure.bar_energy(section, bar)
         density = structure.density_for(energy, "drums")
-        # A two-bar riddim: A A A A' - the variant on every fourth bar.
-        voices = m.drum_bars[1] if (bar % 4 == 3) else m.drum_bars[0]
-        ends_phrase = (bar + 1) % 8 == 0
+        vel_scale = structure.velocity_for(energy) / 100.0
+        # A two-bar riddim: A A A A' - the variant on every fourth bar. A
+        # peak plays the same riddim at full weight.
+        bank = m.drum_bars
+        if peak and m.drum_peak:
+            bank = m.drum_peak[2:4] if (later_peak and len(m.drum_peak) >= 4) else m.drum_peak[:2]
+        voices = bank[1] if (bar % 4 == 3) else bank[0]
+        bars_left = section.bars - bar
+        rolling = bars_left <= roll_n
+        ends_phrase = (bar + 1) % 16 == 0
         ends_section = bar == section.bars - 1
         # The last bar of a section is a fill: the snare and rim let go of
-        # the riddim and run into the next section's downbeat. An 8-bar
-        # phrase end inside a section just thickens the ordinary pattern.
-        fill_this_bar = ends_section and section.bars >= 4
+        # the riddim and run into the next section's downbeat. Inside a
+        # section, an eight-bar phrase end gets a fill by `fills`, otherwise
+        # the ordinary pattern thickened. A build into a drop rolls instead.
+        fill_this_bar = ends_section and section.bars >= 4 and not rolling
+        # A fill never talks over the lead: if the tune is singing through the
+        # back half of this bar, the phrase fill sits out and a section-end
+        # fill plays under it, softly.
+        lo = bar * STEPS_PER_BAR
+        lead_late = any(lo + 8 <= st < lo + 16 for st in lead_on)
+        phrase_fill = (ends_phrase and not ends_section and not rolling
+                       and not lead_late and rng.random() < dyn.fills)
 
         for voice, pattern in voices.items():
             if voice not in KIT_ROWS or not pattern.hits:
                 continue
-            if fill_this_bar and voice in ("snare", "rim"):
+            if (fill_this_bar or phrase_fill) and voice in ("snare", "rim"):
                 continue  # the fill owns this bar
+            if rolling and voice in ("snare", "rim"):
+                continue  # the roll owns these
+            if voice == "kick" and sub is not None:
+                pattern = _lock_kick(pattern, sub_cell, m)
+            # One stream per voice for the whole section: at a given density
+            # the same hits survive every bar, so the groove repeats instead of
+            # reshuffling - a hat that changes every bar sounds out of time.
+            vrng = random.Random(f"{voice_seed}:{voice}")
             keep = density if voice in ("hat", "rim") else min(1.0, density + 0.35)
-            p = rhythm.thin(pattern, keep, rng)
-            if m.swing:
-                p = rhythm.swing(p, m.swing)
-            if voice == "snare":
-                p = rhythm.lay_back(p, 0.05, tags=())
-            p = rhythm.humanize(p, 0.02, 6, rng)
-            if ends_phrase and not fill_this_bar and voice == "snare":
-                p = rhythm.thicken(p, 3, rng, velocity=95)
-            vel_scale = structure.velocity_for(energy) / 100.0
+            climb = 0
+            if voice == "hat" and into_drop and section.ramp > 0 and section.bars >= 8 \
+                    and 2 <= bars_left <= 4:
+                # The hats climb the ladder over the last bars of a build -
+                # a rung, then two - and play in full: the top end tightens
+                # with the roll, and the drop's downbeat releases it.
+                climb = 1 if bars_left > 2 else 2
+                pattern, keep = groove.hat_pattern(m.drums, climb), 1.0
+            p = rhythm.thin(pattern, keep, vrng)
+            if rolling and bars_left == 1 and voice in ("kick", "hat"):
+                # The floor goes out from under the last bar of the roll.
+                p = rhythm.mask(p, lambda st: st < 8)
+            # On the grid: velocity is humanised, timing never is.
+            p = rhythm.humanize(p, 0.0, 6, vrng)
             _emit(part, [(KIT_ROWS[voice], h.step, min(h.length, 0.9), h.velocity * vel_scale)
                          for h in p.sorted_hits()], bar_tick)
 
-        if fill_this_bar:
-            vel_scale = structure.velocity_for(energy) / 100.0
-            for voice, pattern in fill.make(energy, rng).items():
+        if rolling:
+            _emit(part, [(KIT_ROWS["snare"], s, 0.5, v)
+                         for s, v in dynamics.roll(bars_left, roll_n, dyn, rng,
+                                                   gap_steps if bars_left == 1 else 0)],
+                  bar_tick)
+        if fill_this_bar or phrase_fill:
+            fill_energy = energy if fill_this_bar else min(energy, 0.5)
+            under = 0.75 if lead_late else 1.0
+            for voice, pattern in fill.make(fill_energy, rng).items():
                 if voice not in KIT_ROWS:
                     continue
                 _emit(part, [(KIT_ROWS[voice], h.step, min(h.length, 0.9),
-                              h.velocity * vel_scale) for h in pattern.sorted_hits()],
+                              h.velocity * vel_scale * under) for h in pattern.sorted_hits()],
                       bar_tick)
+
+        # Impacts: the drop's downbeat, every eighth bar of a peak, and the
+        # bar after a switch-up - the band coming back in.
+        if bar == 0 and is_drop and dyn.impact > 0.05:
+            _emit(part, [(KIT_ROWS["crash"], 0, 8, 96 + 30 * dyn.impact)], bar_tick)
+        elif peak and bar % 8 == 0 and bar > 0 and rng.random() < dyn.impact:
+            _emit(part, [(KIT_ROWS["crash"], 0, 8, 72 + 20 * dyn.impact)], bar_tick)
+        elif bar_tick in switch_ends:
+            _emit(part, [(KIT_ROWS["crash"], 0, 8, 90)], bar_tick)
+
+    if into_drop:
+        span = dynamics.riser_span(section, dyn, gap)
+        if span is not None:
+            start, length = span
+            part.add(Note(KIT_ROWS["riser"], start, length, int(80 + 40 * dyn.riser)))
+
+
+def _bass_cell(sub: Part, section: Section) -> list[tuple[int, float]]:
+    """The bass's usual positions in a section: each step with how often the
+    bass starts a note there across the section's bars. The kick locks to
+    this, not to each bar's notes - so it plays one steady pattern with the
+    bass instead of chasing every reply and fill."""
+    counts: dict[int, int] = {}
+    for n in sub.notes:
+        if section.start_tick <= n.start < section.start_tick + section.length_ticks:
+            st = (n.start % TICKS_PER_BAR) // TICKS_PER_16TH
+            counts[st] = counts.get(st, 0) + 1
+    return sorted(((st, c / section.bars) for st, c in counts.items()), key=lambda x: x[0])
+
+
+def spec_is_straight(m: Material) -> bool:
+    return m.drums.feel != "half_time"
+
+
+def _lock_kick(pattern, cell: list[tuple[int, float]], m: Material):
+    """The kick plays with the bass. The genre's anchors stay - the one-drop
+    on 3, half-time on 1, steppers on every beat - and every other kick in
+    the bar moves onto a bass note: the strongest ones first, never onto the
+    backbeat, never crowding an anchor. Kick and sub become one instrument
+    instead of two parts that happen to share a tempo."""
+    anchors = set(m.drums.kick_anchors)
+    backbeat = set(m.drums.backbeat)
+    extra = [h for h in pattern.hits if int(round(h.step)) not in anchors]
+    if not extra or not cell:
+        return pattern
+    cands = []
+    one_drop = 0 not in anchors and 8 in anchors and spec_is_straight(m)
+    two_step = getattr(m.drums, "idiom", "roots") == "garage" and 4 not in anchors
+    for st, share in cell:
+        if share < 0.4:
+            continue            # only where the bass plays in most bars
+        if one_drop and st == 0:
+            continue            # the one-drop's empty one stays empty
+        if two_step and st % 4 == 0:
+            continue            # 2-step leaves the beats it skips empty
+        if st in backbeat or st in anchors or any(abs(st - a) < 2 for a in anchors):
+            continue
+        cands.append((share * 4 + metric_weight(st), st))
+    chosen = sorted({st for _, st in sorted(cands, reverse=True)[:len(extra)]})
+    if len(chosen) < len(extra):
+        # A held or pulsing bass leaves the kick little to lock to: the rest
+        # of its extra hits keep their own eighth-note places.
+        for h in sorted(extra, key=lambda h: -metric_weight(int(h.step))):
+            st = int(round(h.step)) // 2 * 2
+            if len(chosen) >= len(extra):
+                break
+            if st not in chosen and st not in backbeat and st not in anchors \
+                    and not any(abs(st - a) < 2 for a in anchors) \
+                    and not (two_step and st % 4 == 0):
+                chosen.append(st)
+        chosen = sorted(chosen)
+    vel = int(sum(h.velocity for h in extra) / len(extra))
+    hits = [h for h in pattern.hits if int(round(h.step)) in anchors]
+    hits += [rhythm.Hit(float(st), vel, 0.9) for st in chosen]
+    return rhythm.Pattern(pattern.length, sorted(hits, key=lambda h: h.step),
+                          pattern.steps_per_bar, pattern.name)
 
 
 def _build_perc(part, section, prof, m: Material, rng):
+    # One figure for the whole section, on the offbeats: a shaker that moves
+    # onto the beat every other bar sounds like it is losing time.
     for bar in range(0, section.bars, 2):
         energy = structure.bar_energy(section, bar)
         density = structure.density_for(energy, "perc")
-        pulses = max(2, int(round(3 + density * 5)))
-        # A fresh cell per two bars: a shaker that loops one figure for a
-        # whole section is the sound of a loop, not of a player.
-        pattern = rhythm.euclid(pulses, STEPS_PER_BAR, rotation=rng.choice((1, 3, 5)))
+        # Offbeat eighths, filling in sixteenths only when the section is full.
+        steps = [2, 6, 10, 14] + ([3, 7, 11, 15] if density > 0.85 else [])
+        pattern = rhythm.from_steps(steps, STEPS_PER_BAR)
         pattern = rhythm.accent(pattern, strong=88, weak=58)
-        if m.swing:
-            pattern = rhythm.swing(pattern, m.swing)
-        two_bar = rhythm.every_other_bar(pattern, rhythm.rotate(pattern, 2), bars=2)
+        if getattr(m.drums, "idiom", "roots") == "garage" and spec_is_straight(m) and density > 0.6:
+            # The garage shaker runs in sixteenths under the skipping hats,
+            # leaning on the offbeat - the engine the Deluge's swing turns
+            # into the shuffle.
+            pattern = rhythm.Pattern(STEPS_PER_BAR, [
+                rhythm.Hit(float(s), 82 if s % 4 == 2 else (40 if s % 4 == 0 else 54), 0.5)
+                for s in range(STEPS_PER_BAR)], STEPS_PER_BAR)
+        two_bar = rhythm.every_other_bar(pattern, pattern, bars=2)
         bar_tick = (section.start_bar + bar) * TICKS_PER_BAR
-        shaken = rhythm.humanize(two_bar, 0.03, 8, rng)
+        shaken = rhythm.humanize(two_bar, 0.0, 8, rng)
         vel_scale = structure.velocity_for(energy) / 100.0
         _emit(part, [(KIT_ROWS["shaker"], h.step, 0.5, h.velocity * vel_scale)
                      for h in shaken.sorted_hits()], bar_tick)
 
 
 def _build_sub(part, section, prof, m: Material, rng):
-    """The bassline: generated phrases, cell restated and answered.
+    """The bassline: generated phrases, cell restated and answered - and
+    placed around the hook.
 
     The cell rhythm is fixed for the song (it is the bassline's identity)
     and its pitch choices are replayed from a fixed seed, so every
     restatement is a restatement. Answer bars draw fresh randomness. Peaks
     use the second, busier cell; a 32-bar peak switches cell halfway.
+
+    Then the conversation: where the theme plan hands the sub the hook (a
+    pass the lead sits out, or a unison pass), the sub plays the hook's
+    rhythm on the chord root - the bass *is* the riff. Where the lead
+    breathes, the sub may answer with a pickup into the next downbeat.
     """
     params = m.bass
     density = structure.density_for(section.energy, "sub")
     phrase_len = params.phrase_bars
     is_peak = section.energy >= 0.85
+    line = m.line(section)
+    ip = m.interplay
+    busy = _lead_busy_beats(m, section)
     fill_params = replace(
         params, density=min(0.6, params.density + params.fill_density_boost),
         syncopation=min(1.0, params.syncopation + 0.15),
@@ -562,7 +1298,7 @@ def _build_sub(part, section, prof, m: Material, rng):
     for start in range(0, section.bars, phrase_len):
         bars = min(phrase_len, section.bars - start)
         roots = []
-        for b in range(bars):
+        for b in range(bars + 1):
             ev = m.plan.at((section.start_bar + start + b) * TICKS_PER_BAR)
             roots.append(ev.chord.degree if ev else 0)
 
@@ -573,7 +1309,7 @@ def _build_sub(part, section, prof, m: Material, rng):
 
         motifs = []
         for b in range(bars):
-            root, nxt = roots[b], roots[(b + 1) % bars]
+            root, nxt = roots[b], roots[b + 1]
             if b in params.answer_bars and bars == phrase_len:
                 motifs.append(bassline.generate_line(fill_rhythm, root, rng, fill_params, nxt))
             else:
@@ -595,41 +1331,431 @@ def _build_sub(part, section, prof, m: Material, rng):
                 b = answers[-1]
                 motifs[b] = bassline.generate_line(
                     groove.generate(colour_params.groove(), rng), roots[b], rng,
-                    colour_params, roots[(b + 1) % bars])
+                    colour_params, roots[b + 1])
                 if len(pcs(motifs)) >= 3:
                     break
 
         for b, motif in enumerate(motifs):
-            abs_bar = section.start_bar + start + b
-            if density < 0.85:
-                motif = melody.thin_tones(motif, density, rng)
-            notes = bassline.constrain_register(motif, m.scale, prof.sub.low, prof.sub.high)
-            notes = bassline.monophonic(notes)
-            notes = [(mi, s, l * prof.bass_note_length,
-                      structure.velocity_for(section.energy, v)) for mi, s, l, v in notes]
+            rel_bar = start + b
+            abs_bar = section.start_bar + rel_bar
+            vel_energy = structure.bar_energy(section, rel_bar)
+            lo_step = rel_bar * STEPS_PER_BAR
+            hook_here = [t for t in line.bass_line if lo_step <= t.step < lo_step + STEPS_PER_BAR]
+            if hook_here:
+                notes = _bass_from_hook(hook_here, lo_step, roots[b], m, prof, section)
+            else:
+                if density < 0.85:
+                    motif = melody.thin_tones(motif, density, rng)
+                notes = bassline.constrain_register(motif, m.scale, prof.sub.low, prof.sub.high)
+                notes = bassline.monophonic(notes)
+                notes = [(mi, s, l * prof.bass_note_length, v) for mi, s, l, v in notes]
+                notes = _bass_style(notes, m, prof, roots[b], roots[b + 1], rel_bar, rng)
+                notes = _answer_breaths(notes, line, lo_step, roots[b + 1], m, prof, rng)
+            if not hook_here:
+                notes = _yield_to_lead(notes, busy, lo_step, m.interplay.space, m.bass.gate)
+            replies = line.response_in(lo_step, lo_step + STEPS_PER_BAR, "sub")
+            if replies:
+                notes = _sub_reply(notes, replies, lo_step, roots[b], m, prof)
+            notes = _on_eighths(notes)
+            if not params.anchor_root and not hook_here:
+                # A bass that skips the one still states a new chord: where
+                # the harmony changes, its root lands with the one-drop kick
+                # on beat 3 if nothing has said it by then.
+                here = m.voiced.at(abs_bar * TICKS_PER_BAR)
+                before = m.voiced.at(abs_bar * TICKS_PER_BAR - 1) if abs_bar > 0 else None
+                changed = here is not None and (before is None or before.chord.degree != here.chord.degree)
+                if changed and not any(st <= 8 for _, st, _, _ in notes):
+                    r = _sub_note(m, prof, roots[b], roots[b])
+                    nxt_st = min([st for _, st, _, _ in notes if st > 8] + [16.0])
+                    notes = sorted(notes + [(r, 8.0, max(1.0, (nxt_st - 8) * m.bass.gate), 108)],
+                                   key=lambda n: n[1])
+            notes = [(mi, s, l, structure.velocity_for(vel_energy, v)) for mi, s, l, v in notes]
             _emit(part, notes, abs_bar * TICKS_PER_BAR)
 
 
+def _bass_style(notes, m: Material, prof, root, nxt_root, rel_bar, rng):
+    """Turn the generated line into the song's kind of bassline. `walk` is
+    the line as generated; the others keep its root and pitch world but
+    change what a bar *is*."""
+    style = getattr(m.bass, "style", "walk")
+    if style == "walk" or not notes:
+        return notes
+    r = _sub_note(m, prof, root, root)
+    fifth = _sub_note(m, prof, root + 4, root)
+    vel = max(v for _, _, _, v in notes)
+    # Phrases have ends. Bar 4 of every eight bends the figure; bar 8 turns
+    # it around and walks into the next phrase - the bassist's job, and the
+    # difference between a loop and a line.
+    pos = rel_bar % 8
+    if pos == 7:
+        out = _bass_turnaround(style, m, prof, root, nxt_root, vel)
+        if out:
+            return out
+    seventh = _sub_note(m, prof, root + 6, root)
+    if pos == 3:
+        if style == "sustain":
+            up = r + 12 if r + 12 <= prof.sub.high else fifth
+            return [(r, 0.0, 7.5, vel), (up, 8.0, 6.0, vel - 8)]
+        if style == "pulse":
+            return [(r, 0.0, 3.2, vel), (r, 4.0, 3.2, vel - 8), (fifth, 8.0, 3.2, vel - 8),
+                    (seventh, 12.0, 3.2, vel - 8)]
+        if style == "skip":
+            return [(r, 0.0, 4.5, vel), (fifth, 6.0, 1.5, vel - 14), (r, 10.0, 3.0, vel - 4)]
+    if style == "sustain":
+        # One held note under the bar; every other bar a pickup on the last
+        # eighth leans into the next root.
+        out = [(r, 0.0, 14.0 if rel_bar % 2 else 15.5, vel)]
+        if rel_bar % 2:
+            out.append((_sub_note(m, prof, nxt_root - 1, nxt_root), 14.0, 2.0, vel - 10))
+        return out
+    if style == "pulse":
+        return [(r if k % 2 == 0 else (fifth if k == 3 else r), float(4 * k), 3.2, vel - (0 if k == 0 else 8))
+                for k in range(4)]
+    if style == "skip":
+        # The 2-step bassline: the root with the kick on the one, an octave
+        # pop on the & of 2, the root again with the late kick on the & of 3,
+        # and every other bar a pickup that leans into the next chord.
+        hi = r + 12 if r + 12 <= prof.sub.high else fifth
+        out = [(r, 0.0, 4.5, vel), (hi, 6.0, 1.5, vel - 14), (r, 10.0, 3.0, vel - 4)]
+        if rel_bar % 2:
+            out.append((_sub_note(m, prof, nxt_root - 1, nxt_root), 14.0, 1.5, vel - 12))
+        return out
+    if style == "bounce":
+        hi = r + 12 if r + 12 <= prof.sub.high else r
+        return [((r if k % 2 == 0 else hi), float(2 * k), 1.6, vel - (0 if k % 2 == 0 else 14))
+                for k in range(8) if not (k == 7 and rel_bar % 2)]
+    # sparse: the notes on the downbeat and the half-bar, held.
+    keep = [(mi, st, ln, v) for mi, st, ln, v in notes if st in (0.0, 8.0)]
+    if not keep:
+        keep = [(r, 0.0, 6.0, vel)]
+    return [(mi, st, 7.0, v) for mi, st, _, v in keep]
+
+
+def _bass_turnaround(style, m: Material, prof, root, nxt_root, vel):
+    """The last bar of an eight-bar phrase: the figure's first half, then a
+    walk - fifth, seventh, a step into the next root - so the bass carries
+    the phrase over the barline instead of starting the loop again."""
+    r = _sub_note(m, prof, root, root)
+    fifth = _sub_note(m, prof, root + 4, root)
+    seventh = _sub_note(m, prof, root + 6, root)
+    into = _sub_note(m, prof, nxt_root - 1, nxt_root)
+    if style == "sustain":
+        return [(r, 0.0, 7.5, vel), (fifth, 8.0, 3.5, vel - 8), (seventh, 12.0, 1.8, vel - 10),
+                (into, 14.0, 1.8, vel - 6)]
+    if style == "pulse":
+        return [(r, 0.0, 3.2, vel), (r, 4.0, 3.2, vel - 8), (fifth, 8.0, 1.8, vel - 8),
+                (seventh, 10.0, 1.8, vel - 8), (fifth, 12.0, 1.8, vel - 8), (into, 14.0, 1.8, vel - 6)]
+    if style == "bounce":
+        hi = r + 12 if r + 12 <= prof.sub.high else r
+        return [(r, 0.0, 1.6, vel), (hi, 2.0, 1.6, vel - 14), (r, 4.0, 1.6, vel), (hi, 6.0, 1.6, vel - 14),
+                (seventh, 8.0, 1.6, vel - 8), (fifth, 10.0, 1.6, vel - 8), (seventh, 12.0, 1.6, vel - 8),
+                (into, 14.0, 1.8, vel - 4)]
+    if style == "skip":
+        return [(r, 0.0, 4.5, vel), (fifth, 6.0, 1.5, vel - 14), (seventh, 10.0, 1.5, vel - 6),
+                (fifth, 12.0, 1.5, vel - 8), (into, 14.0, 1.5, vel - 6)]
+    if style == "sparse":
+        return [(r, 0.0, 7.0, vel), (fifth, 8.0, 5.0, vel - 8), (into, 14.0, 1.8, vel - 6)]
+    return None
+
+
+def _lead_busy_beats(m: Material, section: Section) -> set[int]:
+    """Beats (section-relative, 4 steps each) where the lead, as performed -
+    graces, mordents and all - plays two or more notes. That beat is the
+    lead's; everyone else holds."""
+    lead = m.built.get("lead")
+    if lead is None or not section.plays("lead"):
+        return set()
+    count: dict[int, int] = {}
+    for n in lead.notes:
+        if section.start_tick <= n.start < section.start_tick + section.length_ticks:
+            b = (n.start - section.start_tick) // (4 * TICKS_PER_16TH)
+            count[b] = count.get(b, 0) + 1
+    return {b for b, c in count.items() if c >= 2}
+
+
+def _yield_to_lead(notes, busy: set[int], lo_step: float, space: float = 1.0,
+                   gate: float = 0.9):
+    """The bass gives the lead's figures room: inside a beat the lead is
+    busy, only a note on the beat itself survives (and holds through it);
+    the bass moves again when the lead holds or rests."""
+    if not busy:
+        return notes
+    out = []
+    for mi, st, ln, v in notes:
+        beat = int((lo_step + st) // 4)
+        # `space` is how readily the band gives way - per beat, reproducibly.
+        yields = beat in busy and ((beat * 7919) % 100) / 100.0 < space
+        if yields and (lo_step + st) % 4 != 0:
+            continue
+        out.append((mi, st, ln, v))
+    # Re-join: each kept note holds to the next one (mono; capped at a bar).
+    out.sort(key=lambda n: n[1])
+    joined = []
+    for i, (mi, st, ln, v) in enumerate(out):
+        nxt = out[i + 1][1] if i + 1 < len(out) else st + ln
+        if int((lo_step + st) // 4) in busy:
+            ln = max(ln, min(nxt - st, 8.0) * gate)
+        joined.append((mi, st, ln, v))
+    return joined
+
+
+def _on_eighths(notes):
+    """The sub plays on the eighth-note grid. A sub bass on the in-between
+    sixteenths is heard as out of
+    time, not as syncopation: the low end has to be where the kick is. A note
+    on an odd sixteenth moves forward to the next eighth (or back, but never
+    onto the downbeat, which belongs to the root); if both are taken, it
+    goes."""
+    taken = {float(int(round(st))) for _, st, _, _ in notes if int(round(st)) % 2 == 0}
+    out, used = [], set()
+    for mi, st, ln, v in sorted(notes, key=lambda n: n[1]):
+        s = int(round(st))
+        if s % 2 == 0:
+            q = float(s)
+        elif s + 1 < STEPS_PER_BAR and float(s + 1) not in taken:
+            q = float(s + 1)               # forward to the next eighth
+        elif s - 1 > 0 and float(s - 1) not in taken:
+            q = float(s - 1)               # back - but never onto the downbeat
+        else:
+            continue
+        if q in used:
+            continue
+        used.add(q)
+        out.append((mi, q, max(0.5, ln), v))
+    return out
+
+
+def _sub_note(m: Material, prof, degree: int, root: int) -> int:
+    """A bass degree placed relative to the root's home in the sub window, so
+    an octave jump stays a jump instead of folding back onto the root."""
+    home = pitch.transpose_into(m.scale.note(root), prof.sub.low, prof.sub.low + 11)
+    note = home + (m.scale.note(degree) - m.scale.note(root))
+    while note > prof.sub.high:
+        note -= 12
+    while note < prof.sub.low:
+        note += 12
+    return note
+
+
+def _bass_from_hook(tones, lo_step, root, m: Material, prof, section: Section):
+    """The hook's rhythm, spoken by the sub - the riff in unison.
+
+    Strong beats say the root: the bass still owns the harmony. Everywhere
+    else the sub doubles the hook's own note two or three octaves down, so
+    the bass and the tune move as one figure; the hook's high point pops
+    the root's octave instead, because a sub cannot follow a tune that far
+    up. The downbeat is always there - kick and sub land together - even
+    when the hook enters late. Note lengths follow the bass's gate.
+    """
+    ordered = sorted(tones, key=lambda t: t.step)
+    top = max(t.degree for t in ordered)
+    out = []
+    if ordered[0].step - lo_step >= 2:
+        out.append((0.0, None, root))
+    for t in ordered:
+        step = t.step - lo_step
+        if metric_weight(int(step) % 16) >= 3:
+            out.append((step, None, root))
+        elif t.degree == top:
+            out.append((step, None, root + 7))
+        else:
+            out.append((step, t, None))
+    notes = []
+    home = pitch.transpose_into(m.scale.note(root), prof.sub.low, prof.sub.low + 11)
+    for i, (step, tone, degree) in enumerate(out):
+        nxt = out[i + 1][0] if i + 1 < len(out) else 16.0
+        length = max(0.75, (nxt - step) * m.bass.gate)
+        vel = 112 if metric_weight(int(step) % 16) >= 3 else 100
+        if tone is not None:
+            note = _borrowed(tone, m, tone.step, section)
+            while note - home > 9:
+                note -= 12
+            while note < home - 3:
+                note += 12
+            # Fold, never clamp: clamping moves a note to a different pitch.
+            note = pitch.transpose_into(note, prof.sub.low, prof.sub.high)
+        else:
+            note = _sub_note(m, prof, degree, root)
+        notes.append((note, step, length, vel))
+    return notes
+
+
+# How the sub says a melody's moves: the figure's steps become the bass's
+# own vocabulary - root, the b7 below, the fifth, the octave.
+def _bass_degree(rel: int) -> int:
+    if rel <= -2:
+        return -3          # the fifth below
+    if rel == -1:
+        return -1          # the b7 below, leading home
+    if rel == 0:
+        return 0
+    if rel == 1:
+        return 2           # a step up is the third: colour, not just the frame
+    if rel <= 3:
+        return 4           # the fifth
+    return 7               # the octave
+
+
+def _sub_reply(notes, replies, lo_step, root, m: Material, prof):
+    """The bass answers the call: in the space after it, the sub plays the
+    call's figure back - same rhythm, the shape in bass moves - and its own
+    pattern stands aside so the reply is heard."""
+    out = list(notes)
+    for a, b, _, fig in replies:
+        wa, wb = a - lo_step, b - lo_step
+        kept = []
+        for mi, st, ln, v in out:
+            if wa <= st < wb and not (st == 0 and wa < 0):
+                # The reply owns the window - but a reply carried over the
+                # barline never takes the new bar's downbeat: that is where
+                # the bass states the chord.
+                continue
+            if st < wa < st + ln:
+                ln = max(0.5, wa - st)
+            kept.append((mi, st, ln, v))
+        out = kept
+        onsets = [(wa + rel, deg) for rel, deg in fig if wa + rel < min(wb, STEPS_PER_BAR)
+                  and wa + rel >= 0]
+        for k, (st, deg) in enumerate(onsets):
+            nxt = onsets[k + 1][0] if k + 1 < len(onsets) else min(wb, STEPS_PER_BAR)
+            ln = max(0.75, (nxt - st) * max(m.bass.gate, 0.92))
+            note = _sub_note(m, prof, root + _bass_degree(deg), root)
+            out.append((note, float(st), ln, 112 if k == 0 else 100))
+    return sorted(out, key=lambda n: n[1])
+
+
+def _answer_breaths(notes, line: Line, lo_step, nxt_root, m: Material, prof, rng):
+    """Where the lead breathes and the sub is silent, a pickup into the next
+    downbeat: the step below the coming root, then the root's neighbour -
+    the bass leaning into the next call."""
+    if not line.answers:
+        return notes
+    out = list(notes)
+    for a, b in line.answers_in(lo_step, lo_step + STEPS_PER_BAR):
+        a, b = a - lo_step, b - lo_step
+        if b - a < 3 or b < 15 or rng.random() > m.interplay.answer * 0.6:
+            continue
+        if any(a <= s < b for _, s, _, _ in out):
+            continue
+        pick = rng.choice((-1, 1, 4))
+        out.append((_sub_note(m, prof, nxt_root + pick, nxt_root), b - 2.0, 1.6, 96))
+    return sorted(out, key=lambda n: n[1])
+
+
 def _build_chords(part, section, prof, m: Material, rng):
+    """Offbeat stabs that leave the lead room - and answer it.
+
+    `space` ducks a stab that would land on one of the lead's notes: the
+    stab and the melody are not allowed to say the same thing at the same
+    time. `answer` fills the lead's breaths with the hook's own rhythm on
+    the chord: the call, then the band's reply.
+    """
+    line = m.line(section)
+    lead_on = section.plays("lead")
+    onsets = line.onsets() if lead_on else set()
+    busy = _lead_busy_beats(m, section)
+    ip = m.interplay
     for bar in range(section.bars):
         bar_tick = (section.start_bar + bar) * TICKS_PER_BAR
         ev = m.voiced.at(bar_tick)
         if ev is None:
             continue
-        density = structure.density_for(structure.bar_energy(section, bar), "chords")
+        energy = structure.bar_energy(section, bar)
+        density = structure.density_for(energy, "chords")
         p = rhythm.thin(m.stab, density, rng) if density < 1.0 else m.stab
-        if m.swing:
-            p = rhythm.swing(p, m.swing)
-        p = rhythm.humanize(p, 0.02, 7, rng)
-        vel = lambda v: structure.velocity_for(
-            structure.bar_energy(section, bar), v)  # noqa: E731
-        for hit in p.sorted_hits():
-            for note in ev.chord.pitches:
-                _emit(part, [(note, hit.step, hit.length, vel(hit.velocity))], bar_tick)
+        lo = bar * STEPS_PER_BAR
+        if onsets:
+            p = rhythm.mask(p, lambda st: not (
+                (lo + int(round(st))) in onsets and rng.random() < ip.space))
+        hits = [(h.step, h.length, h.velocity) for h in p.sorted_hits()]
+        if busy:
+            # Under a lead figure the skank says its one offbeat and no more.
+            kept, seen = [], set()
+            for h in hits:
+                beat = int((lo + h[0]) // 4)
+                if beat in busy:
+                    if beat in seen:
+                        continue
+                    seen.add(beat)
+                    h = (h[0], h[1], h[2] * 0.85)
+                kept.append(h)
+            hits = kept
+        # Phrase ends. Bar 4 of eight pushes into the next bar: a stab on
+        # the & of 4 that already plays the coming chord (the anticipation).
+        # Bar 8 leaves its last beat empty for the drums' turnaround. And in
+        # the second half of a long drop the voicing lifts an inversion - the
+        # same chords, brighter, which a listener hears as the drop growing.
+        anticipate = False
+        if section.bars >= 8:
+            pos = bar % 8
+            if pos == 3 and not any(h[0] >= 13 for h in hits) \
+                    and (lo + 14) not in onsets and (lo + 14) // 4 not in busy:
+                hits.append((14.0, max(prof.skank_length, 0.5), 96))
+                anticipate = True
+        lift_all = structure.kind_of(section) == "peak" and section.bars >= 16 \
+            and bar >= section.bars // 2
+        lifts = set()
+        if lead_on:
+            # The chords' turn to answer: the call's figure, stabbed on the
+            # chord, the voicing lifted where the figure rises - and the
+            # ordinary stabs stand aside inside the window.
+            for a, b, _, fig in line.response_in(lo, lo + STEPS_PER_BAR, "chords"):
+                wa, wb = a - lo, b - lo
+                # The answer says the call's figure - and, where the breath
+                # is long, says it again a beat or two later, quieter (the
+                # band's call-back) - then the skank comes back in. It takes
+                # only the room it needs: a two-stab answer that silences ten
+                # steps of groove is a hole, not a reply.
+                span = fig[-1][0] if fig else 0
+                every = max(4, int(math.ceil((span + 2) / 2.0)) * 2)
+                starts = [wa] + ([wa + every] if wb - wa >= every + span + 1 else [])
+                own = min(wb, starts[-1] + span + 2)
+                hits = [h for h in hits if not wa <= h[0] < own]
+                for n_, st0 in enumerate(starts):
+                    for rel, deg in fig:
+                        st = st0 + rel
+                        if 0 <= st < min(wb, STEPS_PER_BAR):
+                            hits.append((st, max(prof.skank_length * 1.6, 0.6), 100 if n_ == 0 else 86))
+                            if deg > 0 and n_ == 0:
+                                lifts.add(st)
+        if section.bars >= 8 and bar % 8 == 7:
+            hits = [h for h in hits if h[0] < 12]
+        if not hits:
+            continue
+        ordered = sorted({h[0]: h for h in hits}.values())
+        pat = rhythm.Pattern(STEPS_PER_BAR, [rhythm.Hit(s, int(v), l) for s, l, v in ordered])
+        # Velocity jitter seeded by position, not by the shared stream: a new
+        # lead must not re-roll the dynamics of every stab after it.
+        pat = rhythm.humanize(pat, 0.0, 7, random.Random(f"{m.seeds.get('chords')}:{section.start_bar + bar}"))
+        chord = m.voiced.at(bar_tick)
+        for hit in pat.sorted_hits():
+            ev_here = m.voiced.at(bar_tick + int(hit.step * TICKS_PER_16TH)) or chord
+            if anticipate and hit.step >= 14:
+                ev_here = m.voiced.at(bar_tick + TICKS_PER_BAR) or ev_here
+            pitches = sorted(ev_here.chord.pitches)
+            if lift_all and pitches[0] + 12 <= prof.chords.high:
+                pitches = pitches[1:] + [pitches[0] + 12]     # the lift
+            if int(round(hit.step)) in lifts and pitches[0] + 12 <= prof.chords.high:
+                pitches = pitches[1:] + [pitches[0] + 12]     # next inversion up
+            for note in pitches:
+                _emit(part, [(note, hit.step, hit.length,
+                              structure.velocity_for(energy, hit.velocity))], bar_tick)
 
 
 def _build_pad(part, section, prof, m: Material, rng):
+    """Held chords, with a top voice that moves against the tune.
+
+    The counter-line is a guide-tone line: on each chord, the chord tone (or
+    its seventh or ninth) nearest the last one, preferring to move against
+    the direction the lead is moving in. Two lines in contrary motion is the
+    oldest trick in counterpoint and the cheapest way to make a pad sound
+    composed rather than held down.
+    """
     start, end = section.start_tick, section.start_tick + section.length_ticks
+    line = m.line(section)
+    lead = sorted(line.tones, key=lambda t: t.step) if section.plays("lead") else []
+    prev_top: int | None = None
+    prev_lead: float | None = None
     for ev in m.voiced.events:
         if ev.end <= start or ev.start >= end:
             continue
@@ -637,64 +1763,289 @@ def _build_pad(part, section, prof, m: Material, rng):
         if e - s <= 0:
             continue
         vel = structure.velocity_for(section.energy, 66)
-        for note in ev.chord.pitches:
-            placed = pitch.transpose_into(note, prof.pad.low, prof.pad.high)
-            part.add(Note(placed, s, max(1, e - s - TICKS_PER_16TH), vel))
+        voices = sorted({pitch.transpose_into(n, prof.pad.low, prof.pad.high)
+                         for n in ev.chord.pitches})
+        hold = max(1, e - s - TICKS_PER_16TH)
+        counter = rng.random() < m.interplay.counter
+
+        # Which way is the tune going over this chord?
+        lo_step = (s - start) / TICKS_PER_16TH
+        hi_step = (e - start) / TICKS_PER_16TH
+        here = [t.midi(m.scale) for t in lead if lo_step <= t.step < hi_step]
+        lead_mean = sum(here) / len(here) if here else prev_lead
+        direction = 0
+        if lead_mean is not None and prev_lead is not None:
+            direction = 1 if lead_mean > prev_lead + 0.5 else (-1 if lead_mean < prev_lead - 0.5 else 0)
+        if here:
+            prev_lead = lead_mean
+
+        # The counter-line *is* the chord's top voice: the lower voices hold,
+        # the top one moves - inside the pad's window, never doubling a held
+        # voice, and never a semitone from what the lead holds over it.
+        base = voices[:-1] if len(voices) >= 3 else voices
+        held = {t.midi(m.scale) % 12 for t in lead if lo_step <= t.step < hi_step}
+        lo_top = max(base) + 1
+        pcs = {m.scale.note(ev.chord.degree + d) % 12 for d in (0, 2, 4, 6)}
+        cands = [c for c in range(lo_top, prof.pad.high + 1)
+                 if c % 12 in pcs and c not in base]
+        cands = [c for c in cands if not any((c - h) % 12 in (1, 11) for h in held)] or cands
+        if section.plays("chords"):
+            # The stabs already say the chord. The pad does not say it again
+            # in the same register: it keeps one voice - its moving line -
+            # and leaves the rest of the space to the stabs.
+            if not cands:
+                part.add(Note(voices[-1], s, hold, vel - 6))
+                continue
+            base = []
+        elif not counter or not cands:
+            for note in voices:
+                part.add(Note(note, s, hold, vel))
+            continue
+        for note in base:
+            part.add(Note(note, s, hold, vel))
+        if prev_top is None:
+            top = min(cands, key=lambda c: abs(c - (lo_top + 4)))
+        else:
+            def cost(c, pt=prev_top):
+                move = c - pt
+                against = 0 if direction == 0 else (2 if move * direction > 0 else 0)
+                return abs(move) + against + (3 if move == 0 else 0) * 0.5
+            top = min(cands, key=cost)
+        # The suspension: across a chord change the old top note is held
+        # into the new chord - a dissonance - and resolves down a step a beat
+        # or two later (the 4-3, 9-8, 7-6 of every chorale). Only where the
+        # held note is not already in the new chord and does not rub against
+        # the tune. The counter dial sets how often.
+        s_top = s
+        if prev_top is not None and e - s >= TICKS_PER_BAR \
+                and rng.random() < 0.25 + 0.6 * m.interplay.counter:
+            for c in sorted(cands, key=lambda c: abs(c - top)):
+                if 1 <= prev_top - c <= 2 and prev_top % 12 not in pcs \
+                        and not any((prev_top - h) % 12 in (1, 11) for h in held):
+                    hang = 4 * TICKS_PER_16TH * (1 if e - s < 2 * TICKS_PER_BAR else 2)
+                    part.add(Note(prev_top, s, hang, vel + 10))
+                    top, s_top = c, s + hang
+                    break
+        span = e - s_top
+        if span >= 2 * TICKS_PER_BAR and m.interplay.counter > 0.6:
+            # A long chord gets a second guide tone halfway: a step to the
+            # nearest other candidate, so the line keeps moving.
+            half = s + ((e - s) // 2 // TICKS_PER_BAR) * TICKS_PER_BAR
+            second = min((c for c in cands if c != top), key=lambda c: abs(c - top), default=top)
+            part.add(Note(top, s_top, max(1, half - s_top - TICKS_PER_16TH), vel + 8))
+            part.add(Note(second, half, max(1, e - half - TICKS_PER_16TH), vel + 8))
+            prev_top = second
+        else:
+            part.add(Note(top, s_top, max(1, e - s_top - TICKS_PER_16TH), vel + 8))
+            prev_top = top
 
 
 def _build_lead(part, section, prof, m: Material, rng):
-    """The motif, developed to this section's stage, in one of three styles.
+    """The theme plan for this section, sung in the lead's register and
+    *performed*.
 
-    All three are sparse on purpose - a dub lead is a comment on the riddim,
-    not a solo - but each guarantees the lead is heard at least every other
-    bar while it is active.
+    The plan (arrange.interplay) decides what the hook does here - tease,
+    climbing fragment, full statement, augmented memory, dissolve. This
+    places it (one octave shift for the whole song, so the hook keeps its
+    shape; velocity from the bar's energy, so a ramped build arrives with
+    its melody) and then plays it, through the performance dials:
+
+    gate      how much of each gap a note holds - staccato riff to legato song
+    slide     step moves played overlapping, so a mono synth glides
+    accent    the riff's strong notes hit, its weak ones ghost
+    grace     a 32nd flicked in from a step below into strong notes
+    flick     weak notes popped up an octave
+    echo      the last note repeated at a dotted eighth into a breath, fading
+    ornament  a trill on long notes
     """
-    style = m.lead_style
-    developed, _ = melody.develop(m.motif, section.development, rng, scale=m.scale)
-    density = structure.density_for(section.energy, "lead")
-    velocity = lambda v: structure.velocity_for(section.energy, v)  # noqa: E731
+    lp = m.lead
+    throw = 1.5 if section.dub_throw else 1.0
+    ordered = sorted(m.line(section).tones, key=lambda t: t.step)
+    notes = []   # (midi, step, length, velocity)
+    for t in ordered:
+        midi = _borrowed(t, m, t.step, section) + m.lead_shift
+        lo, hi = lead_window(prof, lp)
+        while midi > hi:
+            midi -= 12
+        while midi < lo:
+            midi += 12
+        notes.append([midi, t.step, t.length, t.velocity])
 
-    if style == "long_tones":
-        degrees = developed.degrees() or [0]
-        per_bar = 2 if density >= 0.7 else 1
-        hold = (STEPS_PER_BAR // per_bar) - 2
-        for bar in range(section.bars):
-            bar_tick = (section.start_bar + bar) * TICKS_PER_BAR
-            ev = m.plan.at(bar_tick)
-            for slot in range(per_bar):
-                degree = degrees[(bar * per_bar + slot) % len(degrees)]
-                if ev is not None:
-                    degree += ev.chord.degree
-                    # The first tone of the bar agrees with the chord; the
-                    # second is free to be a scale tone, or four bars of
-                    # long tones collapse onto one note.
-                    if slot == 0:
-                        degree = melody.nearest_chord_degree(degree, ev.chord, m.scale)
-                # Long tones do not read the motif's velocity shape; give
-                # them their own, with a little humanize so they do not stack
-                # at one level.
-                _emit(part, [(m.scale.note(degree), slot * (STEPS_PER_BAR // per_bar),
-                              hold, velocity(78 + rng.randint(-8, 8)))],
-                      bar_tick, low=prof.lead.low, high=prof.lead.high)
+    out = []      # [midi, step, length, velocity, slides]
+    base_seed = m.lead_seed * 1000003 + section.start_bar * 4099
+    for i, (midi, step, length, vel) in enumerate(notes):
+        # Each note's performance is decided by where it is, not by how many
+        # notes came before it: change the hook and the notes that stay keep
+        # their accents, flicks and graces.
+        # (Position only, never pitch: a transposed hook is played the same.)
+        rng = random.Random(base_seed + int(round(step * 4)) * 31)
+        nxt = notes[i + 1] if i + 1 < len(notes) else None
+        gap = (nxt[1] - step) if nxt is not None else length
+        bar = int(step // STEPS_PER_BAR)
+        energy = structure.bar_energy(section, min(bar, section.bars - 1))
+        w = metric_weight(int(step) % 16) / 4.0
+        # Accent: contrast around the middle, not loudness - the strong notes
+        # rise, the weak ones ghost, and nothing is pushed into the ceiling.
+        shaped = 80 + (vel - 80) * (1 - 0.5 * lp.accent) + lp.accent * (w - 0.35) * 55
+        v = structure.velocity_for(energy, shaped) + rng.randint(-3, 3)
+
+        # Gate: a sixteenth-note riff at gate 0.3 is all bite; at 1.0 it sings.
+        held = max(0.4, min(length, gap) * (0.3 + 0.7 * lp.gate))
+        # Phrase-final lengthening: the note a figure lands on - the one a
+        # breath follows - is held out, however clipped the notes before it.
+        # A player shortens the run and sings the landing; a riff that chops
+        # its last note too stops instead of arriving. (Stabs excepted: the
+        # hit is the point.)
+        if gap >= 4.0 and length >= 1.0 and m.hook is not None \
+                and m.hook.params.phrasing != "stabs":
+            held = max(held, min(length, gap) * 0.85)
+        slides = False
+        # (A glide needs the notes joined: staccato and slide do not mix.)
+        if nxt is not None and gap <= 4.0 and 0 < abs(nxt[0] - midi) <= 5 \
+                and rng.random() < lp.slide * min(1.0, lp.gate * 1.6):
+            held, slides = gap + 0.25, True              # overlap: the synth glides
+
+        # Flick: a weak note jumps the octave - only where it fits.
+        # (Not in a build: a build approaches the drop's high point, it
+        # does not leap past it.)
+        if w < 0.5 and rng.random() < lp.flick and midi + 12 <= lead_window(prof, lp)[1] + 5 \
+                and structure.kind_of(section) != "build":
+            midi += 12
+
+        # Grace: a 32nd from a scale step below into a strong note, stealing
+        # the time from the note before if it has any to spare.
+        # Grace notes go where a player puts them: into a leap, or into a
+        # note that starts a figure after a rest - not on every note.
+        leap_in = i > 0 and abs(midi - notes[i - 1][0]) >= 3
+        after_rest = i == 0 or step - (notes[i - 1][1] + notes[i - 1][2]) >= 1.5
+        if (leap_in or after_rest) and rng.random() < lp.grace:
+            prev_end = out[-1][1] + out[-1][2] if out else -1.0
+            if prev_end > step - 0.5 and out and out[-1][1] <= step - 1.0:
+                out[-1][2] = step - 0.5 - out[-1][1]
+                out[-1][4] = False
+                prev_end = step - 0.5
+            if prev_end <= step - 0.5 and step >= 0.5:   # never before the section
+                below = m.scale.snap(midi - 1, prefer="down")
+                out.append([below, step - 0.5, 0.45, max(30, int(v * 0.7)), False])
+
+        # Ornament: a trill on a long note; on a short one, a mordent - note,
+        # upper neighbour, note, in 32nds.
+        space = min(length, gap)     # what the note has to play with, gate aside
+        if rng.random() < lp.ornament and space >= 2.0:     # landing notes, eighths
+            upper = m.scale.snap(midi + 1, prefer="up")
+            flicks = (midi, upper, midi, upper) if space >= 3.0 else (midi, upper)
+            for k, pitch_ in enumerate(flicks):
+                out.append([pitch_, step + k * 0.5, 0.45, max(30, v - (0 if k == 0 else 12)), False])
+            rest = len(flicks) * 0.5
+            out.append([midi, step + rest, max(0.4, held - rest), max(30, v - 6), slides])
+        else:
+            out.append([midi, step, held, v, slides])
+
+        # Echo: the note again at a dotted eighth, twice, fading - printed
+        # into the breath that follows, as the desk would throw it.
+        room = (nxt[1] if nxt is not None else section.bars * STEPS_PER_BAR) - step
+        # The echo gives way to a chord reply (same register); a bass reply
+        # is two octaves down and the echo can ring over it.
+        answered = bool(m.line(section).response_in(step + 2, step + 7, "chords"))
+        if room >= 6 and not answered and rng.random() < min(1.0, lp.echo * throw):
+            for k, scale_v in ((1, 0.55), (2, 0.3)):
+                if 3 * k + 1 <= room:
+                    out.append([midi, step + 3 * k, min(held, 2.0), max(20, int(v * scale_v)), False])
+
+    # Swing the starts, then make sure only an intended slide overlaps.
+    out.sort(key=lambda n: n[1])
+    lo, hi = lead_window(prof, lp)
+    for n in out:   # a grace below the floor, a trill above a flick: fold back in
+        while n[0] > hi + 5:
+            n[0] -= 12
+        while n[0] < lo:
+            n[0] += 12
+    starts = [n[1] for n in out]
+    for i, (midi, step, length, v, slides) in enumerate(out):
+        start = starts[i]
+        end = start + max(0.4, length)
+        if i + 1 < len(out) and not slides:
+            end = min(end, starts[i + 1])
+        _emit(part, [(midi, start, max(0.3, end - start), v)], section.start_tick)
+
+
+def _lead_line(part: Part) -> None:
+    """One voice: same-start notes keep the louder, overlaps are cut back to
+    the glide - a sixteenth's quarter - that a slide asked for."""
+    notes = sorted(part.notes, key=lambda n: (n.start, -n.velocity))
+    out: list[Note] = []
+    for n in notes:
+        if out and n.start == out[-1].start:
+            continue
+        if out and out[-1].end > n.start + TICKS_PER_16TH // 4:
+            prev = out[-1]
+            out[-1] = Note(prev.midi, prev.start, max(1, n.start - prev.start), prev.velocity)
+        out.append(n)
+    part.notes = out
+
+
+def _button(song: Song, arrangement: Arrangement, m: Material, prof) -> None:
+    """End on a hit, not a stop: kick, crash and the tonic in the sub on the
+    downbeat after the last bar. It sits past the arrangement, so a looping
+    Deluge clip never plays it; a MIDI file or a WAV ends on it."""
+    last = arrangement.sections[-1] if arrangement.sections else None
+    if last is None:
         return
+    end = arrangement.length_ticks
+    k = m.lift[1] if m.lift and m.lift[1] else 0     # a lifted song ends in its new key
+    for part in song.parts:
+        if part.role == "drums" and last.plays("drums"):
+            song.coda.append(("drums", Note(KIT_ROWS["kick"], end, 22, 118)))
+            song.coda.append(("drums", Note(KIT_ROWS["crash"], end, TICKS_PER_BAR, 104)))
+        elif part.role == "sub" and last.plays("sub"):
+            tonic = pitch.transpose_into(m.scale.root + k, prof.sub.low, prof.sub.low + 11)
+            song.coda.append(("sub", Note(tonic, end, TICKS_PER_BAR, 112)))
+        elif part.role == "pad" and last.plays("pad"):
+            ev = m.voiced.events[0] if m.voiced.events else None
+            if ev is not None and ev.chord.degree == 0:
+                for n in ev.chord.pitches:
+                    song.coda.append(("pad", Note(
+                        pitch.transpose_into(n + k, prof.pad.low, prof.pad.high),
+                        end, TICKS_PER_BAR * 2, 70)))
 
-    if style == "riff":
-        phrase, gap = melody.sequence(developed, [0, -1]), (4 if density >= 0.6 else 6)
-    else:
-        phrase, gap = developed, (2 if density >= 0.55 else 3)
 
-    for index, bar in enumerate(range(0, section.bars, gap)):
-        bar_tick = (section.start_bar + bar) * TICKS_PER_BAR
-        ev = m.plan.at(bar_tick)
-        statement = phrase
-        if style == "call_response" and index % 2 == 1:
-            statement = melody.transpose(statement, -1)
-        if ev is not None:
-            statement = melody.transpose(statement, ev.chord.degree)
-        room = (section.bars - bar) * STEPS_PER_BAR
-        notes = [(mi, s, min(l, room - s), velocity(v))
-                 for mi, s, l, v in statement.notes(m.scale) if s < room]
-        _emit(part, notes, bar_tick, low=prof.lead.low, high=prof.lead.high)
+def _borrowed(t, m: Material, step: float, section: Section | None) -> int:
+    """A tone's pitch, keeping a chromatic alteration only while the chord
+    that lent it is still sounding. A borrowed leading tone held into the
+    next chord - or ornamented, or lifted an octave into a bar where the
+    harmony has moved on - goes back to its scale degree."""
+    midi = t.midi(m.scale)
+    if not t.alter:
+        return midi
+    base = section.start_tick if section is not None else 0
+    ev = m.plan.at(base + int(round(step * TICKS_PER_16TH)))
+    if ev is not None and ev.chord.contains_pc(midi):
+        return midi
+    return midi - t.alter
+
+
+def _apply_silences(part: Part, silences) -> None:
+    """Cut every note in a silence window; truncate notes ringing into one.
+    The riser is the exception: it is what the silence is made of."""
+    if not silences:
+        return
+    kept = []
+    for n in part.notes:
+        if part.output == "kit" and n.midi == KIT_ROWS["riser"]:
+            kept.append(n)
+            continue
+        dead = False
+        for a, b, keep in silences:
+            if part.role in keep:
+                continue
+            if a <= n.start < b:
+                dead = True
+                break
+            if n.start < a < n.end:
+                n = Note(n.midi, n.start, max(1, a - n.start), n.velocity)
+        if not dead:
+            kept.append(n)
+    part.notes = kept
 
 
 def _enforce_monophony(part: Part) -> None:

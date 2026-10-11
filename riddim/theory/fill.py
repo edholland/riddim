@@ -32,27 +32,22 @@ def make(
     half = steps // 2
 
     if energy < 0.35:
-        # A hole is coming. No flourish - a couple of soft rims, the last one
-        # landing the hardest, and then the drop.
-        hits = [
-            Hit(float(s), int(55 + rng.randint(0, 25)), 1.0, "rim")
-            for s in (half + 2, half + 4, half + 6)
-        ]
-        hits[-1] = Hit(float(steps - 2), 85, 1.0, "rim")
+        # A hole is coming. No flourish - two soft rims, the second landing
+        # harder, and then the drop.
+        hits = [Hit(float(steps - 4), int(55 + rng.randint(0, 15)), 1.0, "rim"),
+                Hit(float(steps - 2), 80, 1.0, "rim")]
         return {"rim": Pattern(steps, hits, steps, "fill")}
 
     if energy < 0.7:
-        # Eighths with a climbing velocity arc - a roll that gains weight.
-        hits = _run(rng, half, steps, 2, 78, 115)
+        # Eighths through the last beat and a half, climbing - a nudge, not a solo.
+        hits = _run(rng, steps - 6, steps, 2, 72, 105)
         return {"snare": Pattern(steps, hits, steps, "fill")}
 
-    # A peak is coming: sixteenths all the way, the last hit loudest, with
-    # the rim doubling the penultimate beat for the big thwack.
-    hits = _run(rng, half, steps, 1, 85, 120)
-    rim = [
-        Hit(float(s), int(90 + rng.randint(0, 20)), 1.0, "rim")
-        for s in (steps - 4, steps - 2)
-    ]
+    # A peak is coming: sixteenths through the last beat only, the last one
+    # loudest, and one rim to mark it. The fill points at the downbeat; the
+    # downbeat is the event.
+    hits = _run(rng, steps - 4, steps, 1, 80, 112)
+    rim = [Hit(float(steps - 2), int(88 + rng.randint(0, 12)), 1.0, "rim")]
     return {
         "snare": Pattern(steps, hits, steps, "fill"),
         "rim": Pattern(steps, rim, steps, "fill"),

@@ -122,6 +122,11 @@ class DrumSpec:
     # half-time) but a one-drop is straight-feel hats with the snare on 3,
     # together with the kick - that coincidence *is* the one-drop.
     backbeat_override: frozenset[int] | None = None
+    # Which kit vocabulary the hats, ghosts and rims speak: "roots" (the
+    # sound-system kit - chick on the offbeat, rim on the clave) or
+    # "garage" (2-step - hats skipping into the backbeat, the ghost snare
+    # that pushes the one, rimshots on the in-between sixteenths).
+    idiom: str = "roots"
 
     @property
     def beat_steps(self) -> int:
@@ -173,16 +178,159 @@ HALF_TIME = DrumSpec("half_time", kick_anchors=frozenset({0}), kick_density=0.12
 HALF_TIME_ROLL = DrumSpec("half_time", kick_anchors=frozenset({0}), kick_density=0.12,
                           snare_ghosts=0.12, hat_density=0.5, hat_offbeat_bias=0.0)
 
+# The rest of each idiom's family. Each is a different *anchor* - the kick
+# positions that make a feel itself - not a density tweak of another one.
+ONE_DROP_FLYER = DrumSpec("straight", kick_anchors=frozenset({8}), kick_density=0.06,
+                          hat_density=0.55, hat_offbeat_bias=0.0, rim_density=0.08,
+                          backbeat_override=frozenset({8}))         # running hats
+ONE_DROP_PICKUP = DrumSpec("straight", kick_anchors=frozenset({8, 14}), kick_density=0.12,
+                           hat_density=0.25, rim_density=0.12,
+                           backbeat_override=frozenset({8}))        # kicks into the next bar
+STEPPERS_SKIP = DrumSpec("straight", kick_anchors=frozenset({0, 4, 8, 12}),
+                         kick_density=0.3, kick_syncopation=0.8, hat_density=0.35,
+                         hat_offbeat_bias=0.9, rim_density=0.15)   # a skipped extra kick
+HALF_TIME_PUSH = DrumSpec("half_time", kick_anchors=frozenset({0, 14}), kick_density=0.14,
+                          kick_syncopation=0.5, hat_density=0.25)  # pushes into the bar
+HALF_TIME_DOUBLE = DrumSpec("half_time", kick_anchors=frozenset({0, 10}), kick_density=0.14,
+                            kick_syncopation=0.4, hat_density=0.3)  # boom ... clap-boom
+HALF_TIME_TRESILLO = DrumSpec("half_time", kick_anchors=frozenset({0, 6}), kick_density=0.14,
+                              kick_syncopation=0.3, hat_density=0.3,
+                              hat_offbeat_bias=0.2)                # 3-3-2 against the snare
+HALF_TIME_SPARSE = DrumSpec("half_time", kick_anchors=frozenset({0}), kick_density=0.06,
+                            kick_syncopation=0.6, hat_density=0.15)
+
+# UK garage - the other parent of dubstep. A 2-step bar leaves out the
+# second and fourth kicks a house record would have and puts one on the &
+# of 3 instead: boom . clap . . boom-clap. The shuffle is the Deluge's job;
+# the skip in the hats is ours.
+TWO_STEP = DrumSpec("straight", kick_anchors=frozenset({0, 10}), kick_density=0.12,
+                    kick_syncopation=0.6, snare_ghosts=0.1, hat_density=0.3,
+                    hat_offbeat_bias=0.8, rim_density=0.1, idiom="garage")
+TWO_STEP_SKIP = DrumSpec("straight", kick_anchors=frozenset({0, 11}), kick_density=0.12,
+                         kick_syncopation=0.7, snare_ghosts=0.2, hat_density=0.45,
+                         hat_offbeat_bias=0.8, rim_density=0.15, idiom="garage")  # the late kick
+TWO_STEP_ROLL = DrumSpec("straight", kick_anchors=frozenset({0, 6, 10}), kick_density=0.19,
+                         kick_syncopation=0.5, snare_ghosts=0.1, hat_density=0.3,
+                         hat_offbeat_bias=0.8, rim_density=0.1, idiom="garage")  # boom . . b-boom
+GARAGE_4X4 = DrumSpec("straight", kick_anchors=frozenset({0, 4, 8, 12}), kick_density=0.25,
+                      snare_ghosts=0.1, hat_density=0.3, hat_offbeat_bias=1.0,
+                      rim_density=0.1, idiom="garage")                       # speed garage
+# Dubstep's garage inheritance: half-time with the 2-step's late kick and
+# skipping hats - Skream and Benga rather than the sound system.
+HALF_TIME_SKIP = DrumSpec("half_time", kick_anchors=frozenset({0, 11}), kick_density=0.14,
+                          kick_syncopation=0.5, snare_ghosts=0.15, hat_density=0.45,
+                          hat_offbeat_bias=0.6, rim_density=0.1, idiom="garage")
+HALF_TIME_GARAGE = DrumSpec("half_time", kick_anchors=frozenset({0, 3}), kick_density=0.14,
+                            kick_syncopation=0.4, snare_ghosts=0.1, hat_density=0.3,
+                            hat_offbeat_bias=0.8, rim_density=0.15, idiom="garage")
+
 FEELS = {
-    "one_drop": ONE_DROP, "steppers": STEPPERS, "rockers": ROCKERS,
+    "one_drop": ONE_DROP, "one_drop_flyer": ONE_DROP_FLYER,
+    "one_drop_pickup": ONE_DROP_PICKUP, "steppers": STEPPERS,
+    "steppers_skip": STEPPERS_SKIP, "rockers": ROCKERS,
     "half_time": HALF_TIME, "half_time_roll": HALF_TIME_ROLL,
+    "half_time_push": HALF_TIME_PUSH, "half_time_double": HALF_TIME_DOUBLE,
+    "half_time_tresillo": HALF_TIME_TRESILLO, "half_time_sparse": HALF_TIME_SPARSE,
+    "two_step": TWO_STEP, "two_step_skip": TWO_STEP_SKIP, "two_step_roll": TWO_STEP_ROLL,
+    "garage_4x4": GARAGE_4X4, "half_time_skip": HALF_TIME_SKIP,
+    "half_time_garage": HALF_TIME_GARAGE,
 }
 
 
+# Hat figures, sparse to dense: a drummer's ladder, not scattered hits.
+_HATS = (
+    (2, 6, 10, 14),                                   # the chick on the offbeats
+    (0, 2, 4, 6, 8, 10, 12, 14),                      # eighths
+    (0, 2, 4, 6, 7, 8, 10, 12, 14, 15),               # eighths with a skip
+    tuple(range(16)),                                 # running sixteenths
+)
+# The garage ladder: the offbeat hat, then the sixteenth after it - the
+# skip that, shuffled on the Deluge, is the 2-step sound - then both.
+_GARAGE_HATS = (
+    (2, 6, 10, 14),
+    (2, 6, 7, 10, 14, 15),                            # skips into 3 and the one
+    (2, 3, 6, 7, 10, 11, 14, 15),                     # paired: tss-ts tss-ts
+    (0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15),
+)
+# Ghost-snare and rim positions in the order a player reaches for them.
+_GHOSTS = {"half_time": (15, 6, 11), "straight": (7, 15, 10)}
+_RIMS = {"half_time": (12, 4, 14), "straight": (6, 14, 10)}
+# Garage ghosts push into the one and answer the late kick; its rims sit
+# on the sixteenths between - the woodblock and rimshot of a 2-step kit.
+_GARAGE_GHOSTS = {"half_time": (15, 13, 5), "straight": (15, 9, 7)}
+_GARAGE_RIMS = {"half_time": (3, 13, 6), "straight": (3, 13, 9)}
+
+
 def drums(spec: DrumSpec, rng: random.Random | None = None) -> dict[str, Pattern]:
-    """Generate one bar for every voice of a kit."""
+    """One bar of every kit voice, idiomatically.
+
+    Kick is the spec's anchors plus its extra hits (placed by the scoring
+    generator, then locked to the bass by the composer); snare is the
+    backbeat plus ghosts from the idiomatic positions; hats are a figure
+    from the ladder by density, offbeat-accented by `hat_offbeat_bias`; rim
+    takes clave positions. Regular figures, not scattered hits - in a dense
+    bar, scatter is what sounds out of time.
+    """
     rng = rng or random.Random()
-    return {voice: generate(g, rng) for voice, g in spec.specs().items()}
+    specs = spec.specs()
+    out = {"kick": generate(specs["kick"], rng)}
+    feel = "half_time" if spec.feel == "half_time" else "straight"
+
+    def hits(steps, lo, hi, accent):
+        return Pattern(16, [Hit(float(s), hi if accent(s) else lo, 0.5) for s in steps], 16)
+
+    garage = spec.idiom == "garage"
+    backbeat = sorted(spec.backbeat)
+    ghosts = list((_GARAGE_GHOSTS if garage else _GHOSTS)[feel][: min(3, int(round(spec.snare_ghosts * 10)))])
+    snare = [Hit(float(s), 112, 0.9) for s in backbeat]
+    snare += [Hit(float(s), 58, 0.9) for s in ghosts if s not in backbeat]
+    out["snare"] = Pattern(16, sorted(snare, key=lambda h: h.step), 16)
+
+    # Half-time is felt at half speed: running sixteenths at 140 are a blur,
+    # so its ladder stops at eighths with a skip.
+    # Garage stops at the paired skip too: past it the hats fill the
+    # beats and the skip - the whole point - is gone.
+    out["hat"] = hat_pattern(spec)
+
+    rims = [s for s in (_GARAGE_RIMS if garage else _RIMS)[feel][: min(3, int(round(spec.rim_density * 10)))]
+            if s not in backbeat and s not in spec.kick_anchors]
+    out["rim"] = hits(rims, 72, 90, lambda s: s % 4 == 2)
+    return out
+
+
+def hat_pattern(spec: DrumSpec, climb: int = 0) -> Pattern:
+    """The hat figure from the ladder by density - `climb` rungs higher,
+    for a build tightening into a drop. Half-time stops at eighths with a
+    skip (running sixteenths at 140 are a blur), and garage at the paired
+    skip (past it the hats fill the beats and the skip is gone)."""
+    garage = spec.idiom == "garage"
+    backbeat = sorted(spec.backbeat)
+    top = 2 if spec.feel == "half_time" or garage else len(_HATS) - 1
+    tier = min(top, int(spec.hat_density * 5) + climb)
+    figure = [s for s in (_GARAGE_HATS if garage else _HATS)[tier] if s not in backbeat or tier >= 1]
+    off = spec.hat_offbeat_bias > 0.4
+    accent = (lambda s: s % 4 == 2) if off else (lambda s: s % 4 == 0)
+
+    # Three levels, the way a drummer plays them: the accent, the other
+    # eighths at a medium touch, and the in-between sixteenths ghosted -
+    # the garage skip just audible, the push into the next eighth.
+    def vel(s):
+        if accent(s):
+            return 88
+        if s % 2 == 0:
+            return 68
+        return 54 if garage else 50
+    return Pattern(16, [Hit(float(s), vel(s), 0.5) for s in figure], 16)
+
+
+def _kick_cap(spec: DrumSpec) -> float:
+    """Half-time lives on its emptiness, and 2-step on the kicks it leaves
+    out: too many and it is not that feel any more. A 2-step bar takes one
+    kick beyond its anchors at most; four-to-the-floor garage, none to speak
+    of."""
+    if spec.idiom == "garage":
+        return max(0.19, (len(spec.kick_anchors) + 1) / 16)
+    return 0.22 if spec.feel == "half_time" else 0.4
 
 
 def vary(spec: DrumSpec, rng: random.Random, amount: float = 0.15) -> DrumSpec:
@@ -194,9 +342,7 @@ def vary(spec: DrumSpec, rng: random.Random, amount: float = 0.15) -> DrumSpec:
     """
     def jitter(v, lo=0.0, hi=1.0):
         return max(lo, min(hi, v + rng.uniform(-amount, amount)))
-    # Half-time lives on its emptiness; too many kicks and it is not
-    # half-time any more.
-    kick_cap = 0.22 if spec.feel == "half_time" else 0.4
+    kick_cap = _kick_cap(spec)
     return replace(
         spec,
         kick_density=jitter(spec.kick_density, 0.0, kick_cap),
@@ -257,3 +403,20 @@ def describe(pattern: Pattern) -> str:
         if 0 <= i < pattern.length:
             grid[i] = "X" if h.velocity > 100 else "x"
     return "".join(grid)
+
+
+def intensify(spec: DrumSpec, amount: float = 1.0) -> DrumSpec:
+    """The same feel, played harder: the kit a peak earns.
+
+    More hats and ghost notes, a touch more kick, the rim joining in. The
+    anchors and backbeat do not move - a drop is the riddim at full weight,
+    not a different riddim.
+    """
+    half = spec.feel == "half_time"
+    return replace(
+        spec,
+        hat_density=min(0.6 if half else 0.75, spec.hat_density + 0.22 * amount),
+        snare_ghosts=min(0.25, spec.snare_ghosts + 0.07 * amount),
+        kick_density=min(_kick_cap(spec), spec.kick_density + 0.04 * amount),
+        rim_density=min(0.25, spec.rim_density + 0.05 * amount),
+    )

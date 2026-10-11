@@ -420,6 +420,10 @@ class BassParams:
     # is legato sub bass; near 0.5 is a plucked, staccato line. The strong
     # beats hold a little longer than the weak ones regardless.
     gate: float = 0.8
+    # What kind of bassline: walk (a melodic line), sustain (one big held
+    # note a bar), pulse (the root on every beat), bounce (root and octave in
+    # eighths), sparse (strong beats only, held). See compose._bass_style.
+    style: str = "walk"
     max_hold: float = 12.0
     # Phrasing: how many bars a phrase spans, and which bars answer rather
     # than restate. (3,) with phrase_bars=4 is state-state-state-answer.

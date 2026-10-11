@@ -53,29 +53,26 @@ class Knob:
         return self.path
 
 
-# Choice knob registry: paths -> (choices, labels)
-_LEAD_STYLES = {
-    "call_response": "call_response",
-    "long_tones": "long_tones",
-    "riff": "riff",
-}
+# Choice knobs: a name from a fixed menu rather than a number. Read as the
+# index of the current choice (so diffs and sliders still work), written by
+# index or by name.
+def _choice_table() -> dict[str, tuple[str, ...]]:
+    from .theory import groove, hook as hook_mod, melody, rhythm as rhythm_mod
+    return {
+        # The drum feel by name: one-drop, steppers, half-time, 2-step...
+        "drum_feel": tuple(groove.FEELS),
+        "lead_style": ("hook", "call_response", "riff", "long_tones"),
+        "hook.form": tuple(hook_mod.FORMS),
+        "hook.phrasing": tuple(hook_mod.PHRASINGS),
+        "bass.style": ("walk", "sustain", "pulse", "bounce", "sparse", "skip"),
+        "hook.rhythm": tuple(hook_mod.RHYTHM_NAMES),
+        "stab_pattern": ("generated",) + tuple(
+            n for table in rhythm_mod.STAB_PATTERNS.values() for n in table),
+        "hook.contour": tuple(hook_mod.HOOK_CONTOURS),
+    }
 
-_LEAD_CONTOURS = {
-    "arch": "arch",
-    "valley": "valley",
-    "ascending": "ascending",
-    "descending": "descending",
-    "static": "static",
-    "zigzag": "zigzag",
-    "terraced": "terraced",
-    "falling_tail": "falling_tail",
-}
 
-# Choice bounds (paths -> (choices, labels))
-_CHOICE_BOUNDS = {
-    "lead_style": (list(_LEAD_STYLES.values()), list(_LEAD_STYLES.values())),
-    "lead.contour": (list(_LEAD_CONTOURS.values()), list(_LEAD_CONTOURS.values())),
-}
+_CHOICES = _choice_table()
 
 _BOUNDS = {
     "drums.kick_density": (0.0, 0.5),
@@ -91,18 +88,56 @@ _BOUNDS = {
     "bass.fifth_weight": (0.0, 1.0),
     "bass.gate": (0.3, 1.0),
     "tension": (0.0, 1.0),
-    "swing": (0.0, 0.33),
     "stab_density": (0.1, 1.0),
     "stab_syncopation": (0.0, 1.0),
     "bpm": (60.0, 180.0),
     "bars_per_chord": (1.0, 8.0),
-    "lead.density": (0.1, 0.6),
-    "lead.syncopation": (0.0, 1.0),
-    "lead.span": (3.0, 10.0),
+    "chord_size": (3.0, 5.0),
+    # The lead's performance: how the hook is played.
     "lead.octave": (-1.0, 1.0),
-    "lead.step_bias": (0.0, 1.0),
+    "lead.gate": (0.0, 1.0),
+    "lead.slide": (0.0, 1.0),
+    "lead.accent": (0.0, 1.0),
+    "lead.grace": (0.0, 1.0),
+    "lead.flick": (0.0, 1.0),
+    "lead.echo": (0.0, 1.0),
     "lead.ornament": (0.0, 1.0),
+    # The hook: the theme everything else answers.
+    "hook.density": (0.1, 1.0),
+    "hook.syncopation": (0.0, 1.0),
+    "hook.motion": (0.0, 1.0),
+    "hook.repeat": (0.0, 1.0),
+    "hook.leap": (2.0, 6.0),
+    "hook.span": (4.0, 12.0),
+    "hook.climax": (0.2, 0.95),
+    "hook.repetition": (0.0, 1.0),
+    "hook.colour": (0.0, 1.0),
+    "hook.breath": (0.1, 0.5),
+    "hook.unit_bars": (1.0, 2.0),
+    "hook.candidates": (1.0, 64.0),
+    # How the band talks around it.
+    "interplay.presence": (0.0, 1.0),
+    "interplay.answer": (0.0, 1.0),
+    "interplay.lock": (0.0, 1.0),
+    "interplay.counter": (0.0, 1.0),
+    "interplay.space": (0.0, 1.0),
+    # Tension and release.
+    "dynamics.roll": (0.0, 1.0),
+    "dynamics.riser": (0.0, 1.0),
+    "dynamics.drop_gap": (0.0, 4.0),
+    "dynamics.impact": (0.0, 1.0),
+    "dynamics.switch_up": (0.0, 1.0),
+    "dynamics.fills": (0.0, 1.0),
+    "dynamics.cadence": (0.0, 1.0),
+    "dynamics.layering": (0.0, 1.0),
+    "dynamics.lift": (0.0, 1.0),
+    "hook.contrast": (0.0, 1.0),
 }
+
+# Whole-number knobs: counts and registers, not percentages.
+_INTS = {"bpm", "bars_per_chord", "chord_size", "lead.octave", "hook.leap",
+         "hook.span", "hook.unit_bars", "hook.candidates"}
+_HALVES = {"dynamics.drop_gap"}
 
 _DUMPS = ("kick_density", "kick_syncopation", "snare_ghosts",
         "hat_density", "hat_offbeat_bias", "rim_density")
@@ -123,6 +158,15 @@ def _sub_defaults(group: str):
     if group == "structure":
         from .arrange.structure import StructureParams
         return StructureParams()
+    if group == "hook":
+        from .theory.hook import HookParams
+        return HookParams()
+    if group == "interplay":
+        from .arrange.interplay import InterplayParams
+        return InterplayParams()
+    if group == "dynamics":
+        from .arrange.dynamics import DynamicsParams
+        return DynamicsParams()
     return None
 
 
@@ -134,10 +178,6 @@ def _parts(path: str):
         return "drums", path
     if path in _BASES:
         return "bass", path
-    # Handle choice knobs (lead_style, lead.contour)
-    if path in _CHOICE_BOUNDS:
-        group, leaf = path.split(".", 1)
-        return group, leaf
     return None, path
 
 
@@ -176,13 +216,10 @@ def read_knob(params: SongParams, path: str) -> float:
     """The current value of a knob. `key` resolves to the tonic pitch class."""
     if path == "key":
         return parse_key(params.key or "G minor").root % 12
-    # Handle choice knobs (lead_style, lead.contour) - return index
-    if path in _CHOICE_BOUNDS:
-        choices, labels = _CHOICE_BOUNDS[path]
-        val = getattr(params.lead, path.split(".")[1], 0)
-        if val in choices:
-            return choices.index(val)
-        return 0.0
+    if path in _CHOICES:
+        name = choice_value(params, path)
+        choices = _CHOICES[path]
+        return float(choices.index(name)) if name in choices else 0.0
     sec = _section_ref(path)
     if sec is not None:
         i, field = sec
@@ -206,6 +243,38 @@ def set_knob(params: SongParams, path: str, value: float) -> None:
         _set_key_root(params, int(round(value)))
         return
     from dataclasses import replace
+    if path in _CHOICES:
+        choices = _CHOICES[path]
+        if isinstance(value, str):
+            if value not in choices:
+                raise ValueError(f"unknown {path} {value!r}; known: {', '.join(choices)}")
+            name = value
+        else:
+            name = choices[int(round(value)) % len(choices)]
+        if path == "drum_feel":
+            # A new feel is a new riddim: its anchors and kit, played at the
+            # song's present density, so 'two_step' changes what is played,
+            # not how much.
+            from .theory import groove
+            base, cur = groove.FEELS[name], params.drums
+            if cur is not None and cur.feel == base.feel:
+                base = replace(base, kick_density=max(base.kick_density, min(cur.kick_density, 0.4)),
+                               hat_density=cur.hat_density, snare_ghosts=cur.snare_ghosts)
+            params.drums = base
+            return
+        group, leaf = _parts(path)
+        if group is None:
+            setattr(params, leaf, name)
+        else:
+            setattr(params, group, replace(_container(params, group), **{leaf: name}))
+        return
+    if path in _BOUNDS:
+        lo, hi = _BOUNDS[path]
+        value = max(lo, min(hi, float(value)))
+        if path in _INTS:
+            value = int(round(value))
+        elif path in _HALVES:
+            value = round(value * 2) / 2
     sec = _section_ref(path)
     if sec is not None:
         i, field = sec
@@ -223,6 +292,29 @@ def set_knob(params: SongParams, path: str, value: float) -> None:
         return
     obj = _container(params, group)
     setattr(params, group, replace(obj, **{leaf: value}))
+
+
+def _drum_feel(params: SongParams) -> str:
+    """The named feel this song's drums are a variation of: the one sharing
+    its anchors, backbeat and kit idiom."""
+    from .theory import groove
+    d = params.drums
+    if d is None:
+        return _CHOICES["drum_feel"][0]
+    for name, f in groove.FEELS.items():
+        if (f.feel, f.kick_anchors, f.backbeat, f.idiom) == \
+                (d.feel, d.kick_anchors, d.backbeat, getattr(d, "idiom", "roots")):
+            return name
+    return _CHOICES["drum_feel"][0]
+
+
+def choice_value(params: SongParams, path: str) -> str:
+    """The current name of a choice knob."""
+    if path == "drum_feel":
+        return _drum_feel(params)
+    group, leaf = _parts(path)
+    obj = params if group is None else _container(params, group)
+    return getattr(obj, leaf, None) or _CHOICES[path][0]
 
 
 def _set_key_root(params: SongParams, root_pc: int) -> None:
@@ -251,20 +343,22 @@ def knob(params: SongParams, path: str) -> Knob | None:
     if path == "key":
         root = parse_key(params.key or "G minor").root % 12
         return Knob("key", "key", "global", 0, 11, root, 1, "key")
-    # Handle choice knobs (lead_style, lead.contour)
-    if path in _CHOICE_BOUNDS:
-        choices, labels = _CHOICE_BOUNDS[path]
+    if path in _CHOICES:
+        choices = _CHOICES[path]
         cur = read_knob(params, path)
-        # Convert the curve index to the label
-        label = labels[cur]
-        return Knob(path, label, path.split(".")[0], 0.0, len(choices)-1, cur,
-                    step=1.0, kind="choice", choices=choices, labels=labels)
+        group = path.split(".")[0] if "." in path else "lead"
+        return Knob(path, path.split(".")[-1], group, 0.0, len(choices) - 1, cur,
+                    step=1.0, kind="choice", choices=choices, labels=choices)
     lo, hi = _BOUNDS.get(path, (None, None))
     if lo is None:
         return None
     # Counts, not percentages: whole-step sliders for what is a whole number.
-    step, kind = (1, "int") if path in (
-        "bpm", "bars_per_chord", "lead.span", "lead.octave") else (0.01, "float")
+    if path in _INTS:
+        step, kind = 1, "int"
+    elif path in _HALVES:
+        step, kind = 0.5, "float"
+    else:
+        step, kind = 0.01, "float"
     return Knob(path, path.split(".")[-1], path.split(".")[0], lo, hi,
                 read_knob(params, path), step, kind)
 
@@ -277,6 +371,7 @@ def knobs(params: SongParams) -> dict[str, Knob]:
     """
     out = {"key": knob(params, "key")}
     out.update({path: knob(params, path) for path in _BOUNDS})
+    out.update({path: knob(params, path) for path in _CHOICES})
     return out
 
 
@@ -333,12 +428,29 @@ def _apply_absolute(params: SongParams, op: Op) -> None:
                 f"unknown mode {to!r}; known: minor, dorian, phrygian, "
                 f"harmonic_minor, phrygian_dominant")
         params.key = f"{names[scale.root_pc]} {to}"
+        # A progression belongs to a mode: the sections redraw theirs (the
+        # drop's development included) in the new one.
+        params.progression = None
+        for spec in (params.sections or []):
+            spec.progression = None
+    elif op.path == "_garage":
+        # Garage the song up, keeping its tempo and feel: the 2-step kit
+        # (its half-time cousin under a half-time snare), the skipping
+        # bassline, minor-ninth organ stabs and a chopped hook.
+        half = params.drums is not None and params.drums.feel == "half_time"
+        set_knob(params, "drum_feel", "half_time_skip" if half else "two_step")
+        set_knob(params, "bass.style", "skip")
+        set_knob(params, "chord_size", 5)
+        set_knob(params, "stab_pattern", "organ")
+        set_knob(params, "hook.phrasing", "chop")
     elif op.path == "_total_bars":
         st = params.structure or _sub_defaults("structure")
         params.structure = replace(st, total_bars=int(to))
     elif op.path == "_peaks":
         st = params.structure or _sub_defaults("structure")
         params.structure = replace(st, peaks=int(to))
+    elif op.path in _CHOICES and not to.lstrip("-+").replace(".", "", 1).isdigit():
+        set_knob(params, op.path, to)
     elif op.path == "_sections_energy":
         from .params import SectionSpec
         new_sections = []
@@ -367,9 +479,12 @@ INTENTS = {
     "brighter": [Op("stab_density", 0.12), Op("drums.hat_density", 0.08)],
     "brighten": [Op("stab_density", 0.12), Op("drums.hat_density", 0.08)],
     "darker": [Op("stab_density", -0.12), Op("drums.hat_density", -0.06)],
-    "busier": [Op("drums.kick_density", 0.08), Op("bass.density", 0.06)],
-    "denser": [Op("drums.kick_density", 0.08), Op("bass.density", 0.06)],
-    "thinner": [Op("drums.kick_density", -0.06), Op("bass.density", -0.05)],
+    "busier": [Op("drums.kick_density", 0.08), Op("bass.density", 0.06),
+               Op("drums.hat_density", 0.2)],
+    "denser": [Op("drums.kick_density", 0.08), Op("bass.density", 0.06),
+               Op("drums.hat_density", 0.2)],
+    "thinner": [Op("drums.kick_density", -0.06), Op("bass.density", -0.05),
+                Op("drums.hat_density", -0.2)],
     "more_syncopated": [Op("bass.syncopation", 0.15), Op("drums.kick_syncopation", 0.1)],
     "straighter": [Op("bass.syncopation", -0.15), Op("drums.kick_syncopation", -0.1)],
     "more_approach": [Op("bass.approach", 0.2)],
@@ -378,14 +493,14 @@ INTENTS = {
     "fifthier": [Op("bass.fifth_weight", 0.15)],
     "shorter_notes": [Op("bass.gate", -0.15)],
     "longer_notes": [Op("bass.gate", 0.1)],
-    "swingier": [Op("swing", 0.06)],
-    "straight_grid": [Op("swing", -0.06)],
     "more_tension": [Op("tension", 0.15)],
     "less_tension": [Op("tension", -0.15)],
     "drop_energy": [Op("_sections_energy", to=-0.15)],
     "build_energy": [Op("_sections_energy", to=0.15)],
     "more_tense_progression": [Op("progression", to="i_bII")],
     "relax_progression": [Op("progression", to="tonic_drone")],
+    "sevenths": [Op("chord_size", to=4)],
+    "triads": [Op("chord_size", to=3)],
     "faster": [Op("bpm", 2)],
     "slower": [Op("bpm", -2)],
     # A mode is the harmonic personality; the tonic stays put. 'phrygian'
@@ -397,23 +512,186 @@ INTENTS = {
     "phrygian_dominant": [Op("mode", to="phrygian_dominant")],
     "more_phrygian": [Op("mode", to="phrygian")],
     # Lead intents
-    "lead_busier": [Op("lead.density", 0.05), Op("lead.syncopation", 0.05)],
-    "lead_thinner": [Op("lead.density", -0.05), Op("lead.syncopation", -0.05)],
+    "lead_busier": [Op("hook.density", 0.2)],
+    "lead_thinner": [Op("hook.density", -0.2)],
     "lead_higher": [Op("lead.octave", 1.0)],
     "lead_lower": [Op("lead.octave", -1.0)],
-    "lead_syncopated": [Op("lead.syncopation", 0.2)],
-    "lead_straighter": [Op("lead.syncopation", -0.2)],
+    "lead_syncopated": [Op("hook.syncopation", 0.25)],
+    "lead_straighter": [Op("hook.syncopation", -0.25)],
+    # How the lead is played.
+    "punchier": [Op("lead.gate", -0.25), Op("lead.accent", 0.25)],
+    "smoother": [Op("lead.gate", 0.25), Op("lead.slide", 0.25), Op("lead.accent", -0.2)],
+    "staccato": [Op("lead.gate", to=0.15)],
+    "legato": [Op("lead.gate", to=0.95)],
+    "slidier": [Op("lead.slide", 0.3)],
+    "more_echo": [Op("lead.echo", 0.3)],
+    "less_echo": [Op("lead.echo", -0.3)],
+    "flicks": [Op("lead.flick", 0.3)],
+    "grace_notes": [Op("lead.grace", 0.3)],
+    "trills": [Op("lead.ornament", 0.3)],
+    "leapier": [Op("hook.motion", 0.25)],
+    "steppier": [Op("hook.motion", -0.25)],
+    "more_repeats": [Op("hook.repeat", 0.25)],
+    "fewer_repeats": [Op("hook.repeat", -0.25)],
+    "call_lead": [Op("hook.phrasing", to="call")],
+    "riff_lead": [Op("hook.phrasing", to="riff")],
+    "song_lead": [Op("hook.phrasing", to="song")],
+    "stab_lead": [Op("hook.phrasing", to="stabs")],
+    "drone_lead": [Op("hook.phrasing", to="drone")],
+    "arp": [Op("hook.phrasing", to="arp")],
+    "held_bass": [Op("bass.style", to="sustain")],
+    "walking_bass": [Op("bass.style", to="walk")],
+    "pulsing_bass": [Op("bass.style", to="pulse")],
+    "bouncing_bass": [Op("bass.style", to="bounce")],
+    "sparse_bass": [Op("bass.style", to="sparse")],
+    "skip_bass": [Op("bass.style", to="skip")],
+    # UK garage, dubstep's other parent.
+    "garage": [Op("_garage", to="1")],
+    "two_step": [Op("drum_feel", to="two_step")],
+    "skippy_drums": [Op("drum_feel", to="two_step_skip")],
+    "speed_garage": [Op("drum_feel", to="garage_4x4")],
+    "one_drop": [Op("drum_feel", to="one_drop")],
+    "steppers": [Op("drum_feel", to="steppers")],
+    "half_time": [Op("drum_feel", to="half_time")],
+    "ninths": [Op("chord_size", to=5)],
+    "organ_stabs": [Op("stab_pattern", to="organ")],
+    "chop_lead": [Op("hook.phrasing", to="chop")],
+    "dotted": [Op("hook.rhythm", to="dotted")],
+    "stabs": [Op("hook.rhythm", to="stabs")],
+    "pickup": [Op("hook.rhythm", to="pickup")],
+    "triplet": [Op("hook.rhythm", to="triplet")],
+    "offbeat": [Op("hook.rhythm", to="offbeat")],
+    "flowing": [Op("hook.rhythm", to="flowing")],
+    # The hook. "Catchier" is more literal repetition, more auditions and a
+    # longer breath - the three things that make a phrase stick.
+    "catchier": [Op("hook.repetition", 0.15), Op("hook.repeat", 0.1),
+                 Op("hook.candidates", 16), Op("hook.breath", 0.04)],
+    "wider_hook": [Op("hook.span", 2), Op("hook.motion", 0.15)],
+    "smoother_hook": [Op("hook.motion", -0.25), Op("hook.span", -1)],
+    "busier_hook": [Op("hook.density", 0.12)],
+    "sparser_hook": [Op("hook.density", -0.12)],
+    "syncopated_hook": [Op("hook.syncopation", 0.2)],
+    "straighter_hook": [Op("hook.syncopation", -0.2)],
+    "more_colour": [Op("hook.colour", 0.25)],
+    "less_colour": [Op("hook.colour", -0.25)],
+    "sentence": [Op("hook.form", to="sentence")],
+    "period": [Op("hook.form", to="period")],
+    "riff_form": [Op("hook.form", to="riff")],
+    "call_answer": [Op("hook.form", to="call_answer")],
+    "sing": [Op("lead_style", to="hook")],
+    "riff": [Op("lead_style", to="riff")],
+    "call_response": [Op("lead_style", to="call_response")],
+    "long_tones": [Op("lead_style", to="long_tones")],
+    # The conversation.
+    "more_hook": [Op("interplay.presence", 0.2)],
+    "less_hook": [Op("interplay.presence", -0.2)],
+    "chattier": [Op("interplay.answer", 0.2)],
+    "quieter_band": [Op("interplay.answer", -0.2)],
+    "tighter": [Op("interplay.lock", 0.2)],
+    "looser": [Op("interplay.lock", -0.2)],
+    "more_counter": [Op("interplay.counter", 0.25)],
+    "less_counter": [Op("interplay.counter", -0.25)],
+    "more_space": [Op("interplay.space", 0.2)],
+    # Tension and release.
+    "bigger_drop": [Op("dynamics.drop_gap", 1.0), Op("dynamics.impact", 0.2),
+                    Op("dynamics.roll", 0.2)],
+    "smaller_drop": [Op("dynamics.drop_gap", -1.0), Op("dynamics.impact", -0.2)],
+    "more_build": [Op("dynamics.roll", 0.2), Op("dynamics.riser", 0.25)],
+    "less_build": [Op("dynamics.roll", -0.2), Op("dynamics.riser", -0.25)],
+    "key_lift": [Op("dynamics.lift", to=1.0)],
+    "no_lift": [Op("dynamics.lift", to=0.0)],
+    "more_breaks": [Op("dynamics.switch_up", 0.25)],
+    "fewer_breaks": [Op("dynamics.switch_up", -0.25)],
+    "more_fills": [Op("dynamics.fills", 0.2)],
+    "fewer_fills": [Op("dynamics.fills", -0.2)],
 }
+
+# Mutation: a random twist across many knobs at once, seeds still frozen. The
+# song moves somewhere it has never been while staying itself - same hook
+# seed, same bass seed, new settings. `amount` scales every move.
+MUTATIONS = {
+    "mutate": (("drums", "bass", "lead", "hook", "interplay", "dynamics", "chords"), 0.5),
+    "mutate_hook": (("hook",), 0.6),
+    "mutate_groove": (("drums", "bass", "chords"), 0.5),
+    "mutate_arrangement": (("interplay", "dynamics"), 0.6),
+    "mutate_lead": (("lead", "hook"), 0.5),
+    "wild": (("drums", "bass", "lead", "hook", "interplay", "dynamics", "chords",
+              "harmony"), 1.0),
+}
+
+_KNOB_GROUP = {"stab_density": "chords", "stab_syncopation": "chords",
+               "tension": "harmony", "bars_per_chord": "harmony", "chord_size": "harmony",
+               "lead_style": "lead", "stab_pattern": "chords", "drum_feel": "drums"}
+
+
+def mutation(params: SongParams, groups, amount: float = 0.5, rng=None) -> list[Op]:
+    """A random walk step over the knobs in `groups`, as ops.
+
+    Each float knob moves with probability ~40% by a Gaussian step scaled to
+    its range and `amount`; each choice knob flips with probability
+    `amount * 0.3`. The result is a list of absolute ops, so it lands on the
+    trail with a readback like any other twist and can be undone.
+    """
+    import random as _random
+    rng = rng or _random.Random()
+    ops: list[Op] = []
+    for path, (lo, hi) in _BOUNDS.items():
+        group = _KNOB_GROUP.get(path, path.split(".")[0])
+        if group not in groups or path in ("bpm", "hook.candidates", "hook.unit_bars"):
+            continue
+        if rng.random() > 0.4:
+            continue
+        cur = read_knob(params, path)
+        nxt = cur + rng.gauss(0.0, 0.22) * amount * (hi - lo)
+        nxt = max(lo, min(hi, nxt))
+        if path in _INTS:
+            nxt = int(round(nxt))
+        if abs(nxt - cur) > 1e-6:
+            ops.append(Op(path, to=round(nxt, 3)))
+    for path, choices in _CHOICES.items():
+        group = _KNOB_GROUP.get(path, path.split(".")[0])
+        if group not in groups or rng.random() > amount * 0.3:
+            continue
+        cur = choice_value(params, path)
+        others = [c for c in choices if c != cur]
+        if path == "drum_feel":
+            # A mutation stays in the song's meter: half-time to half-time.
+            from .theory import groove
+            want = params.drums.feel if params.drums is not None else None
+            others = [c for c in others if groove.FEELS[c].feel == want]
+        if others:
+            ops.append(Op(path, to=rng.choice(others)))
+    return ops
 
 INTENT_ALIASES = {
     "up": "brighter", "down": "darker",
     "busy": "busier", "dense": "denser", "thin": "thinner",
     "sync": "more_syncopated", "syncopate": "more_syncopated",
-    "straighten": "straighter", "swing": "swingier",
+    "straighten": "straighter",
     "tense": "more_tension", "relax": "less_tension",
     "bright": "brighter", "dark": "darker",
     "phrygian dominant": "phrygian_dominant",
     "more phrygian": "more_phrygian",
+    "hookier": "catchier", "catchy": "catchier", "hooky": "catchier",
+    "bigger": "bigger_drop", "harder": "bigger_drop", "drop harder": "bigger_drop",
+    "build up": "more_build", "more tension build": "more_build",
+    "conversation": "chattier", "answer": "chattier", "talk": "chattier",
+    "lock": "tighter", "unison": "tighter", "counter": "more_counter",
+    "breaks": "more_breaks", "switch up": "more_breaks", "fills": "more_fills",
+    "mutate everything": "mutate", "mutate hook": "mutate_hook",
+    "mutate groove": "mutate_groove", "mutate arrangement": "mutate_arrangement",
+    "mutate lead": "mutate_lead", "go wild": "wild",
+    "singing": "song_lead", "sing it": "song_lead", "stabby": "stab_lead",
+    "stabby lead": "stab_lead", "drone": "drone_lead", "arpeggio": "arp",
+    "arpeggiate": "arp", "ostinato": "riff_lead",
+    "ukg": "garage", "uk garage": "garage", "garage it": "garage", "garagey": "garage",
+    "more garage": "garage", "2 step": "two_step", "2step": "two_step",
+    "skippy": "skippy_drums", "4x4": "speed_garage", "four to the floor": "speed_garage",
+    "skippy bass": "skip_bass", "2 step bass": "skip_bass", "garage bass": "skip_bass",
+    "ninth": "ninths", "9ths": "ninths", "minor nines": "ninths", "rhodes": "ninths",
+    "organ": "organ_stabs", "vocal chop": "chop_lead", "chopped": "chop_lead",
+    "chop": "chop_lead", "chops": "chop_lead", "one drop": "one_drop",
+    "halftime": "half_time", "half time": "half_time",
 }
 
 
@@ -424,7 +702,7 @@ def _pitch_semitones(text: str) -> int | None:
 
 
 
-def direct(text: str) -> list[Op]:
+def direct(text: str, params: SongParams | None = None, rng=None) -> list[Op]:
     """Resolve a direction in words to a list of ops.
 
     A single word or alias looks up `INTENTS`. A phrase like 'down a third',
@@ -461,9 +739,19 @@ def direct(text: str) -> list[Op]:
         key = INTENT_ALIASES[key]
     if key in INTENTS:
         return list(INTENTS[key])
+    key = key.replace(" ", "_")
+    if key in INTENT_ALIASES:
+        key = INTENT_ALIASES[key]
+    if key in INTENTS:
+        return list(INTENTS[key])
+    if key in MUTATIONS:
+        if params is None:
+            raise ValueError(f"{raw!r} needs a song to mutate")
+        groups, amount = MUTATIONS[key]
+        return mutation(params, groups, amount, rng)
     raise ValueError(
         f"did not understand {raw!r}; try one of: "
-        + ", ".join(sorted(set(INTENTS) | set(INTENT_ALIASES))))
+        + ", ".join(sorted(set(INTENTS) | set(INTENT_ALIASES) | set(MUTATIONS))))
 
 
 def _pitch_from_phrase(rest: str) -> int | None:
@@ -660,8 +948,8 @@ class Session:
         return step
 
     def attempt(self, text: str, label: str = "") -> Step:
-        """Steer by a direction in words: 'busier', 'down a third', 'drop'..."""
-        return self.step(direct(text), label=label or text)
+        """Steer by a direction in words: 'busier', 'down a third', 'mutate'..."""
+        return self.step(direct(text, self.params), label=label or text)
 
     # -- revision control ------------------------------------------------
 

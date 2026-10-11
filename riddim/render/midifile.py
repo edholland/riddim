@@ -25,6 +25,8 @@ GM_DRUMS = {
     KIT_ROWS["rim"]: 37,     # Side Stick
     KIT_ROWS["perc"]: 39,    # Hand Clap
     KIT_ROWS["shaker"]: 70,  # Maracas
+    KIT_ROWS["crash"]: 49,   # Crash Cymbal 1
+    KIT_ROWS["riser"]: 55,   # Splash - GM has no riser; the WAV render does
 }
 
 # Our tick grid is 24 per 16th, so 96 per quarter note.
@@ -50,7 +52,7 @@ def write(song: Song, path: str, gm_drums: bool = True) -> str:
         channel = 9 if is_drums else min(15, max(0, part.channel - 1))
 
         events: list[tuple[int, int, str, int, int]] = []
-        for note in part.sorted_notes():
+        for note in song.notes_with_coda(part):
             midi_note = (
                 GM_DRUMS.get(note.midi, note.midi) if (is_drums and gm_drums)
                 else note.midi

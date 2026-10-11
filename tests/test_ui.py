@@ -4,6 +4,7 @@ import json
 
 from riddim.compose import compose
 from riddim.params import SongParams
+from conftest import clean_seed
 from riddim.direct import Op
 from riddim.ui.server import State, _changed, options, song_to_dict
 
@@ -163,11 +164,11 @@ def test_song_payload_carries_checks_and_score():
     the critic's view: one row per finding, and the score."""
     from riddim import critique
 
-    song = compose("dubstep_140", seed=3)  # clean
+    song = compose("dubstep_140", seed=clean_seed())  # clean
     d = song_to_dict(song)
     assert d["checks"] == [] and d["score"] == 1.0
 
-    broken = compose("roots_dub", seed=23)
+    broken = compose(params=SongParams(profile="roots_dub", seed=50, bpm=72))
     broken.arrangement.sections[3].ramp = 0.0   # a build that never climbs
     broken.arrangement.sections[2].energy = 0.9  # a loud hole
     d = song_to_dict(broken)
@@ -195,7 +196,7 @@ def test_revise_fixes_a_broken_take_and_stays_on_the_trail():
     take is never pushed at all."""
     from riddim import critique
 
-    state = State(SongParams(profile="roots_dub", seed=23))
+    state = State(SongParams(profile="roots_dub", seed=50, bpm=72))
     state.params.sections[3].ramp = 0.0     # build_2
     state.params.sections[2].energy = 0.9   # dub_out
     state.recompose(state.params)           # a step: the take is broken
