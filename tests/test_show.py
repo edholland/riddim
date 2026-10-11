@@ -996,3 +996,48 @@ def test_wild_songs_stay_inside_the_lines():
             assert all(n.start % (2 * T) == 0 for n in song.part("sub").notes)
             again = compose(params=SongParams.from_dict(json.loads(json.dumps(song.params.to_dict()))))
             assert [x.notes for x in song.parts] == [x.notes for x in again.parts]
+
+
+@pytest.mark.parametrize("profile", ["roots_dub", "uk_garage", "dubstep_140"])
+def test_a_live_track_stays_up(profile):
+    """A live track is short loops straight in at energy: drums and bass from
+    the first bar, nothing over sixteen bars, nothing low but the one break
+    - and it is the same song (hook, key, groove) as the record."""
+    record = compose(profile=profile, seed=5)
+    live = compose(profile=profile, seed=5, live=True)
+    secs = live.arrangement.sections
+    assert secs[0].plays("drums") and secs[0].plays("sub")
+    assert all(s.bars <= 16 for s in secs)
+    low = [s for s in secs if s.energy < 0.5]
+    assert [s.name for s in low] == ["break"]
+    assert live.params.key == record.params.key
+    assert live.params.hook == record.params.hook
+    again = compose(params=SongParams.from_dict(json.loads(json.dumps(live.params.to_dict()))))
+    assert [p.notes for p in live.parts] == [p.notes for p in again.parts]
+
+
+def test_live_is_a_word_in_the_ui():
+    p = compose(profile="uk_garage", seed=5).params
+    q = apply_ops(p, direct("live", p))
+    assert q.structure.live and q.sections is None
+    assert compose(params=q).arrangement.sections[0].name == "groove"
+
+
+def test_save_and_load_song_messages():
+    """The custom firmware's save/load commands: 19 and 20 in the AI
+    namespace, names sanitised to what the card accepts, overwrite as a flag."""
+    from riddim.deluge import sysex
+    msg = sysex.save_song("01 Dub/Chamber!", overwrite=True)
+    assert msg[len(sysex.HEADER)] == 19 and msg[len(sysex.HEADER) + 1] == 1
+    assert bytes(msg[len(sysex.HEADER) + 2:]).decode() == "01 Dub_Chamber_"
+    assert sysex.load_song("RIDDIM TEMPLATE")[len(sysex.HEADER)] == 20
+    with pytest.raises(ValueError):
+        sysex.song_name("")
+
+
+def test_set_walks_a_corpus_dry(tmp_path):
+    """`riddim-cli set` loads the template, sends and saves every track."""
+    from riddim import cli, corpus
+    entries = corpus.build(2, ["roots_dub", "uk_garage"], candidates=1, fix=False, live=True)
+    corpus.write(entries, str(tmp_path))
+    assert cli.main(["set", "--dir", str(tmp_path), "--dry-run"]) == 0

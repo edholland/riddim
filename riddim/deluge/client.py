@@ -200,6 +200,27 @@ class Deluge:
             time.sleep(0.05)
         return False
 
+    def slow_command(self, data: list[int], expect: int, label: str,
+                     timeout: float = 30.0) -> Reply | None:
+        """One command that may take seconds (a load or save touches the SD
+        card): sent once, waited on with a long timeout, its reply returned
+        so the caller can tell BUSY from FILE_EXISTS from a real failure."""
+        saved, self.timeout = self.timeout, timeout
+        try:
+            reply = self.send(data, expect)
+        finally:
+            self.timeout = saved
+        if reply is not None and not reply.ok and self.verbose:
+            print(f"  !! {label}: {getattr(reply.status, 'name', reply.status)}")
+        return reply
+
+    def load_song(self, name: str) -> Reply | None:
+        return self.slow_command(sysex.load_song(name), sysex.Command.LOAD_SONG, f"load {name}")
+
+    def save_song(self, name: str, overwrite: bool = False) -> Reply | None:
+        return self.slow_command(sysex.save_song(name, overwrite), sysex.Command.SAVE_SONG,
+                                 f"save {name}")
+
     # -- commands --------------------------------------------------------
 
     def ping(self) -> bool:

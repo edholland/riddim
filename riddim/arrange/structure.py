@@ -502,6 +502,10 @@ class StructureParams:
     # Roles left out of the whole song. A record with no lead, or no pad, is
     # a different record - this is the strongest single variation there is.
     omit: tuple[str, ...] = ()
+    # A live track: a palette of short loops for jam mode - straight in at
+    # energy, the low point only where the performer launches it, no long
+    # intro or outro. See `_live`.
+    live: bool = False
 
 
 # Energy bands per phase kind, and the bar lengths each may take.
@@ -610,6 +614,8 @@ def generate(
     the phase band and jittered so two songs with the same phase sequence
     still have different curves.
     """
+    if p.live:
+        return _live(p, rng, name)
     kinds = _phases(p, rng)
     lengths = []
     for k in kinds:
@@ -677,6 +683,50 @@ def generate(
         last.active = tuple(r for r in ROLES if r in set(last.active) | {"pad"})
     if not short:
         _fit_length(sections, p.total_bars)
+    return Arrangement(sections, name)
+
+
+# A live track, section by section: (name, phase kind for its roles, bars,
+# energy band, ramp). Every section is a loop the performer can hold (jam
+# mode), so none needs to be long; the energy stays up everywhere except the
+# break, which plays only when it is launched.
+_LIVE = (
+    ("groove", "groove", 8, (0.62, 0.70), 0.0),     # the entry: the riddim at full groove
+    ("build", "build", 8, (0.50, 0.62), 0.5),
+    ("drop", "peak", 16, (0.88, 0.94), 0.0),
+    ("break", None, 8, (0.26, 0.36), 0.0),          # the opt-in low point
+    ("build_2", "build", 8, (0.52, 0.64), 0.6),
+    ("drop_2", "peak", 16, (0.92, 1.00), 0.0),
+    ("exit", "groove", 8, (0.58, 0.66), 0.0),       # a groove to leave on, not a fade
+)
+
+
+def _live(p: StructureParams, rng, name: str) -> Arrangement:
+    """A track for the stage: short loopable sections, straight in at energy.
+
+    The entry and exit are the riddim with drums and bass from the first
+    bar - something to launch into and out of, not an atmosphere and a fade.
+    The break (a dub-out or a breakdown, by the song's `release`) is the only
+    low point, and in jam mode it sounds only when the performer launches it.
+    The second drop is the bigger one and brings the whole band."""
+    sections: list[Section] = []
+    cursor = 0
+    for dev, (label, kind, bars, (lo, hi), ramp) in enumerate(_LIVE):
+        if kind is None:
+            kind = p.release if p.release in ("dub_out", "breakdown") else rng.choice(("dub_out", "breakdown"))
+        energy = round(rng.uniform(lo, hi), 3)
+        active = set(_roles_for(kind, energy, p))
+        if label in ("groove", "exit"):
+            active |= {"drums", "sub"}                 # in at energy: the riddim from bar one
+        if label == "drop_2" and "pad" not in p.omit:
+            active.add("pad")                          # the whole band, once
+        sections.append(Section(
+            name=label, bars=bars, energy=energy,
+            active=tuple(r for r in ROLES if r in active), development=dev,
+            direction=_DIRECTION.get(kind, ""), start_bar=cursor,
+            dub_throw=kind in ("dub_out", "breakdown"), ramp=ramp,
+        ))
+        cursor += bars
     return Arrangement(sections, name)
 
 

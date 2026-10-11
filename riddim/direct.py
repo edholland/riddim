@@ -433,6 +433,10 @@ def _apply_absolute(params: SongParams, op: Op) -> None:
         params.progression = None
         for spec in (params.sections or []):
             spec.progression = None
+    elif op.path == "_live":
+        from .compose import _make_live
+        live = _make_live(params)
+        params.structure, params.sections = live.structure, live.sections
     elif op.path == "_garage":
         # Garage the song up, keeping its tempo and feel: the 2-step kit
         # (its half-time cousin under a half-time snare), the skipping
@@ -547,6 +551,8 @@ INTENTS = {
     "skip_bass": [Op("bass.style", to="skip")],
     # UK garage, dubstep's other parent.
     "garage": [Op("_garage", to="1")],
+    # The same song as a live track: short loops, straight in at energy.
+    "live": [Op("_live", to="1")],
     "two_step": [Op("drum_feel", to="two_step")],
     "skippy_drums": [Op("drum_feel", to="two_step_skip")],
     "speed_garage": [Op("drum_feel", to="garage_4x4")],
@@ -684,6 +690,7 @@ INTENT_ALIASES = {
     "singing": "song_lead", "sing it": "song_lead", "stabby": "stab_lead",
     "stabby lead": "stab_lead", "drone": "drone_lead", "arpeggio": "arp",
     "arpeggiate": "arp", "ostinato": "riff_lead",
+    "live set": "live", "live track": "live", "for the stage": "live",
     "ukg": "garage", "uk garage": "garage", "garage it": "garage", "garagey": "garage",
     "more garage": "garage", "2 step": "two_step", "2step": "two_step",
     "skippy": "skippy_drums", "4x4": "speed_garage", "four to the floor": "speed_garage",

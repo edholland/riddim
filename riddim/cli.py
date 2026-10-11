@@ -40,6 +40,9 @@ def _add_compose_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--all-deluge", action="store_true",
                         help="keep every part on Deluge synths instead of "
                              "sending the bass and chords out to the Coral")
+    parser.add_argument("--live", action="store_true",
+                        help="a live track: short loopable sections, straight in at "
+                             "energy, the break only where you launch it")
     parser.add_argument("--name", default="", help="song name")
     parser.add_argument("--check", action="store_true",
                         help="run the self-critic over the song and print "
@@ -58,6 +61,8 @@ def _build(args):
     if getattr(args, "params", None):
         from . import corpus
         song = corpus.load(args.params, rig=rig)
+        if getattr(args, "live", False):
+            song = compose_song(params=song.params, rig=rig, live=True)
         base = args.params.rsplit("/", 1)[-1].rsplit(".", 1)[0]
         song.name = args.name or base
         return song
@@ -71,6 +76,7 @@ def _build(args):
         progression=args.progression,
         name=args.name,
         bpm=getattr(args, "bpm", None),
+        live=getattr(args, "live", False),
     )
     return song
 
@@ -221,6 +227,83 @@ def cmd_send(args) -> int:
     return 1 if report.failures else 0
 
 
+def cmd_set(args) -> int:
+    """Put a whole set onto the Deluge, unattended: for each track, load the
+    template song, write the track into it, save it under the track's name.
+    Needs the custom firmware's LOAD_SONG and SAVE_SONG commands (19, 20)."""
+    import glob
+    import os
+    from . import corpus
+    from .deluge import render, sysex
+    from .deluge.client import Deluge, DelugeError
+    from .deluge.sysex import Status
+
+    rig = ALL_DELUGE if args.all_deluge else Rig()
+    if args.dir:
+        files = sorted(glob.glob(os.path.join(args.dir, "*.json")))
+        if not files:
+            print(f"error: no .json songs in {args.dir}", file=sys.stderr)
+            return 1
+        tracks = []
+        for path in files:
+            song = corpus.load(path, rig=rig)
+            if args.live:
+                song = compose_song(params=song.params, rig=rig, live=True)
+            title = os.path.basename(path).rsplit(".", 1)[0].replace("_", " ")
+            tracks.append((title, song))
+    else:
+        profiles = [profile_mod.get(p).name for p in args.profiles.split(",")]
+        print(f"composing {args.count} live tracks across {', '.join(profiles)}")
+        entries = corpus.build(args.count, profiles, candidates=args.candidates, seed=args.seed,
+                               rig=rig, progress=print, live=True)
+        tracks = [(f"{i:02d} {e.title}", e.song) for i, e in enumerate(entries, 1)]
+    try:
+        rows = render.parse_template(args.template_rows)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    names = [sysex.song_name(f"{args.prefix}{t}") for t, _ in tracks]
+    print(f"\n{len(tracks)} tracks -> SONGS/ on the Deluge, each from template "
+          f"SONGS/{sysex.song_name(args.template)}.XML:")
+    for n in names:
+        print(f"  {n}")
+    failures = 0
+    try:
+        with Deluge(output=args.port, input=args.input, verbose=args.verbose,
+                    dry_run=args.dry_run) as deluge:
+            if not args.dry_run and not deluge.ping():
+                print("Deluge did not answer the ping.", file=sys.stderr)
+                return 1
+            for (title, song), name in zip(tracks, names):
+                print(f"\n== {name}")
+                r = deluge.load_song(args.template)
+                if r is not None and not r.ok:
+                    why = {Status.BUSY: "stop playback and leave any menu, then run again",
+                           Status.FILE_NOT_FOUND: f"no SONGS/{args.template}.XML on the card"}
+                    print(f"   load template failed: {r.status.name} - {why.get(r.status, '')}")
+                    return 1
+                report = render.send(song, deluge, mode=args.mode, template_rows=rows,
+                                     progress=False)
+                print(f"   sent: {report.clips} clips, {report.notes} notes"
+                      + (f", {len(report.failures)} failures"
+                         if report.failures and not args.dry_run else ""))
+                r = deluge.save_song(name, overwrite=args.overwrite)
+                if r is not None and not r.ok:
+                    failures += 1
+                    hint = {Status.FILE_EXISTS: "already on the card (use --overwrite)",
+                            Status.NEEDS_UI_SAVE: "the template uses collected/recorded samples - "
+                                                  "save it once from the Deluge's Save menu"}
+                    print(f"   save failed: {r.status.name} {hint.get(r.status, '')}")
+                else:
+                    print(f"   saved SONGS/{name}.XML")
+    except DelugeError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(f"\n{len(tracks) - failures}/{len(tracks)} tracks saved.")
+    return 1 if failures else 0
+
+
 def cmd_ping(args) -> int:
     from .deluge.client import Deluge, DelugeError
 
@@ -298,7 +381,8 @@ def cmd_corpus(args) -> int:
     print(f"composing {args.count} songs across {', '.join(profiles)} "
           f"(best of {args.candidates} each)")
     entries = corpus.build(args.count, profiles, candidates=args.candidates,
-                           seed=args.seed, fix=not args.no_fix, rig=rig, progress=print)
+                           seed=args.seed, fix=not args.no_fix, rig=rig, progress=print,
+                           live=args.live)
     path = corpus.write(entries, args.out, audio=args.audio, progress=print)
     print()
     print(open(path).read())
@@ -469,7 +553,38 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_batch)
 
     p = subs.add_parser(
+        "set", help="put a whole set onto the Deluge unattended: load template, "
+                    "write track, save - per track (custom firmware 19/20)")
+    p.add_argument("--dir", default=None,
+                   help="a corpus folder of .json songs (in file order); omit to "
+                        "compose a fresh live set")
+    p.add_argument("--live", action="store_true",
+                   help="with --dir: turn each song into a live track")
+    p.add_argument("--count", type=int, default=12, help="tracks to compose (no --dir)")
+    p.add_argument("--profiles", default=",".join(
+        ("roots_dub", "steppers_dub", "dubby_halftime", "uk_garage",
+         "dark_garage", "dubstep_140")), help="profiles to spread a composed set across")
+    p.add_argument("--candidates", type=int, default=6, help="seeds auditioned per track")
+    p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--template", default="RIDDIM TEMPLATE",
+                   help="song on the card holding your instruments (SONGS/<name>.XML)")
+    p.add_argument("--template-rows", default="chords=1,sub=2,lead=3,pad=4,drums=5,perc=6",
+                   help="which row of the template holds each role's clip")
+    p.add_argument("--prefix", default="", help="put before every song name, e.g. 'SET1 '")
+    p.add_argument("--overwrite", action="store_true", help="replace songs of the same name")
+    p.add_argument("--mode", default="jam", choices=("jam", "song"))
+    p.add_argument("--all-deluge", action="store_true")
+    p.add_argument("--port", default=None)
+    p.add_argument("--input", default=None)
+    p.add_argument("--verbose", action="store_true")
+    p.add_argument("--dry-run", action="store_true",
+                   help="compose and walk the set without a Deluge")
+    p.set_defaults(func=cmd_set)
+
+    p = subs.add_parser(
         "corpus", help="compose a show: many songs, ranked, ordered as a set")
+    p.add_argument("--live", action="store_true",
+                   help="live tracks: short loops, straight in at energy")
     p.add_argument("--count", type=int, default=24, help="how many songs")
     p.add_argument("--profiles", default=",".join(
         ("roots_dub", "steppers_dub", "dubby_halftime", "uk_garage",

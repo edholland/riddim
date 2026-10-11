@@ -127,6 +127,7 @@ def compose(
     name: str = "",
     params: SongParams | None = None,
     bpm: int | None = None,
+    live: bool = False,
 ) -> Song:
     """Build a complete song. Deterministic for a given params/seed.
 
@@ -150,6 +151,8 @@ def compose(
             arr = structure.build(template, bars=bars)
             params.sections = [_section_spec(s) for s in arr.sections]
 
+    if live:
+        params = _make_live(params)
     prof = profile if isinstance(profile, Profile) else profile_mod.get(params.profile)
     rig = rig or Rig()
     rng = random.Random(params.seed)
@@ -344,6 +347,21 @@ def _lift(song: Song, m: Material, prof) -> None:
             ev = chord_mod.ChordEvent(c, ev.start, ev.length, c.symbol(), dict(ev.meta, lift=k))
         events.append(ev)
     song.harmony = harmony.HarmonyPlan(song.harmony.scale, song.harmony.progression, events)
+
+
+def _make_live(params: SongParams) -> SongParams:
+    """The same song as a live track: its structure redrawn as short loops
+    straight in at energy (see structure._live). Everything else - hook,
+    harmony, groove, sound - is kept."""
+    if params.structure is not None and params.structure.live:
+        return params
+    params = params.copy()
+    prof = profile_mod.get(params.profile)
+    base = params.structure or structure.params_for_family(
+        prof.family, random.Random(params.seed_for("structure")), params.bpm or prof.bpm)
+    params.structure = replace(base, live=True)
+    params.sections = None
+    return params
 
 
 def regenerate(song: Song, part: str, rig: Rig | None = None, rng=None) -> Song:

@@ -37,6 +37,8 @@ class Command(IntEnum):
     CLAMP_SESSION_VISIBLE_LENGTH = 16
     SET_SECTION_REPEAT = 17
     SET_SIDECHAIN = 18
+    SAVE_SONG = 19
+    LOAD_SONG = 20
 
 
 class Status(IntEnum):
@@ -53,6 +55,9 @@ class Status(IntEnum):
     BAD_PARAM = 10
     SD_CARD_UNAVAILABLE = 11
     FILE_NOT_FOUND = 12
+    FILE_EXISTS = 13
+    BUSY = 14
+    NEEDS_UI_SAVE = 15
 
 
 class OutputType(IntEnum):
@@ -225,6 +230,27 @@ def set_clip_name(name: str, clip: bool = True, output: bool = True) -> list[int
 
 def load_synth_preset(preset: str) -> list[int]:
     return frame([Command.LOAD_CURRENT_SYNTH_PRESET] + ascii7(preset, limit=64))
+
+
+def song_name(name: str, limit: int = 40) -> str:
+    """A song name the firmware will accept as a file name: letters, digits,
+    space, - and _ (anything else becomes _), at most `limit` characters."""
+    out = "".join(c if (c.isascii() and (c.isalnum() or c in " -_")) else "_" for c in name)
+    out = out.strip()[:limit]
+    if not out:
+        raise ValueError(f"no usable characters in song name {name!r}")
+    return out
+
+
+def save_song(name: str, overwrite: bool = False) -> list[int]:
+    """Save the current song as SONGS/<name>.XML (custom firmware 19)."""
+    return frame([Command.SAVE_SONG, 1 if overwrite else 0] + ascii7(song_name(name), limit=60))
+
+
+def load_song(name: str) -> list[int]:
+    """Load SONGS/<name>.XML (custom firmware 20). The transport must be
+    stopped and the Deluge on a main view, or it replies BUSY."""
+    return frame([Command.LOAD_SONG] + ascii7(song_name(name), limit=60))
 
 
 def sync_shared_output() -> list[int]:

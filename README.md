@@ -202,6 +202,49 @@ number apart and behave completely differently.
 
 The channel map lives in `song.py::Rig` — edit it there, it is one dataclass.
 
+## Live sets
+
+A record and a live set want different shapes. `--live` (or saying "live"
+in the UI) redraws a song's structure as a palette of short loops for jam
+mode - the same hook, key, harmony and groove:
+
+| section | bars | what it is |
+|---|---|---|
+| `groove` | 8 | the entry: drums and bass from bar one, the riddim at full groove |
+| `build` | 8 | into the drop |
+| `drop` | 16 | |
+| `break` | 8 | the *only* low point (dub-out or breakdown) - it plays when you launch it |
+| `build_2` | 8 | |
+| `drop_2` | 16 | the bigger drop, the whole band |
+| `exit` | 8 | a groove to leave on, not a fade |
+
+No long intro, no outro fade: in jam mode every section loops until you
+launch the next, so you hold energy as long as you like and bring it down
+only when you mean to.
+
+### Putting a set on the Deluge, unattended
+
+With the custom firmware's `SAVE_SONG` / `LOAD_SONG` commands (AI SysEx
+19 and 20 - branch `ai-save-load` of the firmware fork), the whole set goes
+onto the card with one command:
+
+```bash
+# once, on the Deluge: a song holding your instruments with a template clip
+# per role (rows as in --template-rows), saved as SONGS/RIDDIM TEMPLATE.XML
+
+# compose a 12-track live set and save every track to the card
+./riddim-cli set --count 12
+
+# or take a corpus you already like, as live tracks
+./riddim-cli set --dir show --live --prefix "SET1 "
+```
+
+For each track it loads the template, writes the track's clips into it and
+saves it as `SONGS/<NN title>.XML`, then moves on. The transport must be
+stopped and the Deluge on a main view (not in a menu) - otherwise the
+firmware answers `BUSY` and the command says so. `--overwrite` replaces
+songs of the same name; `--dry-run` walks the set without a Deluge.
+
 ## Template songs
 
 **The Deluge has no SysEx command for setting a MIDI clip's output channel.**

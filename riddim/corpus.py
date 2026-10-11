@@ -97,12 +97,12 @@ def judge(song: Song) -> tuple[float, float, float]:
 
 
 def best_of(profile: str, seeds, rig: Rig | None = None, fix: bool = True,
-            key: str | None = None) -> Entry:
+            key: str | None = None, live: bool = False) -> Entry:
     """Compose a song per seed, keep the one that judges best, revise it."""
     tried = []
     best: tuple | None = None
     for seed in seeds:
-        song = compose(params=SongParams(profile=profile, seed=seed, key=key), rig=rig)
+        song = compose(params=SongParams(profile=profile, seed=seed, key=key), rig=rig, live=live)
         combined, listener, crit = judge(song)
         tried.append((seed, combined))
         if best is None or combined > best[0]:
@@ -268,6 +268,7 @@ def build(
     fix: bool = True,
     rig: Rig | None = None,
     progress=None,
+    live: bool = False,
 ) -> list[Entry]:
     """Compose `count` songs spread across `profiles`, best of `candidates`
     seeds each, ordered as a set."""
@@ -276,7 +277,7 @@ def build(
     for i in range(count):
         prof = profiles[i % len(profiles)]
         first = seed + i * candidates
-        e = best_of(prof, range(first, first + candidates), rig=rig, fix=fix)
+        e = best_of(prof, range(first, first + candidates), rig=rig, fix=fix, live=live)
         entries.append(e)
         if progress:
             progress(f"[{i + 1}/{count}] {prof:<15} {e.title:<24} {e.song.bpm}bpm "
