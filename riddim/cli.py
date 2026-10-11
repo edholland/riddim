@@ -13,6 +13,7 @@ import sys
 
 from . import profile as profile_mod
 from .compose import compose as compose_song
+from .deluge.render import DEFAULT_TEMPLATE_ROWS
 from .song import ALL_DELUGE, Rig
 from .theory import bassline, harmony, rhythm
 
@@ -193,7 +194,8 @@ def cmd_send(args) -> int:
             render.parse_template(args.template_from) if args.template_from else None
         )
         rows = (
-            render.parse_template(args.template_rows) if args.template_rows else None
+            render.parse_template(args.template_rows)
+            if args.template_rows and not args.template_from else None
         )
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -484,10 +486,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="first session clip index to write to "
                         "(default: append after the existing clips)")
     p.add_argument(
-        "--template-rows", default=None, metavar="ROLE=ROW,...",
+        "--template-rows", default=DEFAULT_TEMPLATE_ROWS, metavar="ROLE=ROW,...",
         help="same as --template-from but counted as you see them on screen: "
              "row 1 is the TOP clip. The Deluge displays clips in reverse of "
-             "their internal order, so this is usually what you want.",
+             f"their internal order, so this is usually what you want. Default "
+             f"{DEFAULT_TEMPLATE_ROWS}; pass '' to create new instruments instead.",
     )
     p.add_argument(
         "--template-from", default=None, metavar="ROLE=INDEX,...",
@@ -568,7 +571,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--template", default="RIDDIM TEMPLATE",
                    help="song on the card holding your instruments (SONGS/<name>.XML)")
-    p.add_argument("--template-rows", default="chords=1,sub=2,lead=3,pad=4,drums=5,perc=6",
+    p.add_argument("--template-rows", default=DEFAULT_TEMPLATE_ROWS,
                    help="which row of the template holds each role's clip")
     p.add_argument("--prefix", default="", help="put before every song name, e.g. 'SET1 '")
     p.add_argument("--overwrite", action="store_true", help="replace songs of the same name")

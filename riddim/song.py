@@ -198,12 +198,12 @@ class Rig:
     destinations: dict[str, Destination] = field(
         default_factory=lambda: {
             "chords": Destination(
-                "midi", 1,
+                "midi", 2,
                 comment="Coral - chord voice. Short offbeat stabs; feed these "
                         "to the Nostalgia send.",
             ),
             "sub": Destination(
-                "midi", 2, monophonic=True,
+                "midi", 1, monophonic=True,
                 comment="Coral - single oscillator bass voice. Mono, so notes "
                         "are truncated to never overlap.",
             ),

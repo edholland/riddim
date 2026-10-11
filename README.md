@@ -165,8 +165,8 @@ Deluge MIDI out into the Coral, drums on a Deluge kit:
 
 | Role | Goes to | Notes |
 |---|---|---|
-| `chords` | MIDI ch 1 → rack | Short offbeat skank stabs. Put this channel on the Nostalgia send. |
-| `sub` | MIDI ch 2 → rack | Single oscillator. Forced monophonic — no two notes ever overlap. |
+| `sub` | MIDI ch 1 → rack | Single oscillator. Forced monophonic — no two notes ever overlap. |
+| `chords` | MIDI ch 2 → rack | Short offbeat skank stabs. Put this channel on the Nostalgia send. |
 | `lead` | MIDI ch 3 → rack | |
 | `pad` | MIDI ch 4 → rack | Long held chords under the stabs. |
 | `drums`, `perc` | Deluge kits | Two separate kits. Kit row 36 is the bottom row. |
@@ -268,7 +268,7 @@ patch, and save it. Then:
 ```bash
 # Rows as you see them: row 1 is the TOP clip on screen.
 ./riddim-cli send --profile dubstep --seed 1312 \
-    --template-rows "chords=1,sub=2,lead=3,pad=4,drums=5,perc=6"
+    --template-rows "sub=1,chords=2,lead=3,pad=4,drums=5,perc=6"
 ```
 
 > **The Deluge displays clips in reverse of their internal order.**

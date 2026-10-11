@@ -270,6 +270,11 @@ def _check_template(
             )
 
 
+# The rig's layout: which template row (1 = top of screen) holds each role's
+# clip - the same numbers as the Coral's MIDI channels in `song.Rig`.
+DEFAULT_TEMPLATE_ROWS = "sub=1,chords=2,lead=3,pad=4,drums=5,perc=6"
+
+
 def rows_to_indices(rows: dict[str, int], num_clips: int) -> dict[str, int]:
     """Convert visible song rows (1 = top) to absolute session clip indices.
 

@@ -802,7 +802,7 @@ $('midi').onclick=()=>{ window.location='/api/midi'; };
 $('send').onclick=async()=>{
   const ports=(await api('/api/ports')).outputs; if(!ports.length){ status('no MIDI ports - is the Deluge on?',true); return; }
   const port=ports.find(p=>/Port 3/.test(p))||ports[0];
-  const rows=prompt('Template rows (row 1 = top of screen), or blank to create new instruments:', 'chords=1,sub=2,lead=3,pad=4,drums=5,perc=6');
+  const rows=prompt('Template rows (row 1 = top of screen), or blank to create new instruments:', 'sub=1,chords=2,lead=3,pad=4,drums=5,perc=6');
   if(rows===null) return;
   status('sending to '+port+'…');
   const r=await api('/api/send',{port, template_rows:rows||null, mode:'jam'});
