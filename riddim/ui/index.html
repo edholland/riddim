@@ -138,6 +138,7 @@
         <button class="small" data-say="mutate_groove">⚄ groove</button>
         <button class="small" data-say="mutate_arrangement">⚄ arrangement</button>
         <button class="small" id="new-hook" title="a new hook over the same band - starts a new take">⟳ new hook</button>
+        <button class="small" id="model-hook" title="the trained model writes the drops' lead: its pitches on riddim's rhythm (shift-click: its rhythm too). Each press is a new take; undo brings riddim's lead back; a twist recomposes, so press again after one">🤖 model hook</button>
       </div>
       <div id="tabs"></div>
       <div id="tab-blurb"></div>
@@ -797,6 +798,11 @@ $('say-go').onclick=()=>say($('say').value.trim());
 $('say').addEventListener('keydown',e=>{ if(e.key==='Enter') say($('say').value.trim()); });
 document.querySelectorAll('#quick [data-say]').forEach(b=>b.onclick=()=>say(b.dataset.say));
 $('new-hook').onclick=async()=>{ status('new hook…'); setSong(await api('/api/regenerate',{part:'hook'})); status('ok'); };
+$('model-hook').onclick=async(e)=>{
+  const style=e.shiftKey?'free':'rhythm';
+  status('the model is writing the drops ('+style+')…');
+  setSong(await api('/api/model_lead',{style})); status('model hook ('+style+')');
+};
 $('regen-structure').onclick=async()=>{ setSong(await api('/api/regenerate',{part:'structure'})); S.selected=0; };
 
 // ---------------------------------------------------------------- midi / deluge
@@ -827,7 +833,9 @@ $('send').onclick=async()=>{
   status(r.error?r.error:`sent: ${r.clips} clips, ${r.notes} notes, ${r.trimmed} trimmed${r.failures.length?', '+r.failures.length+' failures':''}`, !!r.error);
 };
 
-(async function init(){ S.options=await api('/api/options'); setSong(await api('/api/song')); })();
+(async function init(){ S.options=await api('/api/options');
+  if(S.options.model_lead){ const b=$('model-hook'); b.disabled=true; b.title='model unavailable: '+S.options.model_lead; }
+  setSong(await api('/api/song')); })();
 </script>
 </body>
 </html>

@@ -94,6 +94,7 @@ class State:
         self.base_params: SongParams = self.params
         self.history: list[_Snap] = []
         self.future: list[_Snap] = []
+        self.model_take = -1
 
     def _compose(self, params: SongParams) -> Song:
         return compose(params=params, live=self.live)
@@ -151,6 +152,22 @@ class State:
                     setattr(fresh, k, v)
             song = self._compose(fresh)
             return self._retake(song.params, song)
+
+    def model_lead(self, style: str = "rhythm") -> Song:
+        """The drops' lead from the trained model: a step on the trail, so
+        undo brings riddim's lead back. Each press is the model's next take.
+        It is written over riddim's own song for these params, and any twist
+        after it recomposes - press again to hear the model on the new band."""
+        from .. import model_lead
+        why = model_lead.unavailable()
+        if why:
+            raise RuntimeError(f"model lead: {why}")
+        with self.lock:
+            self.model_take += 1
+            song = model_lead.write(self._compose(self.params), take=self.model_take, style=style)
+            self._push()
+            self.song = song
+            return self.song
 
     def undo(self) -> Song:
         with self.lock:
@@ -293,7 +310,9 @@ def song_to_dict(song: Song, state: State | None = None) -> dict:
 
 
 def options() -> dict:
+    from .. import model_lead
     return {
+        "model_lead": model_lead.unavailable(),       # None when the model can run
         "profiles": list(profile_mod.PROFILES),
         "feels": list(FEELS),
         "lead_styles": ["hook", "call_response", "riff", "long_tones"],
@@ -406,6 +425,9 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/api/revise":
                 steps = int(body.get("max_steps", 8))
                 return self._json(song_to_dict(self.state.revise(steps), self.state))
+            if self.path == "/api/model_lead":
+                song = self.state.model_lead(body.get("style") or "rhythm")
+                return self._json(song_to_dict(song, self.state))
             if self.path == "/api/send":
                 return self._json(self._send(body))
             if self.path == "/api/save":

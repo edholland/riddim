@@ -304,6 +304,44 @@ Passing one past the end is rejected rather than silently misaligning
 everything: the firmware clamps an out-of-range insert to the end of the list,
 which would put the clip somewhere other than where the index counter thinks.
 
+## Model hooks: a trained model writes the drops' lead
+
+riddim keeps the structure, the band and the Deluge plumbing; a trained
+model writes the hook. The model is the Anticipatory Music Transformer
+(`stanford-crfm/music-medium-800k`, Apache-2.0), fine-tuned on the open
+Lakh MIDI files (CC-BY) that *play* most like early dubstep and dub - picked
+by content, not by tags: half-time and one-drop drums, offbeat skanks, a
+sparse sub, minor modes. It hears riddim's band as it will be played and
+writes the lead over it:
+
+* it drafts several four-bar phrases over the first drop, and riddim keeps
+  the one that works best as a hook (on the chords where it lands on the
+  beat, a tight register, small leaps, a rhythm that repeats inside itself);
+* riddim arranges the drop around it - hook, hook, answer, hook - and the
+  model writes the answer having heard the hook twice;
+* later drops bring the same hook back, bent onto their own chords where they
+  differ, with fresh answers.
+
+Two styles: `rhythm` (default) - the model picks the pitches on riddim's own
+lead rhythm; `free` - the model writes the rhythm too.
+
+```bash
+riddim-cli compose --profile dubstep --live --model-lead --out song.mid
+riddim-cli render  --profile dubstep --seed 11 --model-lead free --take 2
+riddim-cli set --count 12 --model-lead          # a live set with model hooks
+```
+
+In the UI, **🤖 model hook** (shift-click: free) writes the drops' lead; each
+press is the model's next take, undo brings riddim's lead back, and a twist
+recomposes (press again to hear the model over the new band).
+
+The model runs in its own Python environment, so riddim needs nothing new:
+riddim starts `ml/lead_worker.py` with `RIDDIM_ML_PYTHON` (default
+`~/ml/venv/bin/python`) and the model in `RIDDIM_ML_MODEL` (default: the
+newest fine-tune under `~/ml/models/ft_dmz`, else the base model). The
+training pipeline - data, the content filter, the fine-tune, benchmarks - is
+in [ml/README.md](ml/README.md).
+
 ## What it deliberately does not do
 
 Patch design, delay throws and filter performance are left to you. The tool

@@ -51,10 +51,35 @@ def _add_compose_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--fix", action="store_true",
                         help="run the critic's revision loop: apply its "
                              "suggested fixes until the song is clean")
+    _add_model_lead_args(parser)
     parser.add_argument("--params", default=None, metavar="FILE.json",
                         help="rebuild a song exactly from its saved params "
                              "(the .json a corpus writes); other song options "
                              "are ignored")
+
+
+def _add_model_lead_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--model-lead", nargs="?", const="rhythm", default=None,
+                        choices=("rhythm", "free"), metavar="STYLE",
+                        help="the lead in the drops written by the trained model (see ml/): "
+                             "'rhythm' (default) - its pitches on riddim's rhythm; 'free' - "
+                             "its rhythm too")
+    parser.add_argument("--take", type=int, default=0,
+                        help="with --model-lead: which of the model's takes")
+
+
+def _model_lead(args, song):
+    """Hand the drops' lead to the model, if asked."""
+    style = getattr(args, "model_lead", None)
+    if not style:
+        return song
+    from . import model_lead
+
+    why = model_lead.unavailable()
+    if why:
+        raise SystemExit(f"error: --model-lead: {why}")
+    return model_lead.write(song, take=args.take, style=style,
+                            progress=lambda m: print(m, file=sys.stderr))
 
 
 def _build(args):
@@ -66,7 +91,7 @@ def _build(args):
             song = compose_song(params=song.params, rig=rig, live=True)
         base = args.params.rsplit("/", 1)[-1].rsplit(".", 1)[0]
         song.name = args.name or base
-        return song
+        return song if getattr(args, "fix", False) else _model_lead(args, song)
     song = compose_song(
         profile=args.profile,
         key=args.key,
@@ -79,7 +104,8 @@ def _build(args):
         bpm=getattr(args, "bpm", None),
         live=getattr(args, "live", False),
     )
-    return song
+    # --fix recomposes from params, so the model writes after it (cmd_compose)
+    return song if getattr(args, "fix", False) else _model_lead(args, song)
 
 
 def _print_check(song) -> None:
@@ -134,7 +160,7 @@ def _print_ranked(ranked: list) -> None:
 def cmd_compose(args) -> int:
     song = _build(args)
     if args.fix:
-        song = _apply_fix(song)
+        song = _model_lead(args, _apply_fix(song))
     print(song.summary())
     print()
     print(song.arrangement.describe(song.bpm))
@@ -160,7 +186,7 @@ def cmd_plan(args) -> int:
 
     song = _build(args)
     if args.fix:
-        song = _apply_fix(song)
+        song = _model_lead(args, _apply_fix(song))
     print(song.summary())
     print()
     print(song.arrangement.describe(song.bpm))
@@ -178,7 +204,7 @@ def cmd_send(args) -> int:
 
     song = _build(args)
     if args.fix:
-        song = _apply_fix(song)
+        song = _model_lead(args, _apply_fix(song))
     if args.no_fx_rows:
         # A kit without crash and riser rows: leave those notes behind.
         from .compose import KIT_ROWS
@@ -259,6 +285,8 @@ def cmd_set(args) -> int:
         entries = corpus.build(args.count, profiles, candidates=args.candidates, seed=args.seed,
                                rig=rig, progress=print, live=True)
         tracks = [(f"{i:02d} {e.title}", e.song) for i, e in enumerate(entries, 1)]
+    if args.model_lead:
+        tracks = [(t, _model_lead(args, song)) for t, song in tracks]
     try:
         rows = render.parse_template(args.template_rows)
     except ValueError as exc:
@@ -583,6 +611,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--template-rows", default=DEFAULT_TEMPLATE_ROWS,
                    help="which row of the template holds each role's clip")
     p.add_argument("--prefix", default="", help="put before every song name, e.g. 'SET1 '")
+    _add_model_lead_args(p)
     p.add_argument("--overwrite", action="store_true", help="replace songs of the same name")
     p.add_argument("--mode", default="jam", choices=("jam", "song"))
     p.add_argument("--all-deluge", action="store_true")
