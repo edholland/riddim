@@ -13,6 +13,7 @@ repo.
 | `dmz_filter.py` | scores every MIDI file for the 2006 DMZ sound by what it plays: tempo, half-time / one-drop drums, offbeat skank, sparse sub, minor mode, density |
 | `prep_finetune.py` | the files scoring >= a threshold, converted and tokenized as the model was trained (augmented, so it keeps its anticipation / infilling mode) |
 | `finetune.py` | fine-tunes `music-medium-800k` on MPS (bf16 autocast, AdamW, cosine LR); `--probe` measures speed and memory |
+| `amt_smoke.py`, `fast_smoke.py` | smoke tests: the reference sampler (~8 tok/s) vs the cached one (~87 tok/s) |
 | `fast_sample.py` | a KV-cached sampler for the model: ~11x the reference's speed |
 | `lead_core.py` | the constrained lead sampler: one instrument, a register, the song's mode, room between notes, optionally riddim's rhythm with only the pitches chosen |
 | `lead_worker.py` | the process riddim talks to (`riddim/model_lead.py`): JSON lines in, leads out |
