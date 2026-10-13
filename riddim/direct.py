@@ -134,10 +134,6 @@ def _parts(path: str):
         return "drums", path
     if path in _BASES:
         return "bass", path
-    # Handle choice knobs (lead_style, lead.contour)
-    if path in _CHOICE_BOUNDS:
-        group, leaf = path.split(".", 1)
-        return group, leaf
     return None, path
 
 
@@ -150,6 +146,17 @@ def _container(params, group):
         obj = _sub_defaults(group)
         setattr(params, group, obj)
     return obj
+
+
+def _choice_value(params: SongParams, path: str) -> str:
+    """The chosen name for a choice knob; the first choice if unset or unknown."""
+    choices, _ = _CHOICE_BOUNDS[path]
+    if "." in path:
+        group, leaf = path.split(".", 1)
+        val = getattr(_container(params, group), leaf, None)
+    else:
+        val = getattr(params, path, None)
+    return val if val in choices else choices[0]
 
 
 # Per-section fields, steerable as 'sections.<i>.<field>'. These are a
@@ -176,13 +183,11 @@ def read_knob(params: SongParams, path: str) -> float:
     """The current value of a knob. `key` resolves to the tonic pitch class."""
     if path == "key":
         return parse_key(params.key or "G minor").root % 12
-    # Handle choice knobs (lead_style, lead.contour) - return index
+    # Choice knobs read back as the index into their choices, so they flow
+    # through the same float plumbing; the name travels in the delta instead.
     if path in _CHOICE_BOUNDS:
-        choices, labels = _CHOICE_BOUNDS[path]
-        val = getattr(params.lead, path.split(".")[1], 0)
-        if val in choices:
-            return choices.index(val)
-        return 0.0
+        choices, _ = _CHOICE_BOUNDS[path]
+        return float(choices.index(_choice_value(params, path)))
     sec = _section_ref(path)
     if sec is not None:
         i, field = sec
@@ -206,6 +211,17 @@ def set_knob(params: SongParams, path: str, value: float) -> None:
         _set_key_root(params, int(round(value)))
         return
     from dataclasses import replace
+    if path in _CHOICE_BOUNDS:
+        # A choice writes its name from the index; clamped, not wrapped.
+        choices, _ = _CHOICE_BOUNDS[path]
+        idx = max(0, min(len(choices) - 1, int(round(value))))
+        name = choices[idx]
+        if "." in path:
+            group, leaf = path.split(".", 1)
+            setattr(params, group, replace(_container(params, group), **{leaf: name}))
+        else:
+            setattr(params, path, name)
+        return
     sec = _section_ref(path)
     if sec is not None:
         i, field = sec
