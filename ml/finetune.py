@@ -1,7 +1,11 @@
 """Fine-tune the Anticipatory Music Transformer on the DMZ-leaning set (MPS).
 
-usage: finetune.py DATA_DIR OUT_DIR [MAX_STEPS] [--probe]
+usage: finetune.py DATA_DIR OUT_DIR [MAX_STEPS] [--probe] [--init DIR] [--skip N] [--lr LR]
   --probe: 10 steps, report tokens/sec and memory, save nothing.
+  --init:  start from this checkpoint instead of the base model.
+  --skip:  leave out the first N (shuffled) training sequences - continue
+           on data an earlier run did not see.
+  --lr:    peak learning rate (default 2e-5).
 """
 import glob
 import math
@@ -15,15 +19,22 @@ from transformers import AutoModelForCausalLM
 
 ML_HOME = os.environ.get("ML_HOME", os.path.expanduser("~/ml"))
 
-BASE = os.path.join(ML_HOME, "models", "music-medium-800k")
+
+
+def _opt(name, default):
+    return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
+
+
+BASE = _opt("--init", os.path.join(ML_HOME, "models", "music-medium-800k"))
+SKIP = int(_opt("--skip", 0))
 data_dir, out_dir = sys.argv[1], sys.argv[2]
 max_steps = int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3].isdigit() else 1600
 probe = "--probe" in sys.argv
-BATCH, ACCUM, LR, WARMUP = 2, 16, 2e-5, 100
+BATCH, ACCUM, LR, WARMUP = 2, 16, float(_opt("--lr", 2e-5)), 100
 dev = torch.device("mps")
 
 
-def load(paths, limit=None, seed=0):
+def load(paths, limit=None, seed=0, skip=0):
     seqs = []
     for p in paths:
         with open(p) as f:
@@ -32,12 +43,13 @@ def load(paths, limit=None, seed=0):
                 if len(toks) == 1024:
                     seqs.append(toks)
     random.Random(seed).shuffle(seqs)
+    seqs = seqs[skip:]
     return seqs[:limit] if limit else seqs
 
 
 def main():
     need = max_steps * BATCH * ACCUM
-    train = load(sorted(glob.glob(os.path.join(data_dir, "train-*.txt"))), need)
+    train = load(sorted(glob.glob(os.path.join(data_dir, "train-*.txt"))), need, skip=SKIP)
     valid = load([os.path.join(data_dir, "valid.txt")], 64, seed=1)
     print(f"train sequences {len(train)} (need {need}), valid {len(valid)}", flush=True)
 

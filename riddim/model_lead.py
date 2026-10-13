@@ -21,7 +21,7 @@ The model runs in its own Python (see ml/): riddim talks to a worker over
 JSON lines, so this module needs nothing beyond the standard library.
 
     RIDDIM_ML_PYTHON   the ML environment's python  (~/ml/venv/bin/python)
-    RIDDIM_ML_MODEL    the model directory          (newest fine-tune, else base)
+    RIDDIM_ML_MODEL    the model directory          (v2/best, else the first fine-tune, else base)
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ def default_python() -> Path:
 def default_model() -> Path:
     if os.environ.get("RIDDIM_ML_MODEL"):
         return Path(os.environ["RIDDIM_ML_MODEL"])
-    for name in ("ft_dmz/final", "ft_dmz/latest", "music-medium-800k"):
+    for name in ("v2/best", "ft_dmz/final", "ft_dmz/latest", "music-medium-800k"):
         path = ML_HOME / "models" / name
         if (path / "config.json").exists():
             return path
