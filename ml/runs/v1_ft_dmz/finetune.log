@@ -1,0 +1,103 @@
+train sequences 48000 (need 48000), valid 64
+Loading weights:   0%|          | 0/292 [00:00<?, ?it/s]Loading weights: 100%|██████████| 292/292 [00:00<00:00, 86823.82it/s]
+[transformers] [1mGPT2LMHeadModel LOAD REPORT[0m from: /Users/edholland/ml/models/music-medium-800k
+Key                  | Status     |  | 
+---------------------+------------+--+-
+token_out_embeddings | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+step 0 valid loss 0.6106
+step 0 loss 1.0759 lr 2.00e-07 2196 tok/s mem 21.3GB eta 6.2h
+step 20 loss 0.8017 lr 4.20e-06 1890 tok/s mem 24.5GB eta 7.1h
+step 40 loss 0.7884 lr 8.20e-06 1716 tok/s mem 24.5GB eta 7.7h
+step 60 loss 0.9495 lr 1.22e-05 1648 tok/s mem 24.5GB eta 7.9h
+step 80 loss 0.6873 lr 1.62e-05 1610 tok/s mem 24.5GB eta 8.0h
+step 100 loss 0.7142 lr 2.00e-05 1580 tok/s mem 24.5GB eta 8.1h
+step 120 loss 0.8187 lr 2.00e-05 1594 tok/s mem 24.5GB eta 7.9h
+step 140 loss 0.7282 lr 2.00e-05 1651 tok/s mem 24.5GB eta 7.5h
+step 160 loss 0.9080 lr 1.99e-05 1699 tok/s mem 24.5GB eta 7.2h
+step 180 loss 0.8932 lr 1.98e-05 1757 tok/s mem 24.5GB eta 6.8h
+step 200 loss 0.7161 lr 1.97e-05 1810 tok/s mem 24.5GB eta 6.5h
+step 200 valid loss 0.5770
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  3.96it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  3.96it/s]
+step 220 loss 0.7736 lr 1.96e-05 1854 tok/s mem 24.5GB eta 6.3h
+step 240 loss 0.8187 lr 1.95e-05 1894 tok/s mem 24.5GB eta 6.0h
+step 260 loss 0.7464 lr 1.94e-05 1930 tok/s mem 24.5GB eta 5.8h
+step 280 loss 0.6668 lr 1.92e-05 1962 tok/s mem 24.5GB eta 5.7h
+step 300 loss 0.7109 lr 1.90e-05 1990 tok/s mem 24.5GB eta 5.5h
+step 320 loss 0.7205 lr 1.88e-05 2015 tok/s mem 24.5GB eta 5.3h
+step 340 loss 0.7418 lr 1.86e-05 2038 tok/s mem 24.5GB eta 5.2h
+step 360 loss 0.7182 lr 1.83e-05 2059 tok/s mem 24.5GB eta 5.0h
+step 380 loss 0.6931 lr 1.81e-05 2078 tok/s mem 24.5GB eta 4.9h
+step 400 loss 0.6555 lr 1.78e-05 2095 tok/s mem 24.5GB eta 4.8h
+step 400 valid loss 0.5181
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  3.19it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  3.19it/s]
+step 420 loss 0.8183 lr 1.75e-05 2058 tok/s mem 24.5GB eta 4.8h
+step 440 loss 0.7547 lr 1.72e-05 2010 tok/s mem 24.5GB eta 4.8h
+step 460 loss 0.7120 lr 1.69e-05 556 tok/s mem 24.5GB eta 17.0h
+step 480 loss 0.7088 lr 1.66e-05 574 tok/s mem 24.5GB eta 16.2h
+step 500 loss 0.6382 lr 1.62e-05 592 tok/s mem 24.5GB eta 15.4h
+step 520 loss 0.6332 lr 1.59e-05 609 tok/s mem 24.5GB eta 14.6h
+step 540 loss 0.7676 lr 1.55e-05 626 tok/s mem 24.5GB eta 14.0h
+step 560 loss 0.7388 lr 1.51e-05 642 tok/s mem 24.5GB eta 13.3h
+step 580 loss 0.5724 lr 1.47e-05 658 tok/s mem 24.5GB eta 12.7h
+step 600 loss 0.6928 lr 1.43e-05 674 tok/s mem 24.5GB eta 12.1h
+step 600 valid loss 0.4785
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:03<00:00,  3.41s/it]Writing model shards: 100%|██████████| 1/1 [00:03<00:00,  3.41s/it]
+step 620 loss 0.7485 lr 1.39e-05 690 tok/s mem 24.5GB eta 11.6h
+step 640 loss 0.7031 lr 1.35e-05 706 tok/s mem 24.5GB eta 11.1h
+step 660 loss 0.6806 lr 1.31e-05 722 tok/s mem 24.5GB eta 10.6h
+step 680 loss 0.6588 lr 1.27e-05 737 tok/s mem 24.5GB eta 10.1h
+step 700 loss 0.6392 lr 1.22e-05 752 tok/s mem 24.5GB eta 9.7h
+step 720 loss 0.7198 lr 1.18e-05 766 tok/s mem 24.5GB eta 9.3h
+step 740 loss 0.5201 lr 1.13e-05 781 tok/s mem 24.5GB eta 8.8h
+step 760 loss 0.5905 lr 1.09e-05 795 tok/s mem 24.5GB eta 8.5h
+step 780 loss 0.5638 lr 1.04e-05 809 tok/s mem 24.5GB eta 8.1h
+step 800 loss 0.7592 lr 1.00e-05 823 tok/s mem 24.5GB eta 7.7h
+step 800 valid loss 0.4530
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  2.96it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  2.96it/s]
+step 820 loss 0.5951 lr 9.55e-06 836 tok/s mem 24.5GB eta 7.4h
+step 840 loss 0.5680 lr 9.10e-06 850 tok/s mem 24.5GB eta 7.1h
+step 860 loss 0.7826 lr 8.66e-06 863 tok/s mem 24.5GB eta 6.7h
+step 880 loss 0.7526 lr 8.21e-06 876 tok/s mem 24.5GB eta 6.4h
+step 900 loss 0.5917 lr 7.77e-06 888 tok/s mem 24.5GB eta 6.1h
+step 920 loss 0.6198 lr 7.34e-06 901 tok/s mem 24.5GB eta 5.8h
+step 940 loss 0.7257 lr 6.91e-06 913 tok/s mem 24.5GB eta 5.6h
+step 960 loss 0.7898 lr 6.49e-06 925 tok/s mem 24.5GB eta 5.3h
+step 980 loss 0.6893 lr 6.07e-06 937 tok/s mem 24.5GB eta 5.0h
+step 1000 loss 0.7427 lr 5.66e-06 949 tok/s mem 24.5GB eta 4.8h
+step 1000 valid loss 0.4332
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  2.94it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  2.94it/s]
+step 1020 loss 0.6652 lr 5.26e-06 959 tok/s mem 24.5GB eta 4.5h
+step 1040 loss 0.5635 lr 4.87e-06 970 tok/s mem 24.5GB eta 4.3h
+step 1060 loss 0.5881 lr 4.49e-06 981 tok/s mem 24.5GB eta 4.1h
+step 1080 loss 0.5639 lr 4.12e-06 992 tok/s mem 24.5GB eta 3.8h
+step 1100 loss 0.6273 lr 3.77e-06 1002 tok/s mem 24.5GB eta 3.6h
+step 1120 loss 0.6509 lr 3.42e-06 1012 tok/s mem 24.5GB eta 3.4h
+step 1140 loss 0.6817 lr 3.09e-06 1022 tok/s mem 24.5GB eta 3.2h
+step 1160 loss 0.6441 lr 2.77e-06 1032 tok/s mem 24.5GB eta 3.0h
+step 1180 loss 0.5278 lr 2.47e-06 1042 tok/s mem 24.5GB eta 2.8h
+step 1200 loss 0.6688 lr 2.18e-06 1051 tok/s mem 24.5GB eta 2.6h
+step 1200 valid loss 0.4241
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  2.77it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  2.77it/s]
+step 1220 loss 0.6604 lr 1.91e-06 1061 tok/s mem 24.5GB eta 2.4h
+step 1240 loss 0.6475 lr 1.65e-06 1070 tok/s mem 24.5GB eta 2.2h
+step 1260 loss 0.4318 lr 1.42e-06 1079 tok/s mem 24.5GB eta 2.0h
+step 1280 loss 0.5341 lr 1.19e-06 1088 tok/s mem 24.5GB eta 1.8h
+step 1300 loss 0.6530 lr 9.90e-07 1097 tok/s mem 24.5GB eta 1.7h
+step 1320 loss 0.6598 lr 8.05e-07 1106 tok/s mem 24.5GB eta 1.5h
+step 1340 loss 0.5981 lr 6.38e-07 1115 tok/s mem 24.5GB eta 1.3h
+step 1360 loss 0.7283 lr 4.89e-07 1123 tok/s mem 24.5GB eta 1.1h
+step 1380 loss 0.7064 lr 3.60e-07 1132 tok/s mem 24.5GB eta 1.0h
+step 1400 loss 0.5663 lr 2.51e-07 1140 tok/s mem 24.5GB eta 0.8h
+step 1400 valid loss 0.4194
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  3.01it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  3.01it/s]
+step 1420 loss 0.5760 lr 1.61e-07 1148 tok/s mem 24.5GB eta 0.6h
+step 1440 loss 0.5156 lr 9.05e-08 1157 tok/s mem 24.5GB eta 0.5h
+step 1460 loss 0.6056 lr 4.03e-08 1165 tok/s mem 24.5GB eta 0.3h
+step 1480 loss 0.6480 lr 1.01e-08 1174 tok/s mem 24.5GB eta 0.1h
+final valid loss 0.4196
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  3.26it/s]Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  3.26it/s]
+DONE

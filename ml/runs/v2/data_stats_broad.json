@@ -1,0 +1,18 @@
+{
+ "files": 23175,
+ "reasons": {
+  "roles": 6919,
+  "ok": 10444,
+  "tempo": 1193,
+  "duplicate": 4616,
+  "error:TypeError": 3
+ },
+ "full_train": 233604,
+ "lead_train": 56434,
+ "lead_valid": 2490,
+ "full_valid": 10436,
+ "full_train_tokens_M": 239.2,
+ "lead_train_tokens_M": 57.8,
+ "lead_valid_tokens_M": 2.5,
+ "full_valid_tokens_M": 10.7
+}

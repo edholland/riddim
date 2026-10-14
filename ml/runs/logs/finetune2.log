@@ -1,0 +1,10 @@
+train sequences 128000 (need 128000), valid 64
+Loading weights:   0%|          | 0/292 [00:00<?, ?it/s]Loading weights: 100%|██████████| 292/292 [00:00<00:00, 19559.17it/s]
+[transformers] `loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+step 0 valid loss 0.4196
+step 0 loss 0.6398 lr 1.00e-07 2205 tok/s mem 21.3GB eta 16.5h
+step 20 loss 0.5134 lr 2.10e-06 2292 tok/s mem 24.5GB eta 15.8h
+step 40 loss 0.5844 lr 4.10e-06 2292 tok/s mem 24.5GB eta 15.7h
+step 60 loss 0.7035 lr 6.10e-06 2302 tok/s mem 24.5GB eta 15.6h
+/Users/edholland/repos/deluge-firmware/toolchain/current/python/lib/python3.12/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

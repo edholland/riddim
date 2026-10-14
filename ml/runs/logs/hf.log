@@ -1,0 +1,3 @@
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 4 files:  25%|██▌       | 1/4 [00:00<00:00,  3.01it/s]Fetching 4 files:  50%|█████     | 2/4 [00:00<00:00,  4.32it/s]Fetching 4 files: 100%|██████████| 4/4 [02:04<00:00, 38.90s/it]Fetching 4 files: 100%|██████████| 4/4 [02:04<00:00, 31.08s/it]
+HF_DONE /Users/edholland/ml/models/music-medium-800k
