@@ -241,7 +241,7 @@ def cmd_send(args) -> int:
                 return 1
             report = render.send(
                 song, deluge, start_index=args.start_index, mode=args.mode,
-                template=template, template_rows=rows,
+                template=template, template_rows=rows, kits=args.kits,
             )
     except DelugeError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -319,7 +319,7 @@ def cmd_set(args) -> int:
                     print(f"   load template failed: {r.status.name} - {why.get(r.status, '')}")
                     return 1
                 report = render.send(song, deluge, mode=args.mode, template_rows=rows,
-                                     progress=False)
+                                     progress=False, kits=args.kits)
                 print(f"   sent: {report.clips} clips, {report.notes} notes"
                       + (f", {len(report.failures)} failures"
                          if report.failures and not args.dry_run else ""))
@@ -445,6 +445,21 @@ def cmd_vary(args) -> int:
     return 0
 
 
+def cmd_deluge_kits(args) -> int:
+    """The preview's drums as Deluge kits: one-shots and kit presets."""
+    try:
+        from .deluge import kit
+    except ImportError as exc:
+        print(f"deluge-kits needs the audio extra (pip install -e '.[audio]'): {exc}",
+              file=sys.stderr)
+        return 1
+    families = tuple(args.family) if args.family else tuple(kit.KITS)
+    paths = kit.export(args.out, families, seed=args.seed)
+    print(f"wrote {len(paths)} files under {args.out}. Load a kit on a kit clip "
+          f"(or use send --kits with firmware ai-kit-automation).")
+    return 0
+
+
 def cmd_render(args) -> int:
     """Render a song (or a saved params file) to a WAV for auditioning."""
     from .render import audio
@@ -565,6 +580,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-fx-rows", action="store_true",
                    help="drop the crash (row 42) and riser (row 43) notes, for "
                         "a drum kit that has no sounds on those rows")
+    p.add_argument("--kits", action="store_true",
+                   help="load the family's riddim kit (KITS/RIDDIM DUB.XML etc., from "
+                        "`deluge-kits`) on the drum and perc clips and write the kit's "
+                        "desk moves - sweeps, echo throws (firmware ai-kit-automation)")
     p.add_argument("--dry-run", action="store_true",
                    help="run the whole send path without opening a port")
     p.add_argument("--verbose", action="store_true")
@@ -637,9 +656,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--port", default=None)
     p.add_argument("--input", default=None)
     p.add_argument("--verbose", action="store_true")
+    p.add_argument("--kits", action="store_true",
+                   help="load the family's riddim kit (KITS/RIDDIM DUB.XML etc., from "
+                        "`deluge-kits`) on the drum and perc clips and write the kit's "
+                        "desk moves - sweeps, echo throws (firmware ai-kit-automation)")
     p.add_argument("--dry-run", action="store_true",
                    help="compose and walk the set without a Deluge")
     p.set_defaults(func=cmd_set)
+
+    p = subs.add_parser(
+        "deluge-kits", help="write the riddim kits (samples + KITS/*.XML) for the Deluge's card")
+    p.add_argument("out", help="the SD card's top level (e.g. /Volumes/DELUGE), or a folder "
+                               "to copy onto it")
+    p.add_argument("--family", action="append", choices=("dub", "dubstep", "garage"),
+                   help="only this family's kit (repeatable; default all three)")
+    p.add_argument("--seed", type=int, default=1)
+    p.set_defaults(func=cmd_deluge_kits)
 
     p = subs.add_parser(
         "corpus", help="compose a show: many songs, ranked, ordered as a set")

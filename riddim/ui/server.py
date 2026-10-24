@@ -560,7 +560,7 @@ class Handler(BaseHTTPRequestHandler):
                 return {"error": "Deluge did not answer the ping"}
             report = render.send(
                 self.state.song, deluge, mode=body.get("mode", "jam"),
-                template_rows=template, progress=False,
+                template_rows=template, progress=False, kits=bool(body.get("kits")),
             )
         return {"clips": report.clips, "notes": report.notes, "trimmed": report.trimmed,
                 "failures": report.failures}

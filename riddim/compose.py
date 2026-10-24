@@ -199,6 +199,8 @@ def compose(
             role=role, name=role, output=dest.output, channel=dest.channel,
             preset=dest.preset, monophonic=dest.monophonic, comment=dest.comment,
         )
+        if part.output == "kit" and not part.preset:
+            part.preset = profile_mod.KIT_PRESETS.get(prof.family, "")
         part_rng = random.Random(params.seed_for(role))
         material.seeds[role] = params.seed_for(role)
         for section in arrangement.sections:
@@ -213,6 +215,7 @@ def compose(
         elif role == "lead":
             _lead_line(part)
         _add_automation(part, role, arrangement, prof)
+        _add_kit_automation(part, role, arrangement, prof)
         built[role] = part
     for role in used:
         if built[role].notes:
@@ -2252,10 +2255,53 @@ def _add_automation(part: Part, role: str, arrangement: Arrangement, prof: Profi
                 "reverb", section.start_tick, section.length_ticks, 0.55, 0.8))
 
 
+# The kit's desk moves (Deluge kit clips, firmware ai-kit-automation): the
+# same moves the audio preview's desk makes. Values are 0..1 of the Deluge
+# knob. The kit presets set the snare's delay send at about 0.24 in dub, 0.12
+# at 140; a throw opens it, a build runs it away.
+KIT_SWEEP = (0.0, 0.6)          # whole-kit HPF across a build's last two bars
+SNARE_THROW = 0.5               # the backbeat's delay send in a dub throw
+SNARE_RUNAWAY = (0.3, 0.7)      # ... and running away into a drop
+SNARE_THROW_REVERB = 0.45
+
+
+def _add_kit_automation(part: Part, role: str, arrangement: Arrangement, prof: Profile):
+    """The desk on the drums: the high-pass sweep that thins the kit through
+    the end of every build into a drop, the backbeat's echo opened up in a
+    dub throw, and that echo running away over a build's last two bars. Kit
+    clips only - per drum where the move is a channel's, whole-kit where it
+    is the desk's. (Written to the Deluge by firmware ai-kit-automation;
+    older firmware refuses kit automation and the moves are dropped.)"""
+    if part.output != "kit":
+        return
+    sections = arrangement.sections
+    two_bars = 2 * TICKS_PER_BAR
+    backbeat = KIT_ROWS["snare"]
+    for i, section in enumerate(sections):
+        if not section.plays(role):
+            continue
+        following = sections[i + 1] if i + 1 < len(sections) else None
+        end = section.start_tick + section.length_ticks
+        into_drop = (following is not None and following.energy >= 0.8
+                     and section.energy < following.energy)
+        if section.dub_throw and role == "drums":
+            part.automation.append(Automation(
+                "delay", section.start_tick, section.length_ticks, SNARE_THROW, row=backbeat))
+            part.automation.append(Automation(
+                "reverb", section.start_tick, section.length_ticks, SNARE_THROW_REVERB, row=backbeat))
+        if into_drop and section.length_ticks >= two_bars:
+            start = end - two_bars
+            part.automation.append(Automation("hpf", start, two_bars, *KIT_SWEEP))
+            if role == "drums":
+                part.automation.append(Automation(
+                    "delay", start, two_bars, *SNARE_RUNAWAY, row=backbeat))
+
+
 def _performance_notes(prof: Profile, m: Material, arrangement: Arrangement, song: Song):
     throws = [s.name for s in arrangement.sections if s.dub_throw]
     midi_parts = sorted((p for p in song.parts if p.output == "midi"), key=lambda p: p.channel)
-    automated = any(p.automation for p in song.parts)
+    automated = any(p.automation for p in song.parts if p.output == "synth")
+    kit_moves = sum(len(p.automation) for p in song.parts if p.output == "kit")
     channels = ", ".join(f"{p.role} ch{p.channel}" for p in midi_parts)
     return [
         f"Key: {m.scale}. Progression: {m.plan.progression.name} "
@@ -2273,4 +2319,6 @@ def _performance_notes(prof: Profile, m: Material, arrangement: Arrangement, son
          "not a performance." if automated else
          "No filter automation is written - every pitched part is on the rack. "
          "All filter movement is yours; the energy curve is in the notes and mutes."),
-    ]
+    ] + ([f"Kits: {', '.join(sorted({p.preset for p in song.parts if p.output == 'kit' and p.preset}))}"
+          f" - {kit_moves} desk moves on the drums (sweeps into drops, echo throws)."]
+         if kit_moves else [])

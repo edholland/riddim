@@ -41,8 +41,11 @@ class Note:
 class Automation:
     """A parameter ramp or hold on the timeline.
 
-    `param` is one of the Deluge AI SysEx aliases: lpf, resonance, hpf, reverb.
-    Values are 0..1 here and get scaled to the wire format at send time.
+    `param` is one of the Deluge AI SysEx aliases (deluge.sysex.PARAMS):
+    lpf, resonance, hpf, reverb, delay, volume, pan, pitch, decay, release,
+    delay_rate. Values are 0..1 here and get scaled to the wire format at send
+    time. `row` puts the move on one drum of a kit (its kit row note, 36 the
+    bottom); None is the whole clip - a synth, or a kit's "affect entire".
     """
 
     param: str
@@ -50,6 +53,7 @@ class Automation:
     length: int
     start_value: float
     end_value: float | None = None
+    row: int | None = None
 
     @property
     def is_ramp(self) -> bool:

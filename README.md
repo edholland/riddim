@@ -286,7 +286,7 @@ Deluge MIDI out into the Coral, drums on a Deluge kit:
 | `chords` | MIDI ch 2 → rack | Short offbeat skank stabs. Put this channel on the Nostalgia send. |
 | `lead` | MIDI ch 3 → rack | |
 | `pad` | MIDI ch 4 → rack | Long held chords under the stabs. |
-| `drums`, `perc` | Deluge kits | Two separate kits. Kit row 36 is the bottom row. |
+| `drums`, `perc` | Deluge kits | Two separate kits. Kit row 36 is the bottom row. `riddim-cli deluge-kits` makes kits laid out this way. |
 
 Every pitched part leaves the Deluge. One consequence: the firmware only
 accepts param automation on **synth** clips, so with nothing pitched staying
@@ -376,6 +376,43 @@ and the number keeps them in the order you made them - the Deluge lists songs
 alphabetically. The counter lives in `~/.config/riddim/sessions.json`, so it
 carries on after a restart; a name already on the card takes the next number,
 never an overwrite. Needs the save/load firmware (`ai-save-load`).
+
+## Drums on the Deluge: the riddim kits
+
+The preview's drums - the Pearl kit over a synthesised body, the cross-stick,
+the hand percussion, a drum room on every hit, and dub's 70s desk - are made
+into Deluge kits, one per family:
+
+```bash
+./riddim-cli deluge-kits /Volumes/DELUGE     # the card (or any folder to copy onto it)
+```
+
+writes `SAMPLES/RIDDIM/{DUB,140,GARAGE}/*.WAV` and `KITS/RIDDIM DUB.XML`,
+`RIDDIM 140.XML`, `RIDDIM GARAGE.XML`. Every kit has the same fifteen rows in
+riddim's order (row 36 at the bottom: kick, snare, hat, rim, perc, shaker,
+crash, riser, conga lo/hi, bongo, block, tamb, tom lo/hi), so any kit clip
+plays any riddim drum or perc part. Baked into the samples: the room and dub's
+desk. Left live on the Deluge, where a knob or automation can reach them:
+each row's level and pan, its reverb send, its own tape-style delay synced to
+a dotted eighth (the preview's dub echo), a velocity-to-level cable, and a
+little random pitch per hit for the round-robin the Deluge does not have. The
+hat plays in CUT mode, so the note's length opens or closes it as in the
+preview; the riser time-stretches to whatever length the build gives it.
+
+**Firmware branch `ai-kit-automation`** (on top of `ai-save-load`) adds:
+
+| AI SysEx | what |
+|---|---|
+| 6 `SET_CLIP_PARAM_AUTOMATION` | now also on kit clips: moves the whole kit (affect-entire) |
+| 22 `SET_ROW_PARAM_AUTOMATION` | automates one kit row's sound |
+| 23 `LOAD_CURRENT_KIT_PRESET` | loads `KITS/<name>.XML` onto the current kit clip |
+
+and param aliases 4-10: delay, volume, pan, pitch, decay, release, delay_rate.
+With it, `send --kits` / `set --kits` (and **→ deluge** in the UI, which asks)
+load the family's kit on each song's drum and perc clips and write the kit's
+desk moves: the whole-kit high-pass sweep across the last two bars of every
+build into a drop, the backbeat's echo opened up in a dub throw, and running
+away into each drop. Without `--kits` nothing changes for older firmware.
 
 ## Template songs
 

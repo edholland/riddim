@@ -258,25 +258,27 @@ def test_energy_drives_density():
     assert loud_rate > quiet_rate
 
 
-def test_automation_only_on_synth_parts(songs):
-    """The firmware returns BAD_PARAM for param automation on anything that is
-    not a synth clip, because the filter being automated belongs to the
-    Deluge - a part routed out to the Coral has no Deluge filter at all."""
+def test_automation_only_on_deluge_instruments(songs):
+    """Param automation moves a Deluge instrument - a synth, or a kit (firmware
+    ai-kit-automation; written only by `send --kits`). A part routed out to
+    the Coral has no Deluge filter at all, so a MIDI clip never carries any."""
     for name, song in songs.items():
         for part in song.parts:
-            if part.output != "synth":
+            if part.output not in ("synth", "kit"):
                 assert not part.automation, (
                     f"{name}/{part.role}: automation on a {part.output} clip "
                     f"would be rejected by the firmware"
                 )
 
 
-def test_default_rig_writes_no_automation():
+def test_default_rig_writes_no_synth_automation():
     """With every pitched part going out to the rack there is no Deluge synth
-    to automate, so nothing should be written. All filter movement is played."""
+    to automate, so no filter moves are written for them - all of that is
+    played. Only the kits, which stay on the Deluge, carry desk moves."""
     song = compose("roots_dub", seed=7, rig=Rig())
     assert all(p.output in ("midi", "kit") for p in song.parts)
-    assert not any(p.automation for p in song.parts)
+    assert not any(p.automation for p in song.parts if p.output != "kit")
+    assert any(p.automation for p in song.parts if p.output == "kit")
 
 
 def test_all_deluge_rig_does_write_automation():

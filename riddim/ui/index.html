@@ -925,7 +925,10 @@ $('send').onclick=async()=>{
   const rows=prompt('Template rows (row 1 = top of screen), or blank to create new instruments:', 'sub=1,chords=2,lead=3,pad=4,drums=5,perc=6');
   if(rows===null) return;
   status('sending to '+port+'…');
-  const r=await api('/api/send',{port, template_rows:rows||null, mode:'jam'});
+  let kits=false; try { kits=localStorage.getItem('riddim.kits')==='1'; } catch(e) {}
+  kits=confirm(`Load the riddim kits and write the drum desk moves (sweeps, echo throws)?\n\nNeeds firmware ai-kit-automation and the kits on the card (riddim-cli deluge-kits).\nOK = yes, Cancel = keep the template's kits.${kits?'\n(last time: yes)':''}`);
+  try { localStorage.setItem('riddim.kits', kits?'1':'0'); } catch(e) {}
+  const r=await api('/api/send',{port, template_rows:rows||null, mode:'jam', kits});
   status(r.error?r.error:`sent: ${r.clips} clips, ${r.notes} notes, ${r.trimmed} trimmed${r.failures.length?', '+r.failures.length+' failures':''}`, !!r.error);
 };
 

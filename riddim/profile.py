@@ -260,6 +260,11 @@ DARK_GARAGE = Profile(
     deluge_swing=55,
 )
 
+# The Deluge kit preset each family's drums play (deluge/kit.py makes them):
+# the same fifteen rows in riddim's order, the family's own sound.
+KIT_PRESETS = {"dub": "RIDDIM DUB", "dubstep": "RIDDIM 140", "garage": "RIDDIM GARAGE"}
+
+
 PROFILES: dict[str, Profile] = {
     p.name: p
     for p in (ROOTS_DUB, STEPPERS_DUB, DUBSTEP_140, DUBBY_HALFTIME,

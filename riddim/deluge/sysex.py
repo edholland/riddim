@@ -40,6 +40,8 @@ class Command(IntEnum):
     SAVE_SONG = 19
     LOAD_SONG = 20
     ARM_SECTION = 21
+    SET_ROW_PARAM_AUTOMATION = 22
+    LOAD_CURRENT_KIT_PRESET = 23
 
 
 class Status(IntEnum):
@@ -69,8 +71,15 @@ class OutputType(IntEnum):
     AUDIO = 4
 
 
-# SET_CLIP_PARAM_AUTOMATION param aliases, as understood by the firmware.
-PARAMS = {"lpf": 0, "resonance": 1, "hpf": 2, "reverb": 3}
+# SET_CLIP_PARAM_AUTOMATION / SET_ROW_PARAM_AUTOMATION param aliases, as
+# understood by the firmware. The first four are every firmware's; the rest,
+# and automation on kit clips at all, need branch ai-kit-automation. On a
+# synth clip they move the synth; on a kit clip, the whole kit (its "affect
+# entire" effects); on a kit row, that drum's own sound. decay and release
+# are sounds' only (a synth or a row), not the whole kit's.
+PARAMS = {"lpf": 0, "resonance": 1, "hpf": 2, "reverb": 3, "delay": 4,
+          "volume": 5, "pan": 6, "pitch": 7, "decay": 8, "release": 9,
+          "delay_rate": 10}
 
 # SET_ROW_EXPRESSION dimensions.
 EXPRESSION = {"pitch": 0, "timbre": 1, "pressure": 2}
@@ -293,6 +302,39 @@ def set_param_automation(
     else:
         body = head + enc14(start) + enc14(length) + enc14(start_raw) + enc14(end_raw)
     return frame(body)
+
+
+def set_row_param_automation(
+    note: int,
+    param: str,
+    start: int,
+    length: int,
+    start_value: float,
+    end_value: float | None = None,
+) -> list[int]:
+    """Automate one drum of the current kit clip (custom firmware 22):
+    `note` is the kit row (36 the bottom row), the rest as
+    `set_param_automation` - a hold, or a ramp when `end_value` is given."""
+    if param not in PARAMS:
+        raise ValueError(
+            f"unknown param {param!r}; known: {', '.join(sorted(PARAMS))}"
+        )
+    if not 0 <= note <= 127:
+        raise ValueError(f"note {note} out of range")
+    shape = 1 if end_value is not None else 0
+    start_raw = scale_14(start_value)
+    end_raw = scale_14(end_value if end_value is not None else start_value)
+    head = [Command.SET_ROW_PARAM_AUTOMATION, note & 0x7F, PARAMS[param], shape]
+    if start > MAX_14 or length > MAX_14:
+        body = head + enc21(start) + enc21(length) + enc14(start_raw) + enc14(end_raw)
+    else:
+        body = head + enc14(start) + enc14(length) + enc14(start_raw) + enc14(end_raw)
+    return frame(body)
+
+
+def load_kit_preset(preset: str) -> list[int]:
+    """Load KITS/<preset>.XML onto the current kit clip (custom firmware 23)."""
+    return frame([Command.LOAD_CURRENT_KIT_PRESET] + ascii7(preset, limit=64))
 
 
 def set_row_expression(

@@ -69,6 +69,7 @@ def send(
     template: dict[str, int] | None = None,
     template_rows: dict[str, int] | None = None,
     progress: bool = True,
+    kits: bool = False,
 ) -> RenderReport:
     """Write `song` into the Deluge session.
 
@@ -85,6 +86,13 @@ def send(
 
     `start_index` defaults to the end of the current song, so this appends
     rather than assuming it is writing into an empty one.
+
+    `kits` loads each kit part's preset (KITS/RIDDIM DUB.XML and the like,
+    made by `riddim-cli deluge-kits`) onto that part's first clip - after
+    cloning it from a template, if there is one - and every later clip of the
+    part clones from that one, so they share the loaded kit. Needs firmware
+    ai-kit-automation (LOAD_CURRENT_KIT_PRESET); a refusal is reported and
+    the part keeps the template's kit.
     """
     if song.arrangement is None:
         raise ValueError("song has no arrangement; nothing to lay out")
@@ -129,6 +137,7 @@ def send(
     first_clip_for_role: dict[str, int] = dict(template)
     # index -> the length the clip is supposed to be, for the trim pass.
     intended_length: dict[int, int] = {}
+    kits_loaded: set[str] = set()
 
     for section_number, section in enumerate(sections):
         length = section.length_ticks
@@ -170,13 +179,23 @@ def send(
 
             if action == "create" and part.preset and part.output == "synth":
                 deluge.preset(part.preset)
+            if (kits and part.output == "kit" and part.preset
+                    and part.role not in kits_loaded):
+                kits_loaded.add(part.role)
+                if deluge.kit_preset(part.preset):
+                    # The loaded kit is this clip's own: the rest of the
+                    # part clones from here, not from the template.
+                    first_clip_for_role[part.role] = index
+                else:
+                    report.failures.append(f"kit {part.preset} on {part.role}")
 
             written = _write_notes(
                 deluge, notes, section.start_tick, length, report,
                 label=f"{part.role}/{section.name}",
             )
             report.notes += written
-            report.automation += _write_automation(deluge, part, section, report)
+            if part.output != "kit" or kits:
+                report.automation += _write_automation(deluge, part, section, report)
             report.clips += 1
             intended_length[index] = length
 
@@ -374,9 +393,15 @@ def _write_automation(deluge: Deluge, part: Part, section, report) -> int:
         end = min(section.length_ticks, auto.start + auto.length - section.start_tick)
         if end - start <= 0:
             continue
-        if deluge.automation(
-            auto.param, start, end - start, auto.start_value, auto.end_value
-        ):
+        if auto.row is not None:
+            ok = deluge.row_automation(
+                auto.row, auto.param, start, end - start, auto.start_value, auto.end_value
+            )
+        else:
+            ok = deluge.automation(
+                auto.param, start, end - start, auto.start_value, auto.end_value
+            )
+        if ok:
             written += 1
         else:
             report.failures.append(f"automation {auto.param} @{start}")

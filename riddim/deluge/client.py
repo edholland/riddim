@@ -299,6 +299,18 @@ class Deluge:
             sysex.Command.SET_CLIP_PARAM_AUTOMATION, f"automation {param}",
         )
 
+    def row_automation(self, note, param, start, length, start_value, end_value=None) -> bool:
+        return self.command(
+            sysex.set_row_param_automation(note, param, start, length, start_value, end_value),
+            sysex.Command.SET_ROW_PARAM_AUTOMATION, f"row {note} automation {param}",
+        )
+
+    def kit_preset(self, text: str) -> bool:
+        return self.command(
+            sysex.load_kit_preset(text), sysex.Command.LOAD_CURRENT_KIT_PRESET,
+            f"kit {text}",
+        )
+
     def section_repeat(self, section, repeats=0, loop=False, start=None, end=None):
         return self.command(
             sysex.set_section_repeat(section, repeats, loop, start, end),
