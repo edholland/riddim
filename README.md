@@ -190,6 +190,35 @@ of the non-140 profiles and the melodic parts.
 **Kit rows (perc kit).** The hand percussion uses rows 44 conga low, 45
 conga high, 46 bongo, 47 woodblock, 48 tambourine, 49 tom low, 50 tom high.
 
+### Later rounds, each measured against its own genre's records
+
+The references grew to 433 tracks - DMZ, Tempa, Big Apple, Hyperdub and
+others; ~150 UK garage (Oxide & Neutrino, Mis-Teeq, Sunship, speed garage);
+131 roots and steppers dub (Pablo and Tubby, Black Ark, Scientist, Prince
+Jammy, Mad Professor and Shaka, Twilight Circus) - all unofficial uploads,
+kept for study only.
+
+- **Swing on the Deluge, and in the preview.** `Profile.deluge_swing` is
+  each feel's swing in the Deluge's own units (UK garage 58, dark garage 55,
+  dubstep 53, half-time 52, dub straight): set it on the Deluge. The
+  preview applies it the same way, every off-beat sixteenth moved later.
+- **The desk pulls the bass.** The dub records drop their bass about 1.2
+  times every 32 bars (out 6-10% of the time). `dynamics.bass_drops` mutes
+  the sub for a bar on a phrase's turn, slammed back on the next downbeat -
+  heavy in dub, some in garage, none at 140. Words: `pull the bass`,
+  `more bass drops`, `fewer bass drops`.
+- **A dub version is a record side**: ~61-70 bars on the references, so dub
+  songs run three to four and a half minutes, with no more drops than fit.
+- **The one-drop's backbeat is a cross-stick.** In dub the preview plays
+  the snare row as a side-stick rimshot: the judge's real-record score on
+  dub drops went 0.70 -> 0.97, and "roots reggae" 0.39 -> 0.52.
+- **The melody sits back further in dub**, and the pad at half level
+  everywhere - the pad is what made every genre sound "new age".
+- **Tried and left out**, because they measured worse: a synthesised
+  garage vocal and garage bass, a brighter garage mix, a lighter master.
+  Synthesis does not fool the judge - garage's missing piece is real
+  singing, which wants licensed vocal samples.
+
 ## Why it is built this way
 
 Four things are hard about writing this music, and each maps to one module:
