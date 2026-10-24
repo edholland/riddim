@@ -694,7 +694,6 @@ def develop(progression: Progression, scale: Scale, rng: random.Random) -> Progr
             d = dev[j] % size
             if j == len(dev) - 1 and d != 4:
                 options = [4]                     # the loop's last chord leans home
-                majors.add(4)
             elif j == len(dev) - 1:
                 options = [5]                     # deceptive: V becomes bVI
             else:
@@ -706,8 +705,14 @@ def develop(progression: Progression, scale: Scale, rng: random.Random) -> Progr
                        and (j + 1 >= len(dev) or o != dev[j + 1]) and o not in (0, d)]
             options = options[:2] if j < len(dev) - 1 else options[:1]
             if options:
-                dev[j] = rng.choice(options)
+                pick = rng.choice(options)
+                dev[j] = pick
                 made += 1
+                if j == len(dev) - 1 and pick == 4:
+                    # The home substitute wants its major third - and only
+                    # where it was actually installed: the mark is per degree,
+                    # so an iv elsewhere in the loop must stay minor.
+                    majors.add(4)
     all_degs = tuple(degs) + tuple(dev)
     maj = tuple(sorted(d for d in majors if d in all_degs))
     names = []

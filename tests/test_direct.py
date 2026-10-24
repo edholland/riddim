@@ -96,6 +96,20 @@ def test_phrase_parsing_with_numbers():
     assert direct("shorter by 8 bars") == [Op("_total_bars", delta=-8)]
 
 
+def test_longer_and_shorter_move_the_length():
+    """A word changes the song's length - the sections rescale, keeping the
+    template's shape - rather than silently doing nothing."""
+    song = _song()
+    base = song.bars
+    for text, way in (("longer", 1), ("shorter", -1),
+                      ("longer by 16", 1), ("shorter by 16", -1)):
+        moved = apply_ops(song.params, direct(text, song.params))
+        new_total = sum(s.bars for s in moved.sections)
+        assert (new_total - base) * way > 0
+        recomposed = compose(params=moved)
+        assert recomposed.bars * way > base * way
+
+
 def test_mode_intent_keeps_the_tonic():
     """The mode is a word like any other; it moves the mode, not the key."""
     assert direct("phrygian") == [Op("mode", to="phrygian")]

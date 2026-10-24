@@ -170,6 +170,26 @@ def _sub_defaults(group: str):
     return None
 
 
+def _retotal(sections, total: int):
+    """Rescale the explicit sections toward `total` bars, keeping each
+    section's share of the song. The total is soft, like the generator's
+    fit: a peak keeps sixteen bars, everything else eight - sections that
+    are already at their floor do not shrink further."""
+    from dataclasses import replace
+
+    from .arrange.structure import kind_of
+
+    current = sum(s.bars for s in sections)
+    if current <= 0:
+        return sections
+    out = []
+    for s in sections:
+        floor = 16 if kind_of(s) == "peak" else 8
+        share = int(round(s.bars * total / current / 4)) * 4
+        out.append(replace(s, bars=max(floor, share)))
+    return out
+
+
 def _parts(path: str):
     if "." in path:
         group, leaf = path.split(".", 1)
@@ -216,6 +236,15 @@ def read_knob(params: SongParams, path: str) -> float:
     """The current value of a knob. `key` resolves to the tonic pitch class."""
     if path == "key":
         return parse_key(params.key or "G minor").root % 12
+    if path == "_total_bars":
+        # The song's true length: the explicit sections, the structure's
+        # target, or the default - a bare "longer" moves from wherever the
+        # song is now.
+        if params.sections:
+            return float(sum(s.bars for s in params.sections))
+        if params.structure is not None:
+            return float(params.structure.total_bars)
+        return float(_sub_defaults("structure").total_bars)
     if path in _CHOICES:
         name = choice_value(params, path)
         choices = _CHOICES[path]
@@ -243,6 +272,16 @@ def set_knob(params: SongParams, path: str, value: float) -> None:
         _set_key_root(params, int(round(value)))
         return
     from dataclasses import replace
+    if path == "_total_bars":
+        st = params.structure or _sub_defaults("structure")
+        total = max(16, int(round(value)))
+        if params.sections:
+            # The sections are the song's length; rescale them, keeping the
+            # template's shape, or the recompose would ignore the target.
+            params.sections = _retotal(params.sections, total)
+            total = sum(s.bars for s in params.sections)
+        params.structure = replace(st, total_bars=total)
+        return
     if path in _CHOICES:
         choices = _CHOICES[path]
         if isinstance(value, str):

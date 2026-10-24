@@ -643,3 +643,15 @@ def test_fill_shapes_follow_energy():
         max(h.velocity for h in high["snare"].hits)
     assert [h.step for h in high["rim"].hits] == [14.0]
     assert all(h.step >= 8 for h in high["rim"].hits)
+
+
+def test_develop_marks_four_major_only_where_it_installs_one():
+    """The home substitute wants a major third, and only where it was actually
+    installed: the mark is per degree, so an iv elsewhere in the loop must
+    keep its minor third."""
+    scale = Scale(40, "minor")
+    for degs in ((4, 0), (0, 2)):
+        prog = harmony.Progression("test", degs)
+        for seed in range(50):
+            dev = harmony.develop(prog, scale, random.Random(seed))
+            assert (4 in dev.major_degrees) == (dev.degrees[-1] == 4)
