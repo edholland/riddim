@@ -15,6 +15,7 @@ fetched straight from the archive with its metadata:
 
     python ml/collect_refs.py refs.txt                 # into ./references
     python ml/collect_refs.py refs.txt --out ~/refs
+    python ml/collect_refs.py refs.txt --prefer-mp3   # the archive's MP3s, not FLAC/WAV
 
 refs.txt:
     https://www.youtube.com/watch?v=7W-qIw4nnow   dubstep dmz
@@ -36,6 +37,7 @@ import urllib.parse
 import urllib.request
 
 AUDIO_EXT = (".mp3", ".flac", ".ogg", ".m4a", ".wav", ".aiff", ".aif")
+PREFER_MP3 = "--prefer-mp3" in sys.argv
 
 
 def _get(url, path=None, tries=4):
@@ -64,6 +66,21 @@ def _get_once(url, path=None):
     os.replace(path + ".part", path)
 
 
+def audible(path):
+    """False for a file that decodes to digital silence (some uploads are
+    empty transfers) - None when ffmpeg is not there to ask."""
+    try:
+        out = subprocess.run(["ffmpeg", "-hide_banner", "-t", "90", "-i", path, "-af",
+                              "volumedetect", "-f", "null", "-"],
+                             capture_output=True, text=True, timeout=120).stderr
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    for line in out.splitlines():
+        if "max_volume:" in line:
+            return float(line.split("max_volume:")[1].split()[0]) > -60.0
+    return None
+
+
 def archive_item(url, tags, audio, seen, write):
     """Every audio file of an archive.org item, with the item's metadata.
     Items without a licence are marked so: fine to study, not clean data."""
@@ -74,6 +91,12 @@ def archive_item(url, tags, audio, seen, write):
     # The archive derives MP3s from what was uploaded: take the originals
     # only, so a FLAC album is not fetched twice.
     originals = [f for f in files if f.get("source") != "derivative"]
+    if PREFER_MP3:
+        # Lossless is wasted on listening: take the archive's MP3s where
+        # it made them, the originals only where it did not.
+        mp3s = [f for f in files if f["name"].lower().endswith(".mp3")]
+        stems = {os.path.splitext(f["name"])[0] for f in mp3s}
+        originals = mp3s + [f for f in originals if os.path.splitext(f["name"])[0] not in stems]
     for f in originals or files:
         name = f["name"]
         rid = "ia_" + hashlib.sha1(f"{item}/{name}".encode()).hexdigest()[:12]
@@ -95,7 +118,8 @@ def archive_item(url, tags, audio, seen, write):
                "license": m.get("licenseurl") or "none stated (unofficial upload - study only)",
                "tags": tags, "file": os.path.join("audio", rid + ext),
                "bytes": int(f.get("size", 0)), "md5": f.get("md5"),
-               "fetched": time.strftime("%Y-%m-%dT%H:%M:%S")})
+               "fetched": time.strftime("%Y-%m-%dT%H:%M:%S"),
+               "silent": audible(dest) is False})
         seen.add(rid)
         print(f"got {rid}  {name}")
         time.sleep(1)

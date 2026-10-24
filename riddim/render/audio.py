@@ -82,6 +82,27 @@ TREAT_PAD = True
 # record is the loudest tell there is (measured: the same drop with its lead
 # 10 dB down goes from 0.12 to 0.64 "real record" with the judge).
 LEAD_LEVEL = 0.4
+# The Deluge's swing, applied as it applies it (profile.deluge_swing).
+SWING = True
+# Master: bus glue and soft clip. (A lighter master - nearer the records'
+# 13-15 dB crest - measured worse with the judge: kept as it was.)
+MASTER = {"thresh": -14.0, "ratio": 2.5, "makeup": 4.0, "clip": 1.3}
+
+
+def _swing_ticks(tick: float, amount: int) -> float:
+    """A Deluge-style swing as a time warp inside each eighth: the off-beat
+    sixteenth lands `amount`% of the way through the eighth (50 straight),
+    everything between moved in proportion, the beats untouched."""
+    if amount == 50:
+        return float(tick)
+    eighth = 2 * TICKS_PER_16TH
+    base = (tick // eighth) * eighth
+    pos = tick - base
+    mid = eighth * amount / 100.0
+    half = eighth / 2.0
+    if pos <= half:
+        return base + pos * mid / half
+    return base + mid + (pos - half) * (eighth - mid) / half
 
 # Per-part stereo position (-1 left .. 1 right) and level.
 PAN = {"sub": 0.0, "bass": 0.0, "drums": 0.0, "perc": 0.45, "chords": -0.3, "pad": 0.0, "lead": 0.12}
@@ -543,6 +564,15 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     is140 = song.bpm >= 120 or "dubstep" in prof
     garage = "garage" in prof
     rnd = _Rand((song.seed or 0) * 7919 + 13)
+    from .. import profile as _profile_mod
+    try:
+        swing = _profile_mod.get(prof).deluge_swing if (SWING and prof) else 50
+    except Exception:      # noqa: BLE001 - an unknown profile renders straight
+        swing = 50
+
+    def at(tick):
+        """Sample index of a tick, swung as the Deluge would play it."""
+        return int((_swing_ticks(tick, swing) - w0) * spt * SR)
 
     stems = {r: np.zeros((n, 2), dtype=np.float32) for r in PAN}
     kick_env = np.zeros(n, dtype=np.float32)
@@ -555,7 +585,7 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
         for note in song.notes_with_coda(part):
             if window is not None and not (w0 <= note.start < window[1]):
                 continue
-            start = int((note.start - w0) * spt * SR)
+            start = at(note.start)
             dur = note.length * spt
             if part.output == "kit" and note.midi in HANDS:
                 name, p, g = HANDS[note.midi]
@@ -592,7 +622,8 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                 _add(buf, start, _strings(note.midi, dur, note.velocity, rnd))
                 continue
             glide = prev.midi if (prev is not None and prev.end > note.start) else None
-            x = (_synth_lead if is140 else _reed)(note.midi, dur, note.velocity, rnd, glide)
+            voice = _synth_lead if is140 else _reed
+            x = voice(note.midi, dur, note.velocity, rnd, glide)
             _add(buf, start, _pan(x, PAN["lead"]))
             prev = note
 
@@ -645,16 +676,16 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
         for note in song.notes_with_coda(song.part("drums")):
             if window is not None and not (w0 <= note.start < window[1]):
                 continue
-            at = int((note.start - w0) * spt * SR)
+            at_ = at(note.start)
             if note.midi in (SNARE, RIM):
-                _add(sn, at, _drum(note.midi, note.length * spt, note.velocity, rnd, garage)
+                _add(sn, at_, _drum(note.midi, note.length * spt, note.velocity, rnd, garage)
                      * (1.0 if note.midi == SNARE else 0.4))
             elif note.midi in (RISER, CRASH):
-                _add(fx, at, _drum(note.midi, note.length * spt, note.velocity, rnd))
+                _add(fx, at_, _drum(note.midi, note.length * spt, note.velocity, rnd))
         for perc_part in [p for p in song.parts if p.role == "perc"]:
             for note in song.notes_with_coda(perc_part):
                 if note.midi in (49, 50) and (window is None or w0 <= note.start < window[1]):
-                    _add(fx, int((note.start - w0) * spt * SR),
+                    _add(fx, at(note.start),
                          _play(HANDS[note.midi][0], 1.0, 0.6 * _vel(note.velocity)))
         plate_send += np.stack([sn, sn], axis=1)
         hall_send += np.stack([fx, fx], axis=1) * 0.5
@@ -693,9 +724,11 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     # Master: glue, tape, a soft ceiling.
     mix = _hp(music, 24)
     mix /= (np.max(np.abs(mix)) or 1.0)
-    mix = _compress(mix, -14.0, 2.5, attack=0.015, release=0.2, makeup_db=4.0)
+    mix = _compress(mix, MASTER["thresh"], MASTER["ratio"], attack=0.015, release=0.2,
+                    makeup_db=MASTER["makeup"])
     mix = _tape(mix, rnd)
-    mix = np.tanh(1.3 * mix / (np.max(np.abs(mix)) or 1.0)) / np.tanh(1.3)
+    c = MASTER["clip"]
+    mix = np.tanh(c * mix / (np.max(np.abs(mix)) or 1.0)) / np.tanh(c)
     mix *= 0.89 / (np.max(np.abs(mix)) or 1.0)
     return mix[lead_in:].astype(np.float32)
 

@@ -29,4 +29,23 @@ https://archive.org/details/rephlex-grime   grime rephlex
 https://archive.org/details/rephlex-grime-2   grime rephlex
 # UK garage
 https://archive.org/details/various-artists-vital-uk-garage   uk_garage
-https://archive.org/details/wookie-battle   uk_garage wookie
+https://archive.org/details/oxideneutrino2stepzahead   uk_garage oxide_neutrino
+https://archive.org/details/mis-teeq-eye-candy-cd-rip   uk_garage misteeq
+https://archive.org/details/04-04-b-15-project-girls-like-us-sharp-house-rage-mix   uk_garage b15
+https://archive.org/details/jhelisa-friendly-pressure-1998-sunship-remixes-cd-rip   uk_garage sunship
+https://archive.org/details/02-fragma-tocas-miracle-2-step-remix   uk_garage
+https://archive.org/details/speed-garage-volume-2-fresh-fruit   uk_garage speed_garage
+# Dub: roots (JA 70s-80s) and UK steppers (90s)
+https://archive.org/details/augustus-pablo-king-tubbys-meets-rockers-uptown   roots_dub pablo tubby
+https://archive.org/details/augustus-pablo-skanking-easy-cd-2   roots_dub pablo
+https://archive.org/details/lee-perry-black-ark-in-dub   roots_dub perry
+https://archive.org/details/KingTubbyPrinceJammyScientist-FirstSecondThirdGenerat   roots_dub tubby jammy scientist
+https://archive.org/details/08-your-teeth-in-my-neck   roots_dub scientist
+https://archive.org/details/scientist-v-the-professor-dub-duel-at-king-tubbys   roots_dub scientist madprof
+https://archive.org/details/fatman-presents-prince-jammy-vs-crucial-bunny-dub-contest   roots_dub jammy
+https://archive.org/details/mad-professor-dub-me-crazy-part-4-escape-to-the-asylum-of-dub   roots_dub madprof
+https://archive.org/details/mad-professor-a-caribbean-taste-of-technology   roots_dub madprof
+https://archive.org/details/mad-professor-jah-shaka-new-decade-of-dub   steppers_dub madprof shaka
+https://archive.org/details/mad-professor-anti-racist-dub-broadcast   steppers_dub madprof
+https://archive.org/details/03-heavy   steppers_dub twilightcircus
+https://archive.org/details/dub-syndicate-stoned-immaculate   steppers_dub dubsyndicate

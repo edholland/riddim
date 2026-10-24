@@ -61,6 +61,10 @@ class Profile:
     family: str = "dub"
     # Swing is set on the Deluge, never written into the notes.
     swing: float = 0.0
+    # The Deluge's swing for this feel (50 = straight, as the Deluge shows
+    # it): every off-beat sixteenth moved later together. Not in the notes -
+    # set it on the Deluge; the audio preview applies it the same way.
+    deluge_swing: int = 50
     # The tempo is drawn per song from this range - the same feel at 68 and
     # at 76 is two different records.
     bpm_range: tuple[int, int] = (0, 0)
@@ -171,6 +175,7 @@ DUBSTEP_140 = Profile(
     beat_steps=8,
     note="Written at 140, felt at 70. Kick on 1, snare on 3, and the bar is "
          "mostly empty so the sub can be the whole event.",
+    deluge_swing=53,
 )
 
 DUBBY_HALFTIME = Profile(
@@ -190,6 +195,7 @@ DUBBY_HALFTIME = Profile(
     section_template="dub",
     beat_steps=8,
     note="Between the two. Heavy, slow, trip-hop adjacent.",
+    deluge_swing=52,
 )
 
 UK_GARAGE = Profile(
@@ -218,6 +224,7 @@ UK_GARAGE = Profile(
     note="2-step at 132: kick on 1 and the & of 3, hats skipping into the "
          "backbeat, minor-ninth stabs dancing round the kick, a bass that "
          "bounces with it and a chopped hook over the top.",
+    deluge_swing=58,
 )
 
 DARK_GARAGE = Profile(
@@ -243,6 +250,7 @@ DARK_GARAGE = Profile(
     skank_length=0.6,
     note="Proto-dubstep at 138: the 2-step kit, a deep sub and dark "
          "harmony - the garage record that turned into dubstep.",
+    deluge_swing=55,
 )
 
 PROFILES: dict[str, Profile] = {

@@ -334,6 +334,22 @@ def test_audio_preview_renders_a_window():
     assert 0.5 < abs(data).max() <= 1.0
 
 
+def test_preview_swing_is_the_deluges():
+    """Swing as the Deluge plays it: the beats stay put, the off-beat
+    sixteenth lands `amount`% through its eighth, and nothing reorders."""
+    pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    from riddim.render.audio import _swing_ticks
+    from riddim.units import TICKS_PER_16TH as T
+    for amount in (50, 55, 58, 66):
+        assert _swing_ticks(0, amount) == 0 and _swing_ticks(2 * T, amount) == 2 * T
+        assert _swing_ticks(T, amount) == pytest.approx(2 * T * amount / 100.0)
+        ticks = [_swing_ticks(k, amount) for k in range(0, 8 * T)]
+        assert ticks == sorted(ticks)
+    from riddim import profile
+    assert profile.get("uk_garage").deluge_swing > profile.get("roots_dub").deluge_swing == 50
+
+
 def test_audio_preview_renders():
     pytest.importorskip("numpy")
     pytest.importorskip("scipy")
