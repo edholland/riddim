@@ -867,9 +867,13 @@ def params_for_family(family: str, rng, bpm: int | None = None) -> StructurePara
     # ~61-70 bars at ~70 bpm, three and a half to four minutes.
     total = _bars_for_minutes(rng, bpm, 3.0, 4.4, (64, 72, 72, 80))
     cold = rng.random() < 0.12
+    # A drop cycle (build, peak, release) is ~32 bars: no more drops than
+    # the side has room for, or the song overruns its length (sections do
+    # not shrink below eight bars, peaks below sixteen).
+    most = max(2 if cold else 1, int(round((total - 16) / 32)))
     return StructureParams(
         total_bars=total,
-        peaks=max(2 if cold else 1, rng.choices((1, 2, 3), (2, 4, 1))[0]),
+        peaks=min(most, max(2 if cold else 1, rng.choices((1, 2, 3), (2, 4, 1))[0])),
         intro=not cold and rng.random() < 0.8,
         cold_open=cold,
         release=rng.choice(("dub_out", "dub_out", "mixed")),

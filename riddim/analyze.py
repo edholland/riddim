@@ -173,7 +173,17 @@ def analyze(song: Song) -> Report:
     m["tension"] = scored / drops if drops else 0.5
 
     minutes = song.arrangement.duration_seconds(song.bpm) / 60.0
-    m["length"] = 1.0 if 3.4 <= minutes <= 6.5 else max(0.0, 1.0 - abs(minutes - 4.5) / 4.0)
+    # A dub version is a record side - three to four and a half minutes on
+    # the references; a club record runs longer.
+    family = ""
+    if song.params is not None:
+        from . import profile as _profile
+        try:
+            family = _profile.get(song.params.profile).family
+        except (KeyError, ValueError):
+            family = ""
+    lo, hi, mid = (2.9, 5.0, 3.8) if family == "dub" else (3.4, 6.5, 4.5)
+    m["length"] = 1.0 if lo <= minutes <= hi else max(0.0, 1.0 - abs(minutes - mid) / 4.0)
 
     # Presence: the hook heard in peaks, by the lead or by the bass taking it.
     pk = [s for s in secs if structure.kind_of(s) == "peak"]
