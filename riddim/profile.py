@@ -74,6 +74,11 @@ class Profile:
     # drone or a two-chord rock (i-bII, i-bVI, i-V) and the sub is the
     # event - a four-chord anthem loop under it is a trance record.
     drop_chords: int = 4
+    # What the pad track plays: "held" chords with a moving top voice, or
+    # the reggae organ's "bubble" - the shuffle under the skank that is the
+    # other half of reggae keys (a held string pad is the "new age" in a
+    # dub record; measured, the dub records' mid band is a busy keys part).
+    pad_style: str = "held"
     chord_size: int = 3
     progression_tension: float = 0.35
     # Registers. The sub window is deliberately narrow - one oscillator, and
@@ -121,6 +126,7 @@ ROOTS_DUB = Profile(
     progression_tension=0.25,
     section_template="dub",
     skank_length=0.4,
+    pad_style="bubble",
     note="72bpm one-drop. Slow harmonic rhythm, offbeat skank, bass enters "
          "late in the bar. The mix is the arrangement.",
 )
@@ -140,6 +146,7 @@ STEPPERS_DUB = Profile(
     bars_per_chord=2.0,
     progression_tension=0.3,
     section_template="dub",
+    pad_style="bubble",
     note="Four-to-the-floor militant dub. More forward motion than one-drop, "
          "bass pulses with the kick.",
 )

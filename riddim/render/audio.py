@@ -89,6 +89,10 @@ LEAD_LEVEL = 0.4
 LEAD_LEVEL_DUB = 0.25
 # The pad is the "new age" in every genre: at half level it halves.
 PAD_LEVEL = 0.5
+# The organ bubble (profile.pad_style "bubble"): its level against the pad's,
+# and its place - opposite the skank, as the keys sit on a reggae desk.
+BUBBLE_LEVEL = 1.0
+BUBBLE_PAN = 0.25
 # Dub's backbeat on a cross-stick (the one-drop's rimshot), not a snare.
 DUB_STICK = True
 # The Deluge's swing, applied as it applies it (profile.deluge_swing).
@@ -117,6 +121,9 @@ def _swing_ticks(tick: float, amount: int) -> float:
 PAN = {"sub": 0.0, "bass": 0.0, "drums": 0.0, "perc": 0.45, "chords": -0.3, "pad": 0.0, "lead": 0.12}
 GAIN = {"sub": 0.45, "bass": 0.42, "drums": 0.75, "perc": 0.5, "chords": 0.5, "pad": 0.32,
         "lead": 0.42}
+# Per-family trims on GAIN, multiplied in: each family's balance measured
+# against its own records (Demucs stems, `claude/loop-rounds.md`).
+FAMILY_GAIN: dict[str, dict[str, float]] = {}
 # Sends: (plate, spring, hall, delay)
 SENDS = {"drums": (0.0, 0.0, 0.05, 0.0), "chords": (0.0, 0.35, 0.1, 0.5),
          "pad": (0.0, 0.0, 0.45, 0.0), "lead": (0.0, 0.0, 0.3, 0.3),
@@ -584,6 +591,10 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     except Exception:      # noqa: BLE001
         family = ""
     cross = DUB_STICK and family == "dub"
+    try:
+        bubble = _profile_mod.get(prof).pad_style == "bubble" if prof else False
+    except Exception:      # noqa: BLE001
+        bubble = False
 
     def kit(midi, dur, vel):
         """A kit hit as this genre plays it: in dub the one-drop's backbeat
@@ -650,7 +661,12 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                 _add(buf, start, _pan(x, PAN["chords"] + rnd.jitter(0.05)))
                 continue
             if role == "pad":
-                _add(buf, start, _strings(note.midi, dur, note.velocity, rnd))
+                if bubble:
+                    # The organ bubble: drawbars, opposite the skank.
+                    x = _organ(note.midi, dur, note.velocity, rnd)
+                    _add(buf, start, _pan(x, BUBBLE_PAN + rnd.jitter(0.04)))
+                else:
+                    _add(buf, start, _strings(note.midi, dur, note.velocity, rnd))
                 continue
             glide = prev.midi if (prev is not None and prev.end > note.start) else None
             voice = _synth_lead if is140 else _reed
@@ -667,12 +683,12 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     for r, hp in (("chords", 220), ("pad", 160), ("lead", 200), ("perc", 120), ("bass", 70)):
         stems[r] = _hp(stems[r], hp)
     stems["lead"] = stems["lead"] * (LEAD_LEVEL_DUB if family == "dub" else LEAD_LEVEL)
-    stems["pad"] = stems["pad"] * PAD_LEVEL
+    stems["pad"] = stems["pad"] * (BUBBLE_LEVEL if bubble else PAD_LEVEL)
     sends = dict(SENDS)
     if TREAT_LEAD:
         stems["lead"] = _sat(_lp(_hp(stems["lead"], 380, order=4), 3000, order=4) * 1.6, 1.8) * 0.45
         sends["lead"] = (0.0, 0.12, 0.35, 0.6)
-    if TREAT_PAD:
+    if TREAT_PAD and not bubble:
         stems["pad"] = _lp(_hp(stems["pad"], 260), 950) * 0.7
         sends["pad"] = (0.0, 0.0, 0.2, 0.0)
 
@@ -744,8 +760,9 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     echo = _dub_delay(_hp(delay_send, 250), d, fb)
 
     music = np.zeros((n, 2), dtype=np.float32)
+    trim = FAMILY_GAIN.get(family, {})
     for role, x in stems.items():
-        music += x * GAIN.get(role, 0.2)
+        music += x * GAIN.get(role, 0.2) * trim.get(role, 1.0)
     music += plate * 0.18 + spring * 0.12 + hall * 0.2 + echo * 0.32
 
     # The build's sweep thins everything but the riser and the sub's absence.

@@ -1855,6 +1855,38 @@ def _build_chords(part, section, prof, m: Material, rng):
                               structure.velocity_for(energy, hit.velocity))], bar_tick)
 
 
+def _build_bubble(part, section, prof, m: Material):
+    """The organ bubble: the reggae keyboard's shuffle under the skank.
+
+    Each beat, a quiet sixteenth then the loud '&' (rhythm.bubble), on the
+    chord's upper voices in the middle of the keys - the root is the bass's.
+    At low energy only the '&'s; the last beat of an eight-bar phrase is left
+    to the drums' turnaround, as the skank leaves it. Velocities wander by
+    position, never by the shared stream, so the same bar plays the same.
+    """
+    pat = rhythm.bubble(STEPS_PER_BAR, 84)
+    for bar in range(section.bars):
+        bar_tick = (section.start_bar + bar) * TICKS_PER_BAR
+        energy = structure.bar_energy(section, bar)
+        jitter = random.Random(f"{m.seeds.get('pad')}:{section.start_bar + bar}")
+        for hit in pat.sorted_hits():
+            soft = hit.velocity < 70
+            if soft and energy < 0.45:
+                continue
+            if section.bars >= 8 and bar % 8 == 7 and hit.step >= 12:
+                continue
+            ev = m.voiced.at(bar_tick + int(hit.step * TICKS_PER_16TH))
+            if ev is None:
+                continue
+            voices = sorted({pitch.transpose_into(n, prof.pad.low, prof.pad.high)
+                             for n in ev.chord.pitches})
+            root_pc = ev.chord.root_pc
+            upper = [v for v in voices if v % 12 != root_pc] or voices
+            vel = structure.velocity_for(energy, hit.velocity + jitter.randint(-6, 6))
+            for note in upper:
+                _emit(part, [(note, hit.step, hit.length, vel)], bar_tick)
+
+
 def _build_pad(part, section, prof, m: Material, rng):
     """Held chords, with a top voice that moves against the tune.
 
@@ -1864,6 +1896,9 @@ def _build_pad(part, section, prof, m: Material, rng):
     oldest trick in counterpoint and the cheapest way to make a pad sound
     composed rather than held down.
     """
+    if getattr(prof, "pad_style", "held") == "bubble":
+        _build_bubble(part, section, prof, m)
+        return
     start, end = section.start_tick, section.start_tick + section.length_ticks
     line = m.line(section)
     lead = sorted(line.tones, key=lambda t: t.step) if section.plays("lead") else []

@@ -888,3 +888,20 @@ def test_the_desk_pulls_the_bass_in_dub():
         song = compose("roots_dub", seed=seed)
         dropped += song.params.dynamics.bass_drops > 0
     assert dropped == 8
+
+
+def test_dub_keys_bubble():
+    """A roots or steppers record's pad track is the organ bubble: short
+    chords on each beat's 'e' and '&', the root left to the bass - not a
+    held string pad. The other families keep their held pad."""
+    from riddim.units import TICKS_PER_16TH
+    for name in ("roots_dub", "steppers_dub"):
+        assert profile_mod.get(name).pad_style == "bubble"
+        song = compose(name, seed=5)
+        notes = song.part("pad").notes
+        assert notes
+        for n in notes:
+            assert n.length <= TICKS_PER_16TH
+            assert (n.start // TICKS_PER_16TH) % 4 in (1, 2)
+    held = compose("dubstep_140", seed=5).part("pad").notes
+    assert held and max(n.length for n in held) > TICKS_PER_BAR // 2
