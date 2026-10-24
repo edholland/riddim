@@ -20,5 +20,9 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 include = ["riddim*"]
 
+[tool.setuptools.package-data]
+# The audio preview's samples and impulse responses (see their LICENSES.md).
+"riddim.render" = ["samples/*.md", "samples/*/*.wav"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -12,3 +12,5 @@ variations/
 *.m4a
 .claude/
 show_build.log
+references/
+!riddim/render/samples/*/*.wav

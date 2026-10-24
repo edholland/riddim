@@ -320,6 +320,20 @@ def test_camelot_by_key_signature():
     assert corpus.camelot(compose(profile="roots_dub", seed=1, key="E minor")) == "9A"
 
 
+def test_audio_preview_renders_a_window():
+    """One section on its own, with what rings into it - for auditioning."""
+    pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    from riddim.render import audio
+    song = compose(profile="dubstep_140", seed=3)
+    sec = next(s for s in song.arrangement.sections if s.energy >= 0.8)
+    data = audio.render(song, window=(sec.start_tick, sec.start_tick + 8 * TICKS_PER_BAR))
+    secs = 8 * 4 * 60.0 / song.bpm
+    assert data.shape[1] == 2
+    assert secs <= data.shape[0] / audio.SR <= secs + 4
+    assert 0.5 < abs(data).max() <= 1.0
+
+
 def test_audio_preview_renders():
     pytest.importorskip("numpy")
     pytest.importorskip("scipy")
@@ -393,6 +407,12 @@ def _by_bar(ns):
     return list(bars.values())
 
 
+def _palette_pcs(song):
+    from riddim.theory import hook as _hook
+    degs = _hook.palette(song.scale) or range(song.scale.size)
+    return {song.scale.note(d) % 12 for d in degs}
+
+
 def _lead_features(song):
     import statistics as st
     # Judged where the hook is sung as written - the first drop, which
@@ -413,7 +433,9 @@ def _lead_features(song):
         # section loudness (a soft outro, a ramped build) is not accent
         velspread=st.mean([st.pstdev(v) for v in _by_bar(ns) if len(v) >= 2] or [0.0]),
         pitch=st.mean(n.midi for n in ns),
-        vocab=len({n.midi % 12 for n in ns}),
+        # the share of the tune off its pentatonic palette (what `outside`
+        # asks for; the chords' own tones still pull it out either way)
+        outside=sum(1 for n in ns if n.midi % 12 not in _palette_pcs(song)) / len(ns),
         overlaps=sum(1 for a, b in zip(ns, ns[1:]) if a.end > b.start) / len(ns),
         sounding=len({t for n in ns for t in range(n.start // T, n.end // T)}),
     )
@@ -424,7 +446,7 @@ DIAL_EFFECTS = {
     "hook.density": ("notes", 0.25, 0.85), "hook.syncopation": ("offbeat", 0.1, 0.9),
     "hook.motion": ("interval", 0.1, 0.9), "hook.repeat": ("repeats", 0.0, 0.7),
     "hook.span": ("range", 4, 11), "hook.breath": ("sounding", 0.45, 0.12),
-    "hook.outside": ("vocab", 0.0, 1.0),
+    "hook.outside": ("outside", 0.0, 1.0),
     "lead.gate": ("length", 0.1, 1.0), "lead.accent": ("velspread", 0.0, 1.0),
     "lead.echo": ("notes", 0.0, 1.0), "lead.flick": ("interval", 0.0, 0.8),
     "lead.grace": ("notes", 0.0, 1.0), "lead.slide": ("overlaps", 0.0, 1.0),
@@ -498,7 +520,9 @@ def test_the_groove_repeats_bar_to_bar():
             song = compose(profile=profile, seed=seed)
             drums = song.part("drums")
             for sec in song.arrangement.sections:
-                if sec.bars < 8 or sec.ramp > 0 or not sec.plays("drums"):
+                # (A build ends in its roll - a fill by design - ramped or not.)
+                if sec.bars < 8 or sec.ramp > 0 or not sec.plays("drums") \
+                        or sec.name.startswith("build"):
                     continue
                 for row in rows:
                     bars = []

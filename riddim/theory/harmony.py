@@ -251,13 +251,12 @@ def choose(
         # distinct chords or fewer (falling back to the whole pool only if
         # the mode has none - every mode has at least its drone).
         pool = [p for p in pool if len(set(p.degrees)) <= max_chords] or pool
-        near = [p for p in pool if abs(p.tension - tension) <= tolerance]
-        if len(near) < 3:
-            # A short pool must not collapse onto one loop - every harmonic
-            # minor drop an i-V is a set with a fingerprint. The three
-            # nearest in tension stay in play.
-            near = sorted(pool, key=lambda p: (abs(p.tension - tension), p.name))[:3]
-        return rng.choice(near)
+        # A short pool must not collapse onto one loop - every harmonic
+        # minor drop an i-V is a set with a fingerprint. Every loop in it
+        # stays in play, the ones nearer the asked-for tension likelier.
+        pool = sorted(pool, key=lambda p: p.name)
+        weights = [1.0 / (0.15 + abs(p.tension - tension)) for p in pool]
+        return rng.choices(pool, weights)[0]
     near = [p for p in pool if abs(p.tension - tension) <= tolerance]
     return rng.choice(near or pool)
 

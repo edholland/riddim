@@ -24,6 +24,8 @@ repo.
 | `fast_sample.py` | a KV-cached sampler for the model: ~11x the reference's speed |
 | `lead_core.py` | the constrained lead sampler: one instrument, a register, the song's mode, room between notes, optionally riddim's rhythm with only the pitches chosen |
 | `lead_worker.py` | the process riddim talks to (`riddim/model_lead.py`): JSON lines in, leads out |
+| `collect_refs.py` | reference recordings in (archive.org items, or anything yt-dlp reads), audio + a provenance manifest out (licence recorded; unlicensed items marked study-only) |
+| `judge.py` | CLAP embeddings: FAD and closeness of renders against the references, and a zero-shot real-record-vs-machine probability (`pip install torch transformers`) |
 | `amt_lead.py`, `lead_stats.py` | A/B renders of riddim's lead vs the model's, and the numbers to compare them |
 
 ## v2: the pipeline (`pipeline.sh`)

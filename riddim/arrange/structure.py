@@ -506,6 +506,13 @@ class StructureParams:
     # energy, the low point only where the performer launches it, no long
     # intro or outro. See `_live`.
     live: bool = False
+    # Holes take out the *low end*, not the band: an intro or a breakdown is
+    # the tune, the chords, the percussion and the snare at nearly full
+    # weight, with the kick and the sub held back for the drop. Measured on
+    # the DMZ catalogue - 29 records: the intro's mids and snare sit ~4 dB
+    # under the body while sub and kick are 20-50 dB down, and the low end
+    # lands whole around bar sixteen to twenty-four, mostly with no build.
+    low_end_out: bool = False
 
 
 # Energy bands per phase kind, and the bar lengths each may take.
@@ -534,7 +541,10 @@ def _phases(p: StructureParams, rng) -> list[str]:
             seq.append("intro")
         if rng.random() < p.grooves:
             seq.append("groove")
-        seq += ["build", "peak"]
+        if p.low_end_out and p.intro and rng.random() < 0.7:
+            seq.append("peak")          # out of the intro, straight into the drop
+        else:
+            seq += ["build", "peak"]
         for _ in range(p.peaks - 1):
             seq.append(_release(p, rng))
             if rng.random() < p.grooves:
@@ -559,6 +569,14 @@ def _roles_for(kind: str, energy: float, p: StructureParams) -> tuple[str, ...]:
     active = {r for r, t in thresholds.items() if energy >= t}
     active -= set(p.omit)
     # The holes. These are the arrangement.
+    if p.low_end_out and kind in ("intro", "breakdown"):
+        # The band without its bottom: the kick is muted in the notes
+        # (compose), the sub sits out, everything else plays.
+        active = {"drums", "perc", "chords", "lead"} | ({"pad"} if kind == "breakdown" else set())
+        if kind == "intro" and "pad" not in p.omit and energy < 0.5:
+            active.add("pad")
+        active -= set(p.omit)
+        return tuple(r for r in ROLES if r in active) or ("drums",)
     if kind == "dub_out":
         active = {"drums", "sub"}
     elif kind == "breakdown":
@@ -584,6 +602,11 @@ def _roles_for(kind: str, energy: float, p: StructureParams) -> tuple[str, ...]:
         # then nothing (the coda). The theme plan keeps all three sparse -
         # this only lets the lead be there.
         active.add("lead")
+    if p.low_end_out and kind == "build":
+        # No climbing tease of the hook into a 140 drop: the records hold
+        # the tune back and let the drop give it (measured with the judge -
+        # a build's lead fragment is the plainest machine tell there is).
+        active.discard("lead")
     active -= set(p.omit)
     if not active:
         active = {"drums"} - set(p.omit) or {"sub"}
@@ -622,6 +645,8 @@ def generate(
         options = _PHASE[k][1]
         if k == "peak" and p.long_peak:
             options = (32,)
+        if p.low_end_out and k == "intro":
+            options = (16, 16, 24)      # the low end lands around bar 16-24
         lengths.append(rng.choice(options))
 
     natural = sum(lengths)
@@ -651,6 +676,9 @@ def generate(
             # the bass phrases every 4, and a 12-bar section fights both.
             bars = max(8, int(round(scaled / 8.0)) * 8)
         lo, hi = _PHASE[k][0]
+        if p.low_end_out and k in ("intro", "breakdown"):
+            # Nearly full weight above the bass.
+            lo, hi = (0.42, 0.56) if k == "intro" else (0.3, 0.42)
         # Rounded here, not on write-back: the params must reproduce the
         # song to the bit, and a velocity computed from 0.93389 is not the
         # velocity computed from 0.934.
@@ -659,6 +687,8 @@ def generate(
         # Only builds climb. Everything else sits on its level - a peak that
         # rambled up from below would stop reading as a drop.
         ramp = round(rng.uniform(0.4, 0.85), 2) if k == "build" else 0.0
+        if p.low_end_out and k == "build":
+            ramp = 0.0                       # a level, not an EDM ramp
         counts[k] = counts.get(k, 0) + 1
         label = k if counts[k] == 1 else f"{k}_{counts[k]}"
         sections.append(Section(
@@ -797,7 +827,7 @@ def params_for_family(family: str, rng, bpm: int | None = None) -> StructurePara
         # Anything shorter snaps sections to four bars, which at this tempo
         # is seven seconds: a sketch, not a song. Two drops is the form; a
         # long track earns a third, a cold open always gets a second.
-        total = _bars_for_minutes(rng, bpm, 3.7, 5.0, (128, 144, 144, 160))
+        total = _bars_for_minutes(rng, bpm, 4.2, 5.6, (144, 160, 160, 176))
         cold = rng.random() < 0.2
         peaks = 3 if total >= 168 and rng.random() < 0.5 else 2
         if not cold and total <= 136 and rng.random() < 0.15:
@@ -813,6 +843,7 @@ def params_for_family(family: str, rng, bpm: int | None = None) -> StructurePara
             perc_threshold=rng.uniform(0.55, 0.8), chords_threshold=0.4,
             omit=_draw_omit(rng),
             grooves=rng.choice((0.0, 0.25, 0.5)),
+            low_end_out=True,
         )
     if family == "garage":
         # A garage record is built for the mix: a drum intro to blend over,

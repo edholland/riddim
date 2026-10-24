@@ -27,6 +27,13 @@ GM_DRUMS = {
     KIT_ROWS["shaker"]: 70,  # Maracas
     KIT_ROWS["crash"]: 49,   # Crash Cymbal 1
     KIT_ROWS["riser"]: 55,   # Splash - GM has no riser; the WAV render does
+    KIT_ROWS["conga_lo"]: 64,  # Low Conga
+    KIT_ROWS["conga_hi"]: 63,  # Open High Conga
+    KIT_ROWS["bongo"]: 60,     # High Bongo
+    KIT_ROWS["block"]: 76,     # Hi Wood Block
+    KIT_ROWS["tamb"]: 54,      # Tambourine
+    KIT_ROWS["tom_lo"]: 45,    # Low Tom
+    KIT_ROWS["tom_hi"]: 50,    # High Tom
 }
 
 # Our tick grid is 24 per 16th, so 96 per quarter note.

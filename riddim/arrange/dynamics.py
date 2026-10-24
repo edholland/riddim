@@ -53,9 +53,12 @@ class DynamicsParams:
 def params_for(family: str, rng: random.Random) -> DynamicsParams:
     """Draw dynamics for a genre family. Dubstep commits harder to the drop."""
     if family == "dubstep":
+        # The 140 drop is earned by what is held back (the low end), not by
+        # an EDM snare roll and white-noise riser: the records have short
+        # rolls if any, and the riser is rare.
         return DynamicsParams(
-            roll=round(rng.uniform(0.6, 1.0), 2),
-            riser=round(rng.uniform(0.5, 1.0), 2),
+            roll=round(rng.uniform(0.1, 0.45), 2),
+            riser=round(rng.uniform(0.0, 0.35), 2),
             drop_gap=rng.choice((0.5, 1.0, 1.0, 2.0)),
             impact=round(rng.uniform(0.7, 1.0), 2),
             switch_up=round(rng.uniform(0.1, 0.4), 2),

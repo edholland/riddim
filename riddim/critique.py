@@ -362,7 +362,13 @@ def _energy_curve(song: Song) -> list[Finding]:
                      why="a peak must clear everything before it"),),
             ))
         seen_max = max(seen_max, section.energy)
-        if section.name.startswith("build") and section.ramp <= 0 and section.bars >= 8:
+        # (Not in a song whose holes take out the low end - the 140 records:
+        # there the approach to a drop is a level, held, and the drop is the
+        # low end arriving. An EDM ramp into it is the machine's habit.)
+        flat_ok = song.params is not None and song.params.structure is not None \
+            and song.params.structure.low_end_out
+        if section.name.startswith("build") and section.ramp <= 0 and section.bars >= 8 \
+                and not flat_ok:
             out.append(Finding(
                 section.name, "is a build that never climbs (ramp is 0)",
                 "note",

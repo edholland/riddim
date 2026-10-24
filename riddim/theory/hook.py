@@ -723,11 +723,18 @@ def realise(hook: Hook, scale: Scale, chord_at, follow: bool = True) -> list[Ton
                 shift += scale.size
             candidates.append(shift)
         best = None
+        pal = palette(scale)
         for shift in candidates:
             tones = [replace(t, degree=t.degree + shift, step=t.step + off) for t in u.tones]
             agree = _agreement(tones, scale, chord_at)
             # A literal restatement wins ties: the ear wants the same notes.
             key = agree - (0.08 if shift else 0.0)
+            if pal is not None and shift:
+                # And a sequence that carries the tune off its five notes
+                # has to earn it: following the chord must win clearly, more
+                # clearly the more the tune is meant to stay inside.
+                off_pal = sum(1 for t in tones if t.degree % scale.size not in pal) / len(tones)
+                key -= 0.5 * off_pal * (1.0 - hook.params.outside)
             if best is None or key > best[0]:
                 best = (key, tones)
         out += best[1]
@@ -856,6 +863,15 @@ def score(hook: Hook, tones: list[Tone], scale: Scale, chord_at) -> tuple[float,
     target = 0.05 + 0.45 * p.repeat + (0.2 if p.phrasing == "chop" else 0.0)   # a chop is its stutter
     rep["f_repeat"] = max(0.0, 1.0 - abs(same - target) * 1.5)
 
+    # Outside notes as asked: the share of the tune off its pentatonic
+    # palette follows the dial, so `outside` moves the tune both ways.
+    pal = palette(scale)
+    if pal is not None:
+        off_pal = sum(1 for t in tones if not t.alter and t.degree % scale.size not in pal) / len(tones)
+        rep["f_outside"] = max(0.0, 1.0 - abs(off_pal - 0.35 * p.outside) * 2.0)
+    else:
+        rep["f_outside"] = 1.0
+
     # The tune over the bass: on the strong beats a melody sings the third,
     # fifth or seventh of the chord - the root is the bass's note, and a
     # tune that keeps landing on it doubles the bass in octaves and sounds
@@ -871,7 +887,8 @@ def score(hook: Hook, tones: list[Tone], scale: Scale, chord_at) -> tuple[float,
 
     weights = {"chord_fit": 2.0, "climax": 1.2, "closes": 0.8, "returns": 0.8,
                "sane": 1.0, "economy": 1.4, "cell_moves": 1.5, "over_bass": 1.2,
-               "f_span": 1.6, "f_motion": 1.0, "f_sync": 1.0, "f_repeat": 0.8}
+               "f_span": 1.6, "f_motion": 1.0, "f_sync": 1.0, "f_repeat": 0.8,
+               "f_outside": 0.8}
     total = sum(weights[k] * max(0.0, rep[k]) for k in weights) / sum(weights.values())
     return round(total, 4), rep
 

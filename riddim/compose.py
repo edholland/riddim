@@ -35,7 +35,7 @@ from .profile import Profile
 from .song import Automation, Note, Part, Rig, Song
 from .theory import (
     bassline, chord as chord_mod, fill, groove, harmony, hook as hook_mod,
-    melody, pitch, rhythm,
+    melody, percussion, pitch, rhythm,
 )
 from .theory.rhythm import metric_weight
 from .theory.scale import Scale, parse_key
@@ -45,7 +45,12 @@ from .units import STEPS_PER_BAR, TICKS_PER_16TH, TICKS_PER_BAR
 # Crash and riser are the tension rows: load a crash (or impact) on 42 and a
 # noise sweep or reverse cymbal on 43 of the drum kit.
 KIT_ROWS = {"kick": 36, "snare": 37, "hat": 38, "rim": 39, "perc": 40, "shaker": 41,
-            "crash": 42, "riser": 43}
+            "crash": 42, "riser": 43,
+            # The hands, on the perc kit: see theory/percussion.py.
+            "conga_lo": 44, "conga_hi": 45, "bongo": 46, "block": 47, "tamb": 48,
+            "tom_lo": 49, "tom_hi": 50}
+HAND_ROWS = tuple(KIT_ROWS[v] for v in ("conga_lo", "conga_hi", "bongo", "block", "tamb",
+                                        "tom_lo", "tom_hi"))
 
 
 @dataclass
@@ -82,6 +87,7 @@ class Material:
     built: dict = field(default_factory=dict)       # parts written so far, by role
     lift: tuple = (0, 0)                            # (from tick, semitones): the last drop's key lift
     seeds: dict = field(default_factory=dict)       # each part's own seed, by role
+    hands: object = None                            # percussion.PercParams, drawn with the perc
 
     def neighbours(self, section: Section) -> tuple[Section | None, Section | None]:
         i = next((k for k, s in enumerate(self.sections) if s.start_bar == section.start_bar), None)
@@ -866,8 +872,15 @@ def _layers(params: SongParams, sections: list[Section]) -> list:
     the drop never stops being the drop.
     """
     out = []
+    low_end_out = params.structure is not None and params.structure.low_end_out
     for i, sec in enumerate(sections):
         kind = structure.kind_of(sec)
+        if low_end_out and (kind in ("intro", "breakdown") or (i == 0 and kind == "build")):
+            # The low end is held for the drop: the kit plays, its kick
+            # does not.
+            out.append((sec.start_tick, sec.start_tick + sec.length_ticks,
+                        {("drums", KIT_ROWS["kick"])}))
+            continue
         if kind == "intro" and sec.bars >= 8 and i == 0:
             # The beat lands halfway: hats, pad and bass set the scene
             # first, kick and snare arrive at the half - a layer, not a wall.
@@ -1287,6 +1300,35 @@ def _build_perc(part, section, prof, m: Material, rng):
         vel_scale = structure.velocity_for(energy) / 100.0
         _emit(part, [(KIT_ROWS["shaker"], h.step, 0.5, h.velocity * vel_scale)
                      for h in shaken.sorted_hits()], bar_tick)
+    _build_hands(part, section, prof, m)
+
+
+def _build_hands(part, section, prof, m: Material):
+    """The hand percussion over the shaker: one two-bar part per section,
+    repeated as a player repeats it, the last bar of every eight a call
+    (a tom run, or the high conga picking up into the one). Its own stream
+    per section, so a section re-rolls alone."""
+    if m.hands is None:
+        m.hands = percussion.params_for(prof.family, random.Random(f"{m.seeds.get('perc', 0)}:hands"))
+    hrng = random.Random(f"{m.seeds.get('perc', 0)}:hands:{section.start_bar}")
+    energy = structure.bar_energy(section, max(0, section.bars - 1))
+    two = percussion.pattern(m.hands, prof.beat_steps, energy, hrng)
+    vel_scale = structure.velocity_for(energy) / 100.0
+    for bar in range(0, section.bars, 2):
+        notes = []
+        for voice, hits in two.items():
+            for step, vel in hits:
+                b = bar + int(step // STEPS_PER_BAR)
+                if b >= section.bars:
+                    continue
+                if (b + 1) % 8 == 0 and step % STEPS_PER_BAR >= 8:
+                    continue          # the call owns the end of the phrase
+                notes.append((KIT_ROWS[voice], step, 0.5, vel * vel_scale))
+        _emit(part, notes, (section.start_bar + bar) * TICKS_PER_BAR)
+    for bar in range(7, section.bars, 8):
+        fill_ = percussion.call(m.hands, random.Random(f"{m.seeds.get('perc', 0)}:call:{section.start_bar}:{bar}"))
+        notes = [(KIT_ROWS[v], s, 0.5, vel * vel_scale) for v, hits in fill_.items() for s, vel in hits]
+        _emit(part, notes, (section.start_bar + bar) * TICKS_PER_BAR)
 
 
 def _build_sub(part, section, prof, m: Material, rng):

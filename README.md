@@ -152,6 +152,44 @@ to 1.0-2.0 (dubstep 4.08 → 1.92), every family's hook range from 14-18
 semitones to 10-12, and restated drop bars from about a fifth to about a
 half. `tests/test_tells.py` holds a batch of each family to the ceiling.
 
+## Ears: listening against real records
+
+The engine cannot hear, so it measures. Three tools, and a reference set:
+
+- `ml/collect_refs.py` collects reference recordings (archive.org items or
+  anything yt-dlp reads) into `references/` with a manifest of where each
+  came from and under what licence - kept out of git. Run it on your own
+  machine.
+- `riddim/listen.py` turns any recording into numbers and pictures: tempo,
+  swing, band balance, stereo width, texture, the energy curve, and a
+  spectrogram with a two-bar close-up on the sixteenth grid.
+- `ml/judge.py` embeds recordings with CLAP and scores a batch of renders
+  against the references: **FAD** (Frechet Audio Distance, the standard
+  measure for generated audio), each track's **closeness** to the reference
+  centroid, and a zero-shot **real-record vs machine** probability. It is
+  also the probe that says *what a passage sounds like* - "dubstep", "new
+  age", "video game music".
+
+What it found on the 29-track DMZ catalogue, and what changed because of it:
+
+| finding | change |
+|---|---|
+| the preview sounded like a MIDI file (0.000 "real") | the renderer rebuilt: stereo, the sampled Pearl kit with round-robin, the EMT-140 plate, a drum room, a hall, a tape-echo dub delay that runs up into drops, a mid-bass growl at 140, kick pumping, bus glue and tape |
+| DMZ intros keep the mids and snare within ~4 dB of the body; sub and kick are 20-50 dB down until bar 16-24 | `StructureParams.low_end_out` for the dubstep family: intros and breakdowns are the band without its low end; the first drop mostly comes straight out of the intro |
+| a 16-bar pad-only breakdown is unlike anything in the catalogue | breakdowns keep percussion, chords and the tune |
+| the records are dense with hand percussion | `theory/percussion.py`: congas, bongo, clave, tambourine and tom runs on the perc kit (rows 44-50) |
+| the lead riding on top of the mix is the loudest machine tell (0.12 → 0.64 "real" with it 10 dB down); a pad in a big hall reads as new age | the lead sits in the mix (`audio.LEAD_LEVEL`), the pad darker and drier |
+| a climbing lead fragment and an EDM ramp into a 140 drop read as machine | dubstep-family builds are a held level with no lead tease; smaller rolls and risers |
+
+Across a fixed panel of six songs the renders went from FAD 0.54 to 0.30
+(the DMZ catalogue against itself: 0.12), closeness 0.71 to 0.83 (DMZ median
+0.84) and "real record" 0.00 to 0.41 (DMZ median 0.92). The drops and the
+breakdowns now pass about half the time; the tells left are in the builds
+of the non-140 profiles and the melodic parts.
+
+**Kit rows (perc kit).** The hand percussion uses rows 44 conga low, 45
+conga high, 46 bongo, 47 woodblock, 48 tambourine, 49 tom low, 50 tom high.
+
 ## Why it is built this way
 
 Four things are hard about writing this music, and each maps to one module:
@@ -545,6 +583,7 @@ direct.py   steering — knobs, choice knobs, ops, word intents, mutation, trail
 critique.py the self-critic: findings, fixes, the score, the revision loop
 analyze.py  the listener: musical measures and one score to rank by
 tells.py    where a producer would hear a machine: the giveaways, measured
+listen.py   ears: any recording as numbers and spectrograms
 corpus.py   a show: best-of-N songs, set ordering, variations, files
 song.py     Note / Part / Song / Rig — the boundary between theory and MIDI
 render/     standard MIDI file output, and an audio preview synth
