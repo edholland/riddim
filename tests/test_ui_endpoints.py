@@ -130,3 +130,43 @@ def test_steering_endpoints_end_to_end():
     finally:
         server.shutdown()
         server.server_close()
+
+def test_studio_render_and_tells():
+    """Studio playback over the wire: a window of the live song comes back
+    as stereo WAV of the right length, a muted part is left out of it, and
+    the song payload carries the tells and the Deluge swing."""
+    import io
+    import wave
+
+    import pytest
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+
+    state = State(SongParams(profile="roots_dub", seed=50, bpm=72))
+    Handler.state = state
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        song = _get(base, "/api/song")
+        assert song["swing"] == 50 or 50 <= song["swing"] <= 60
+        assert song["tells"] and all({"name", "value", "ok"} <= set(t) for t in song["tells"])
+
+        def pcm(path):
+            with urllib.request.urlopen(base + path) as r:
+                assert r.headers["Content-Type"] == "audio/wav"
+                w = wave.open(io.BytesIO(r.read()))
+                assert w.getnchannels() == 2
+                frames = w.readframes(w.getnframes())
+                return w.getnframes() / w.getframerate(), np.frombuffer(frames, "<i2")
+
+        secs, full = pcm("/api/render?from=4&bars=2")
+        bar = 4 * 60.0 / song["bpm"]
+        assert 2 * bar <= secs <= 2 * bar + 4.0          # the window plus its tail
+        _, again = pcm("/api/render?from=4&bars=2")
+        assert np.array_equal(full, again)               # cached: the same render
+        _, muted = pcm("/api/render?from=4&bars=2&mute=drums,perc,sub,chords,pad,lead")
+        assert np.abs(muted.astype(float)).max() < np.abs(full.astype(float)).max()
+    finally:
+        server.shutdown()
+        server.server_close()

@@ -33,6 +33,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from .. import critique, profile as profile_mod
+from .. import tells as tells_mod
 from ..compose import compose
 from ..direct import Op, apply_ops, diff as params_diff, direct as parse_direct
 from ..direct import knobs as read_knobs
@@ -264,6 +265,61 @@ def _part_counts(song: Song) -> dict:
     return {p.role: len(p.notes) for p in song.parts}
 
 
+def _swing_of(song: Song) -> int:
+    """The Deluge swing for this song's feel (50 = straight)."""
+    try:
+        return int(profile_mod.get(song.params.profile).deluge_swing)
+    except Exception:      # noqa: BLE001 - an unknown profile plays straight
+        return 50
+
+
+# Studio previews: rendered windows of the live song, kept for the songs the
+# page is likely to ask about again (the same chunk replayed, A/B, a seek
+# back). Each entry holds the song itself so its id cannot be reused.
+_RENDERS: dict = {}
+_RENDER_LOCK = threading.Lock()
+RENDER_CACHE = 24
+
+
+def render_window(song: Song, start_bar: int, bars: int, mute: tuple[str, ...] = ()) -> bytes:
+    """`bars` bars of `song` from `start_bar`, through the audio preview
+    (sampled kit, the desk, swing, the spaces), as 16-bit stereo WAV bytes.
+    Muted roles are left out of the render."""
+    import copy
+    import os
+    import tempfile
+    try:
+        from ..render import audio
+    except ImportError as exc:      # numpy / scipy are the optional audio extra
+        raise RuntimeError("studio sound needs the audio extra: "
+                           "pip install -e '.[audio]'") from exc
+
+    start_bar = max(0, min(song.bars - 1, int(start_bar)))
+    bars = max(1, min(int(bars), song.bars - start_bar))
+    key = (id(song), start_bar, bars, tuple(sorted(mute)))
+    with _RENDER_LOCK:
+        hit = _RENDERS.get(key)
+    if hit is not None:
+        return hit[1]
+    target = song
+    if mute:
+        target = copy.copy(song)
+        target.parts = [p for p in song.parts if p.role not in mute]
+    window = (start_bar * TICKS_PER_BAR, (start_bar + bars) * TICKS_PER_BAR)
+    fd, tmp = tempfile.mkstemp(suffix=".wav")
+    os.close(fd)
+    try:
+        audio.write(target, tmp, window=window)
+        data = Path(tmp).read_bytes()
+    finally:
+        os.unlink(tmp)
+    with _RENDER_LOCK:
+        _RENDERS[key] = (song, data)
+        while len(_RENDERS) > RENDER_CACHE:
+            _RENDERS.pop(next(iter(_RENDERS)))
+    return data
+
+
 def song_to_dict(song: Song, state: State | None = None) -> dict:
     """Everything the page needs to draw and play the song."""
     arr = song.arrangement
@@ -301,6 +357,8 @@ def song_to_dict(song: Song, state: State | None = None) -> dict:
         "ticks_per_bar": TICKS_PER_BAR,
         "checks": [asdict(f) for f in critique.critique(song)],
         "score": round(critique.score(song), 2),
+        "tells": [dict(asdict(t), ok=t.ok) for t in tells_mod.tells(song)],
+        "swing": _swing_of(song),
     }
     if state is not None:
         d["can_undo"] = bool(state.history)
@@ -386,6 +444,20 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/api/ports":
                 import mido
                 return self._json({"outputs": mido.get_output_names()})
+            if self.path.startswith("/api/render"):
+                from urllib.parse import parse_qs, urlparse
+                q = parse_qs(urlparse(self.path).query)
+                song = self.state.song
+                mute = tuple(m for m in (q.get("mute", [""])[0]).split(",") if m)
+                data = render_window(song, int(q.get("from", ["0"])[0]),
+                                     int(q.get("bars", ["16"])[0]), mute)
+                self.send_response(200)
+                self.send_header("Content-Type", "audio/wav")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(data)
+                return
             if self.path == "/api/midi":
                 from ..render import midifile
                 import tempfile, os

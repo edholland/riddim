@@ -97,6 +97,9 @@
   #check .where { min-width:52px; flex:none; font-weight:600; }
   #check .msg { color:var(--dim); flex:1; min-width:120px; }
   #check .clean { color:var(--dim); }
+  #check .dot.ok { background:var(--accent); opacity:0.6; }
+  #check .tells-h { margin:10px 0 2px; padding-top:7px; border-top:1px solid var(--line); color:var(--dim); }
+  #studio.on { background:var(--accent); color:#10131a; border-color:var(--accent); }
   #status { color:var(--warn); }
   .c-drums { background:var(--drums);} .c-perc{background:var(--perc);} .c-sub{background:var(--sub);} .c-chords{background:var(--chords);} .c-pad{background:var(--pad);} .c-lead{background:var(--lead);}
   .t-drums { color:var(--drums);} .t-perc{color:var(--perc);} .t-sub{color:var(--sub);} .t-chords{color:var(--chords);} .t-pad{color:var(--pad);} .t-lead{color:var(--lead);}
@@ -110,6 +113,7 @@
   <h1>riddim</h1>
   <button id="play" class="primary">▶ play</button>
   <button id="stop">■</button>
+  <button id="studio" title="studio sound: play the engine's own render - sampled kit, the desk, spring and plate, the Deluge's swing - rendered on this machine 16 bars at a time (off: the instant browser sketch)">🎧 studio</button>
   <span class="meta">bar <b id="pos">1</b><span id="pos-of"></span> <span id="pos-sec" style="color:var(--accent)"></span></span>
   <span class="hint">space play/pause · ←/→ section · click the parts to jump</span>
   <span class="meta" id="song-meta"></span>
@@ -240,13 +244,13 @@ const TABS = [
   ["arrange", "arrangement", "How the parts talk to each other and how tension builds into the drops."],
 ];
 const WORDS = {
-  tune: ["catchier","busier_hook","sparser_hook","leapier","steppier","wider_hook","syncopated_hook","more_repeats","riff_lead","song_lead","chop_lead","stab_lead","arp","call_response"],
+  tune: ["pentatonic","more_outside","more_inside","catchier","busier_hook","sparser_hook","leapier","steppier","wider_hook","syncopated_hook","more_repeats","riff_lead","song_lead","chop_lead","stab_lead","arp","call_response"],
   lead: ["punchier","smoother","lead_higher","lead_lower","staccato","legato","slidier","more_echo","less_echo","flicks","grace_notes","trills"],
   drums: ["busier","thinner","two_step","skippy_drums","half_time","one_drop","steppers","speed_garage","more_fills","fewer_fills"],
   bass: ["held_bass","walking_bass","pulsing_bass","bouncing_bass","skip_bass","sparse_bass","more_octaves","shorter_notes","longer_notes","more_syncopated"],
   chords: ["ninths","sevenths","triads","organ_stabs","brighter","darker"],
   song: ["faster","slower","more_tension","less_tension","minor","dorian","phrygian","garage"],
-  arrange: ["key_lift","no_lift","bigger_drop","smaller_drop","more_build","less_build","chattier","tighter","more_space","more_breaks","fewer_breaks","more_hook","less_hook"],
+  arrange: ["key_lift","no_lift","bigger_drop","smaller_drop","more_build","less_build","chattier","tighter","more_space","more_breaks","fewer_breaks","more_hook","less_hook","more_bass_drops","fewer_bass_drops"],
 };
 // path: [tab, name, low end, high end, what it does, fine?]
 const CAT = {
@@ -302,6 +306,7 @@ const CAT = {
   "interplay.presence": ["arrange","hook presence","rare","always","How much of each drop the lead sings."],
   "interplay.answer": ["arrange","answering","quiet","chatty","How readily bass and chords reply in the lead's gaps."],
   "interplay.space": ["arrange","room for the lead","busy band","band gives way","How far the stabs and bass step out of the way when the lead plays a figure."],
+  "dynamics.bass_drops": ["arrange","pull the bass","never","often","The dub desk's oldest move: the sub muted for a bar on a phrase's turn and slammed back on the downbeat (times per 32 bars)."],
   "dynamics.roll": ["arrange","build roll","none","big","The accelerating snare roll at the end of each build."],
   "dynamics.drop_gap": ["arrange","silence before the drop","none","4 beats","Beats of nothing before the drop lands."],
   "dynamics.switch_up": ["arrange","drop breaks","never","often","Mid-drop half-bar stops."],
@@ -467,8 +472,8 @@ function renderChecks(s){
   score.textContent = s.score<1 ? `score ${(+s.score).toFixed(2)}` : 'clean';
   score.style.color = s.score>=1 ? 'var(--accent)' : (s.score<0.6?'var(--danger)':'var(--warn)');
   body.innerHTML='';
-  if(!(s.checks&&s.checks.length)){ body.innerHTML='<div class="clean">the engine finds nothing to fix</div>'; return; }
-  s.checks.forEach(f=>{
+  if(!(s.checks&&s.checks.length)) body.innerHTML='<div class="clean">the engine finds nothing to fix</div>';
+  (s.checks||[]).forEach(f=>{
     const row=document.createElement('div'); row.className='finding';
     const isRole=ROLES.includes(f.where);
     row.innerHTML=`<span class="dot ${f.severity}"></span>
@@ -486,6 +491,27 @@ function renderChecks(s){
       };
       row.appendChild(b);
     });
+    body.appendChild(row);
+  });
+  renderTells(s, body);
+}
+// The tells: the first drop measured the way a listener hears a machine -
+// too many notes in the hook, too wide, never restated, a sub that wanders
+// off the root - each against what the records in this family do.
+const TELL_NAMES = {lead_vocab:'hook notes', lead_range:'hook range', lead_density:'hook busyness',
+  lead_restated:'hook restated', drop_chords:'drop chords', sub_extra:'sub off-frame', sub_on_root:'sub on root'};
+function renderTells(s, body){
+  if(!(s.tells&&s.tells.length)) return;
+  const bad=s.tells.filter(t=>!t.ok).length;
+  const h=document.createElement('div'); h.className='tells-h';
+  h.innerHTML=`tells · first drop · ${bad ? `<span style="color:var(--warn)">${bad} giveaway${bad>1?'s':''}</span>` : 'none - it reads as played'}`;
+  h.title='would a listener hear a computer? each measure against what real records in this family do';
+  body.appendChild(h);
+  s.tells.forEach(t=>{
+    const want = t.low==null ? `≤ ${t.high}` : t.high==null ? `≥ ${t.low}` : `${t.low}–${t.high}`;
+    const row=document.createElement('div'); row.className='finding';
+    row.innerHTML=`<span class="dot ${t.ok?'ok':'note'}"></span><span class="where">${TELL_NAMES[t.name]||t.name}</span>
+      <span class="msg">${+(+t.value).toFixed(2)} <span style="color:var(--dim)">want ${want}</span></span>`;
     body.appendChild(row);
   });
 }
@@ -689,6 +715,13 @@ function playTone(ac, role, midi, t, dur, vel, from=null){
   g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(peak,t+a); g.gain.setValueAtTime(peak,t+Math.max(a,dur-rel)); g.gain.linearRampToValueAtTime(0,t+dur+rel);
   oscs.forEach(o=>{ o.start(t); o.stop(t+dur+rel+0.05); });
 }
+// The Deluge's swing, as the Deluge applies it: inside each eighth the off
+// sixteenth lands `amt`% of the way through (50 = straight).
+function swingTick(tick, amt){
+  if(!amt || amt===50) return tick;
+  const e=48, base=Math.floor(tick/e)*e, pos=tick-base, mid=e*amt/100, h=e/2;
+  return pos<=h ? base+pos*mid/h : base+mid+(pos-h)*(e-mid)/h;
+}
 function schedule(){
   const s=live(), ac=ctx(), spt=60/s.bpm/96, total=s.bars*s.ticks_per_bar;
   const now=ac.currentTime, until=now+LOOK;
@@ -696,7 +729,7 @@ function schedule(){
     if(nextTick>=total){ nextTick=0; startTime += total*spt; S.leadEnd=null; }
     const tickEnd = Math.min(total, nextTick+24);
     for(const role of ROLES){ const part=s.parts[role]; if(!part||S.muted.has(role)) continue;
-      for(const [midi,start,len,vel] of part.notes){ if(start>=nextTick && start<tickEnd){ const t=startTime+start*spt;
+      for(const [midi,start,len,vel] of part.notes){ if(start>=nextTick && start<tickEnd){ const t=startTime+swingTick(start, s.swing)*spt;
         if(part.output==='kit') playDrum(ac,midi,t,vel,len*spt);
         else if(role==='lead'){ const g=(S.leadEnd!=null && start<S.leadEnd && S.leadMidi!=null)?S.leadMidi:null; S.leadEnd=start+len; S.leadMidi=midi; playTone(ac,role,midi,t,len*spt,vel,g); }
         else playTone(ac,role,midi,t,len*spt,vel); } } }
@@ -708,6 +741,7 @@ function schedule(){
 // a click anywhere on the parts (or the ruler) jumps there.
 S.pauseTick = 0;
 function startPlayback(fromTick=S.pauseTick||0){
+  if(S.studio) return studioStart(fromTick);
   const ac=ctx(); ac.resume(); BUS.delay.delayTime.value=60/live().bpm*0.75;
   const spt=60/live().bpm/96;
   startTime=ac.currentTime+0.05-fromTick*spt; nextTick=fromTick;
@@ -716,10 +750,11 @@ function startPlayback(fromTick=S.pauseTick||0){
 }
 function currentTick(){
   if(!S.playing || !AC) return S.pauseTick||0;
+  if(S.studio && !STUDIO.started) return STUDIO.from||0;
   const s=live(), total=s.bars*s.ticks_per_bar;
   return Math.max(0, ((AC.currentTime-startTime)/(60/s.bpm/96))) % total;
 }
-function halt(){ clearInterval(timer); if(AC){ AC.close(); AC=null; BUS=null; } S.playing=false; }
+function halt(){ STUDIO.gen++; clearInterval(timer); if(AC){ AC.close(); AC=null; BUS=null; } S.playing=false; }
 function pausePlayback(){ S.pauseTick=currentTick(); halt(); $('play').textContent='▶ play'; showPos(S.pauseTick); }
 function stopPlayback(){ halt(); S.pauseTick=0; $('play').textContent='▶ play'; showPos(0); }
 function seekBar(bar){
@@ -743,6 +778,66 @@ function jumpSection(dir){
   if(target===undefined) target = dir>0 ? null : 0;
   if(target!==null) seekBar(target);
 }
+// ---------------------------------------------------------------- studio playback
+// The sketch above plays instantly. "Studio" plays the real preview - the
+// engine's own render: the sampled kit, the desk and its spaces, the swing -
+// fetched from the server 16 bars at a time and laid end to end as it plays.
+// A change made while it plays is heard from the next chunk on.
+const CHUNK=16;
+const STUDIO={gen:0, started:false, pending:false, next:0, from:0};
+try { S.studio = localStorage.getItem('riddim.studio')==='1'; } catch(e) { S.studio=false; }
+async function studioQueue(bar, gen, first=false){
+  const s=live(); if(bar>=s.bars) return;
+  const bars=Math.min(CHUNK, s.bars-bar);
+  STUDIO.pending=true;
+  if(first) status(`rendering bars ${bar+1}–${bar+bars}…`);
+  let buf;
+  try {
+    const r=await fetch(`/api/render?from=${bar}&bars=${bars}&mute=${[...S.muted].join(',')}`);
+    if(!r.ok){ let m='HTTP '+r.status; try { m=(await r.json()).error||m; } catch(e) {} throw new Error(m); }
+    const raw=await r.arrayBuffer();
+    if(gen!==STUDIO.gen || !AC) return;
+    buf=await AC.decodeAudioData(raw);
+  } catch(e){ if(gen===STUDIO.gen){ STUDIO.pending=false; status('studio render failed: '+e.message, true); } return; }
+  if(gen!==STUDIO.gen || !AC) return;
+  const spt=60/s.bpm/96, tpb=s.ticks_per_bar, dur=bars*tpb*spt;
+  let t0=startTime+bar*tpb*spt;
+  if(first || t0 < AC.currentTime+0.02){      // the first chunk, or a late one: play it from now
+    startTime=AC.currentTime+0.05-bar*tpb*spt; t0=startTime+bar*tpb*spt; }
+  const src=AC.createBufferSource(), g=AC.createGain(); src.buffer=buf;
+  g.gain.setValueAtTime(1, t0+Math.max(0,dur-0.02)); g.gain.linearRampToValueAtTime(0, t0+dur);
+  src.connect(g).connect(AC.destination); src.start(t0, 0, dur+0.01);
+  STUDIO.started=true; STUDIO.next=bar+bars; STUDIO.pending=false;
+  if(first) status('studio');
+}
+function studioStart(fromTick){
+  const ac=ctx(); ac.resume();
+  const s=live(), bar=Math.floor(fromTick/s.ticks_per_bar);
+  const gen=++STUDIO.gen;
+  STUDIO.started=false; STUDIO.pending=false; STUDIO.from=bar*s.ticks_per_bar; STUDIO.next=bar;
+  S.playing=true; $('play').textContent='❚❚ pause'; $('ab').classList.remove('on');
+  clearInterval(timer); timer=setInterval(()=>studioTick(gen), 60);
+  studioQueue(bar, gen, true);
+}
+function studioTick(gen){
+  if(gen!==STUDIO.gen || !AC) return;
+  const s=live(), tpb=s.ticks_per_bar;
+  if(!STUDIO.started){ showPos(STUDIO.from); return; }
+  const tick=(AC.currentTime-startTime)/(60/s.bpm/96);
+  if(tick>=s.bars*tpb){ stopPlayback(); return; }
+  showPos(Math.max(0, tick));
+  // ask for the next chunk halfway through this one
+  if(!STUDIO.pending && STUDIO.next<s.bars && tick > (STUDIO.next-CHUNK/2)*tpb) studioQueue(STUDIO.next, gen);
+}
+function setStudio(on){
+  const was=S.playing, at=currentTick();
+  if(was) halt();
+  S.studio=on; $('studio').classList.toggle('on', on);
+  try { localStorage.setItem('riddim.studio', on?'1':'0'); } catch(e) {}
+  if(was) startPlayback(at); else status(on ? 'studio sound: rendered on play' : 'sketch sound');
+}
+$('studio').onclick=()=>setStudio(!S.studio);
+$('studio').classList.toggle('on', S.studio);
 $('play').onclick=()=>{ if(S.playing) pausePlayback(); else startPlayback(); };
 $('stop').onclick=()=>stopPlayback();
 const typing = el => el && (el.tagName==='INPUT' && !['range','checkbox','button'].includes(el.type) || el.tagName==='TEXTAREA' || el.tagName==='SELECT' || el.isContentEditable);
