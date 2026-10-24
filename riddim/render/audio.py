@@ -93,6 +93,12 @@ PAD_LEVEL = 0.5
 # and its place - opposite the skank, as the keys sit on a reggae desk.
 BUBBLE_LEVEL = 1.0
 BUBBLE_PAN = 0.25
+# Dub's kick damped and round, not an 808 boom (the judge heard the boom as
+# "hip hop beat"); dub's kit through a 70s desk - rolled-off top, a little
+# tape - and its backbeat into the spring.
+DUB_KICK = True
+DUB_KIT_TONE = True
+DUB_SPRING_KIT = 0.25
 # Dub's backbeat on a cross-stick (the one-drop's rimshot), not a snare.
 DUB_STICK = True
 # The Deluge's swing, applied as it applies it (profile.deluge_swing).
@@ -348,6 +354,23 @@ def _synth_lead(midi, dur, vel, rnd, glide_from=None):
 
 # 808 metal: six square oscillators at inharmonic ratios.
 _METAL = (205.3, 304.4, 369.6, 522.7, 540.0, 800.0)
+
+
+def _dub_kick(dur, vel, rnd):
+    """A reggae kick: the acoustic drum, damped - a short round thump
+    under a felt beater, no 808 boom and no click (the sub is the low end)."""
+    v = _vel(vel)
+    rate = 0.86 + rnd.jitter(0.02)
+    top = _lp(_hp(_play("pearl/kick-01", rate), 50), 2200)
+    n = int(0.22 * SR)
+    t = np.arange(n) / SR
+    freq = 58 + 40 * np.exp(-t / 0.02)
+    body = np.sin(2 * np.pi * np.cumsum(freq) / SR) * np.exp(-t / 0.09)
+    m = max(len(top), n)
+    out = np.zeros(m, dtype=np.float32)
+    out[:n] += body.astype(np.float32) * 0.7
+    out[:len(top)] += top * 1.5
+    return (_sat(out, 1.3) * v).astype(np.float32)
 
 
 def _drum(row, dur, vel, rnd, garage=False, sampled=True):
@@ -610,6 +633,8 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                 out[:len(body)] += body
                 return out
             return x
+        if cross and midi == KICK and DUB_KICK:
+            return _dub_kick(dur, vel, rnd)
         return _drum(midi, dur, vel, rnd, garage)
 
     def at(tick):
@@ -736,6 +761,8 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                     _add(fx, at(note.start),
                          _play(HANDS[note.midi][0], 1.0, 0.6 * _vel(note.velocity)))
         plate_send += np.stack([sn, sn], axis=1)
+        if cross and DUB_SPRING_KIT:
+            spring_send += np.stack([sn, sn], axis=1) * DUB_SPRING_KIT
         hall_send += np.stack([fx, fx], axis=1) * 0.5
         delay_send += fx * 0.35 + sn * 0.12
     for r, (pl, sp, ha, de) in sends.items():
@@ -756,6 +783,11 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     # The kit in a room: a little of a real drum room on every hit.
     stems["drums"] = stems["drums"] + 0.22 * _convolve(
         _hp(stems["drums"], 120), _norm_ir(_sample("ir/nice_drum_room")))
+    if cross and DUB_KIT_TONE:
+        d = _lp(stems["drums"], 7000)
+        k = 1.0 / (np.max(np.abs(d)) or 1.0)
+        # Tape on the kit: peaks rounded, small-signal level unchanged.
+        stems["drums"] = _sat(d * k, 1.4) * (np.tanh(1.4) / (1.4 * k))
     d = int(3 * TICKS_PER_16TH * spt * SR)
     echo = _dub_delay(_hp(delay_send, 250), d, fb)
 
