@@ -488,7 +488,8 @@ def _resolve_material(
         progs = [prog] * len(sections)
         core = prog
     else:
-        progs, core = _harmony_for_sections(scale, sections, params, hrng)
+        progs, core = _harmony_for_sections(scale, sections, params, hrng,
+                                            max_peak_chords=prof.drop_chords)
 
     # One chord plan per section, laid out at the section's absolute start,
     # with voice leading continuing across the seams so a progression change
@@ -970,6 +971,7 @@ def _harmony_for_sections(
     sections: list[Section],
     params: SongParams,
     hrng: random.Random,
+    max_peak_chords: int | None = None,
 ) -> tuple[list[harmony.Progression], harmony.Progression]:
     """One progression per section, three personalities in all.
 
@@ -999,7 +1001,8 @@ def _harmony_for_sections(
             continue
         if sec.energy >= PEAK_ENERGY:
             if peak is None:
-                peak = harmony.choose(scale.name, 0.85, hrng, tolerance=0.4)
+                peak = harmony.choose(scale.name, 0.85, hrng, tolerance=0.4,
+                                      max_chords=max_peak_chords)
                 progs.append(peak)
             else:
                 # A later drop returns to the first one's loop, then develops
@@ -1387,8 +1390,54 @@ def _build_sub(part, section, prof, m: Material, rng):
                     nxt_st = min([st for _, st, _, _ in notes if st > 8] + [16.0])
                     notes = sorted(notes + [(r, 8.0, max(1.0, (nxt_st - 8) * m.bass.gate), 108)],
                                    key=lambda n: n[1])
+            if prof.family == "dubstep" and structure.kind_of(section) == "peak":
+                notes = _sub_economy(notes, m, prof, roots[b], roots[b + 1], rel_bar)
             notes = [(mi, s, l, structure.velocity_for(vel_energy, v)) for mi, s, l, v in notes]
             _emit(part, notes, abs_bar * TICKS_PER_BAR)
+
+
+def _sub_economy(notes, m: Material, prof, root, nxt_root, rel_bar):
+    """The 140 drop's sub: a handful of notes, said with weight.
+
+    A dubstep sub moves - it is the riff as often as not - but among very
+    few pitches: the chord's root and its octave, the fifth, and in a mode
+    with a flat second the b2 the sub leans on and falls back from. One
+    note per eight-bar phrase may step out of that, the approach into the
+    next chord at the end of the phrase. A walking sub - the riff in the
+    bass - keeps the chord's third and seventh as well. Everything else the generators
+    reached for - sevenths, passing tones, the tune doubled in the bass - is
+    brought onto the nearest of those, keeping its rhythm: the bar keeps its
+    groove and loses its wandering. (A roots bassline is a melody, and a
+    garage bass bounces between chord tones: this is only the drop sub of
+    the dubstep family.)"""
+    if not notes:
+        return notes
+    r = _sub_note(m, prof, root, root)
+    allowed = {r % 12, _sub_note(m, prof, root + 4, root) % 12}
+    third = None
+    if getattr(m.bass, "style", "walk") == "walk":
+        # A walking sub is the riff: it keeps the chord's third and its
+        # seventh - the b7 below the root is the sub's oldest move - so it
+        # walks the chord's own four notes rather than the scale. A stray
+        # note equally near the third and the root or fifth goes to the
+        # third. Held, pulsing and skipping subs sit on the root by design.
+        third = _sub_note(m, prof, root + 2, root) % 12
+        allowed |= {third, _sub_note(m, prof, root + 6, root) % 12}
+    colour = hook_mod.MODE_COLOUR.get(m.scale.name)
+    if colour is not None and colour[0] == 1:        # phrygian's b2 - the wobble's other note
+        allowed.add(m.scale.note(1) % 12)
+    approach = rel_bar % 8 == 7
+    out = []
+    for mi, st, ln, v in notes:
+        if mi % 12 in allowed or (approach and st >= 14.0):
+            out.append((mi, st, ln, v))
+            continue
+        # Nearest allowed pitch in the sub window; on a tie, a walking
+        # line's third, then the root.
+        choices = [c for c in range(prof.sub.low, prof.sub.high + 1) if c % 12 in allowed]
+        best = min(choices, key=lambda c: (abs(c - mi), c % 12 != third, c % 12 != r % 12))
+        out.append((best, st, ln, v))
+    return out
 
 
 def _bass_style(notes, m: Material, prof, root, nxt_root, rel_bar, rng):
@@ -1890,13 +1939,19 @@ def _build_lead(part, section, prof, m: Material, rng):
         notes.append([midi, t.step, t.length, t.velocity])
 
     out = []      # [midi, step, length, velocity, slides]
-    base_seed = m.lead_seed * 1000003 + section.start_bar * 4099
+    base_seed = m.lead_seed * 1000003
+    # The hook's cycle: a performance decision belongs to a place *in the
+    # hook*, so every pass of it - in this drop and the next - is played the
+    # same way. A riff is written once, flick and grace and all, and then
+    # it repeats; a player who reshuffles the ornaments on every pass is a
+    # random number generator, and that is exactly what a listener hears.
+    cycle = m.hook.length if m.hook is not None and m.hook.length > 0 else 4 * STEPS_PER_BAR
     for i, (midi, step, length, vel) in enumerate(notes):
         # Each note's performance is decided by where it is, not by how many
         # notes came before it: change the hook and the notes that stay keep
         # their accents, flicks and graces.
         # (Position only, never pitch: a transposed hook is played the same.)
-        rng = random.Random(base_seed + int(round(step * 4)) * 31)
+        rng = random.Random(base_seed + int(round((step % cycle) * 4)) * 31)
         nxt = notes[i + 1] if i + 1 < len(notes) else None
         gap = (nxt[1] - step) if nxt is not None else length
         bar = int(step // STEPS_PER_BAR)
@@ -1926,8 +1981,14 @@ def _build_lead(part, section, prof, m: Material, rng):
         # Flick: a weak note jumps the octave - only where it fits.
         # (Not in a build: a build approaches the drop's high point, it
         # does not leap past it.)
+        # And only to a height the line can reach: a flicked note stays
+        # within an octave of the notes either side of it, so the gesture is
+        # the octave pop a player makes, not a leap off the top of the tune.
+        prev_m = notes[i - 1][0] if i > 0 else midi
+        next_m = nxt[0] if nxt is not None else midi
         if w < 0.5 and rng.random() < lp.flick and midi + 12 <= lead_window(prof, lp)[1] + 5 \
-                and structure.kind_of(section) != "build":
+                and structure.kind_of(section) != "build" \
+                and abs(midi + 12 - prev_m) <= 12 and abs(midi + 12 - next_m) <= 12:
             midi += 12
 
         # Grace: a 32nd from a scale step below into a strong note, stealing

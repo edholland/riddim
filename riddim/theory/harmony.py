@@ -229,6 +229,7 @@ def choose(
     tension: float = 0.5,
     rng: random.Random | None = None,
     tolerance: float = 0.25,
+    max_chords: int | None = None,
 ) -> Progression:
     """Pick a progression for a mode at roughly the requested tension.
 
@@ -245,6 +246,18 @@ def choose(
         raise ValueError(
             f"no progression in the library is harmonically safe in {mode!r}"
         )
+    if max_chords is not None:
+        # A genre that keeps its loops short: only loops of that many
+        # distinct chords or fewer (falling back to the whole pool only if
+        # the mode has none - every mode has at least its drone).
+        pool = [p for p in pool if len(set(p.degrees)) <= max_chords] or pool
+        near = [p for p in pool if abs(p.tension - tension) <= tolerance]
+        if len(near) < 3:
+            # A short pool must not collapse onto one loop - every harmonic
+            # minor drop an i-V is a set with a fingerprint. The three
+            # nearest in tension stay in play.
+            near = sorted(pool, key=lambda p: (abs(p.tension - tension), p.name))[:3]
+        return rng.choice(near)
     near = [p for p in pool if abs(p.tension - tension) <= tolerance]
     return rng.choice(near or pool)
 

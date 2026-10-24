@@ -65,6 +65,11 @@ class Profile:
     # at 76 is two different records.
     bpm_range: tuple[int, int] = (0, 0)
     bars_per_chord: float = 2.0
+    # The most chords a drop's loop may carry. A dub version or a garage
+    # record runs a three- or four-chord loop happily; a 140 drop is a
+    # drone or a two-chord rock (i-bII, i-bVI, i-V) and the sub is the
+    # event - a four-chord anthem loop under it is a trance record.
+    drop_chords: int = 4
     chord_size: int = 3
     progression_tension: float = 0.35
     # Registers. The sub window is deliberately narrow - one oscillator, and
@@ -154,6 +159,7 @@ DUBSTEP_140 = Profile(
                    "late_pair", "organ", "dotted"),
     bars_per_chord_choices=(2.0, 4.0, 4.0, 8.0),
     family="dubstep",
+    drop_chords=2,
     lead_styles=("hook", "hook", "hook", "riff", "call_response"),
     bars_per_chord=4.0,      # very slow harmony; the sub is the event
     progression_tension=0.6,
@@ -228,6 +234,7 @@ DARK_GARAGE = Profile(
     bars_per_chord_choices=(2.0, 4.0, 4.0),
     lead_styles=("hook", "riff", "riff", "call_response"),
     family="dubstep",
+    drop_chords=2,
     bars_per_chord=4.0,
     progression_tension=0.55,
     sub=Register(24, 45),

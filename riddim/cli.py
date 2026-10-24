@@ -456,6 +456,25 @@ def cmd_render(args) -> int:
     return 0
 
 
+def cmd_tells(args) -> int:
+    """Where would a producer hear a machine? The tells of a batch of songs'
+    first drops against each family's ranges - one profile or all of them."""
+    from . import tells
+    from .compose import compose
+
+    profiles = ([profile_mod.get(args.profile).name] if args.profile else
+                ["roots_dub", "steppers_dub", "dubby_halftime", "uk_garage",
+                 "dark_garage", "dubstep_140"])
+    for prof in profiles:
+        songs = [compose(profile=prof, seed=s, live=args.live)
+                 for s in range(args.seed, args.seed + args.count)]
+        print(f"{prof}: {len(songs)} songs, "
+              f"{sum(tells.count(s) for s in songs) / len(songs):.2f} tells a song")
+        for name, row in tells.survey(songs).items():
+            print(f"  {name:14s} mean {row['mean']:6.2f}   human-range {row['pass']:4.0%}")
+    return 0
+
+
 def cmd_ui(args) -> int:
     from .ui.server import serve
 
@@ -660,6 +679,14 @@ def build_parser() -> argparse.ArgumentParser:
     _add_compose_args(p)
     p.add_argument("--out", default=None, help="write the .wav here")
     p.set_defaults(func=cmd_render)
+
+    p = subs.add_parser(
+        "tells", help="audit a batch for the giveaways that a computer wrote it")
+    p.add_argument("--profile", default=None, help="one profile (default: all six)")
+    p.add_argument("--count", type=int, default=16, help="songs per profile")
+    p.add_argument("--seed", type=int, default=100, help="first seed")
+    p.add_argument("--live", action="store_true", help="audit live tracks")
+    p.set_defaults(func=cmd_tells)
 
     p = subs.add_parser("ui", help="open the web UI to preview, tweak and regenerate")
     p.add_argument("--port", type=int, default=8765)

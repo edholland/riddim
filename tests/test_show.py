@@ -413,6 +413,7 @@ def _lead_features(song):
         # section loudness (a soft outro, a ramped build) is not accent
         velspread=st.mean([st.pstdev(v) for v in _by_bar(ns) if len(v) >= 2] or [0.0]),
         pitch=st.mean(n.midi for n in ns),
+        vocab=len({n.midi % 12 for n in ns}),
         overlaps=sum(1 for a, b in zip(ns, ns[1:]) if a.end > b.start) / len(ns),
         sounding=len({t for n in ns for t in range(n.start // T, n.end // T)}),
     )
@@ -423,6 +424,7 @@ DIAL_EFFECTS = {
     "hook.density": ("notes", 0.25, 0.85), "hook.syncopation": ("offbeat", 0.1, 0.9),
     "hook.motion": ("interval", 0.1, 0.9), "hook.repeat": ("repeats", 0.0, 0.7),
     "hook.span": ("range", 4, 11), "hook.breath": ("sounding", 0.45, 0.12),
+    "hook.outside": ("vocab", 0.0, 1.0),
     "lead.gate": ("length", 0.1, 1.0), "lead.accent": ("velspread", 0.0, 1.0),
     "lead.echo": ("notes", 0.0, 1.0), "lead.flick": ("interval", 0.0, 0.8),
     "lead.grace": ("notes", 0.0, 1.0), "lead.slide": ("overlaps", 0.0, 1.0),

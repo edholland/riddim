@@ -112,6 +112,7 @@ _BOUNDS = {
     "hook.climax": (0.2, 0.95),
     "hook.repetition": (0.0, 1.0),
     "hook.colour": (0.0, 1.0),
+    "hook.outside": (0.0, 1.0),
     "hook.breath": (0.1, 0.5),
     "hook.unit_bars": (1.0, 2.0),
     "hook.candidates": (1.0, 64.0),
@@ -619,6 +620,10 @@ INTENTS = {
     "straighter_hook": [Op("hook.syncopation", -0.2)],
     "more_colour": [Op("hook.colour", 0.25)],
     "less_colour": [Op("hook.colour", -0.25)],
+    # Inside the pentatonic, or out across the whole mode.
+    "pentatonic": [Op("hook.outside", to=0.0)],
+    "more_outside": [Op("hook.outside", 0.25)],
+    "more_inside": [Op("hook.outside", -0.25)],
     "sentence": [Op("hook.form", to="sentence")],
     "period": [Op("hook.form", to="period")],
     "riff_form": [Op("hook.form", to="riff")],
@@ -738,6 +743,8 @@ INTENT_ALIASES = {
     "organ": "organ_stabs", "vocal chop": "chop_lead", "chopped": "chop_lead",
     "chop": "chop_lead", "chops": "chop_lead", "one drop": "one_drop",
     "halftime": "half_time", "half time": "half_time",
+    "outside": "more_outside", "out": "more_outside", "jazzier": "more_outside",
+    "inside": "more_inside", "simpler tune": "more_inside", "pent": "pentatonic",
 }
 
 

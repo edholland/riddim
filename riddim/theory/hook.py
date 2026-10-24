@@ -73,6 +73,21 @@ MODE_COLOUR = {
 
 HOOK_CONTOURS = ("arch", "ascending", "valley", "falling_tail", "zigzag", "descending")
 
+# The five notes each mode's tunes are actually built from, as 0-indexed
+# degrees of the seven-note mode. Dub melodica lines, 140 leads and garage
+# chops are overwhelmingly pentatonic - the minor pentatonic over the minor
+# modes - with the mode's one colour tone (MODE_COLOUR) let in on top. A
+# generator allowed every scale tone uses every scale tone, and a line that
+# walks the whole mode is the plainest sign that nobody wrote it.
+PALETTES = {
+    "minor": (0, 2, 3, 4, 6), "aeolian": (0, 2, 3, 4, 6),
+    "dorian": (0, 2, 3, 4, 6), "phrygian": (0, 2, 3, 4, 6),
+    "harmonic_minor": (0, 2, 3, 4, 5), "melodic_minor": (0, 2, 3, 4, 5),
+    "phrygian_dominant": (0, 1, 2, 4, 5),
+    "major": (0, 1, 2, 4, 5), "ionian": (0, 1, 2, 4, 5),
+    "lydian": (0, 1, 2, 4, 5), "mixolydian": (0, 1, 2, 4, 6),
+}
+
 # Rhythmic idioms: (motive length in steps, onsets), strictly sparse to
 # dense - notes per step rise along each row, so `density` always means
 # "more notes". A
@@ -117,6 +132,7 @@ class HookParams:
     contour: str = "arch"
     candidates: int = 32         # how many hooks are auditioned
     contrast: float = 0.7        # how often a later drop brings a B-theme before the hook
+    outside: float = 0.15        # how willingly the tune leaves its pentatonic palette
 
 
 @dataclass
@@ -328,6 +344,47 @@ def _colour(tones: list[Tone], scale: Scale, amount: float, rng) -> list[Tone]:
     return out
 
 
+def palette(scale: Scale) -> set[int] | None:
+    """The degrees (mod the scale's size) a hook in this mode is built
+    from: its pentatonic. None for a scale that is already that small.
+    (The mode's colour tone is not in it: `_colour` places that once, where
+    it means something, and those placements are kept.)"""
+    if scale.name not in PALETTES or scale.size != 7:
+        return None
+    return set(PALETTES[scale.name])
+
+
+def _to_palette(tones: list[Tone], scale: Scale, outside: float, rng,
+                keep: set | frozenset = frozenset()) -> list[Tone]:
+    """Bring each tone outside the palette onto its nearest palette note -
+    continuing the line's direction, so a passing step becomes a step of
+    the pentatonic (a third) rather than a repeated note. `outside` is the
+    chance a stray tone is kept: the passing note a player lets through."""
+    pal = palette(scale)
+    if pal is None:
+        return tones
+    size = scale.size
+    colour = MODE_COLOUR[scale.name][0] if scale.name in MODE_COLOUR else None
+    out: list[Tone] = []
+    prev = None
+    for t in sorted(tones, key=lambda t: t.step):
+        # `keep` holds the steps where `_colour` put the mode's colour tone
+        # on purpose: that one stays, wherever the motive states it.
+        if t.alter or t.degree % size in pal or t.degree % size == colour \
+                and t.step in keep or rng.random() < outside:
+            out.append(t)
+            prev = t.degree
+            continue
+        up = prev is None or t.degree >= prev
+        for off in ((1, -1, 2, -2) if up else (-1, 1, -2, 2)):
+            if (t.degree + off) % size in pal:
+                t = replace(t, degree=t.degree + off)
+                break
+        out.append(t)
+        prev = t.degree
+    return out
+
+
 def generate(
     params: HookParams,
     scale: Scale,
@@ -346,7 +403,7 @@ def generate(
     # so the same idea comes back adjusted rather than replaced.
     seed = rng.random()
     sub = {k: random.Random(f"{seed}:{k}") for k in
-           ("rhythm", "shape", "start", "colour", "vel", "land", "form")}
+           ("rhythm", "shape", "start", "colour", "vel", "land", "form", "palette")}
     length, onsets = motive_rhythm(params, sub["rhythm"])
     shape = motive_shape(len(onsets), params, sub["shape"])
     # Re-strikes: with `repeat` up, a note with room after it is struck again
@@ -549,7 +606,9 @@ def _assemble(params, scale, steps, sung, length, onsets, shape, trajectory, sta
     a_tones = _statements(length, onsets, shape, trajectory, start, sung, contour, vrng)
     if cap is not None:
         a_tones = [replace(t, length=min(t.length, cap)) for t in a_tones]
+    plain = a_tones
     a_tones = _colour(a_tones, scale, params.colour, sub["colour"])
+    coloured = frozenset(t.step for t, o in zip(a_tones, plain) if t.degree != o.degree)
     # The opening unit ends open - on the 2nd, 4th or 5th - asking a question.
     a_open = _land(a_tones, sub["land"].choice((1, 3, 4, 4)), size)
 
@@ -622,6 +681,10 @@ def _assemble(params, scale, steps, sung, length, onsets, shape, trajectory, sta
     else:   # call_answer: the second call closes; the rests are the band's.
         units = [a, Unit("rest", [], steps), unit("a2", _land(a_tones, 0, size)),
                  Unit("rest", [], steps)]
+    if params.phrasing != "arp":       # an arpeggio is its chord's tones already
+        prng = sub["palette"]
+        units = [replace(u, tones=_to_palette(u.tones, scale, params.outside, prng, coloured))
+                 for u in units]
     return Hook(units, params, steps, contour)
 
 
@@ -723,6 +786,16 @@ def _avoid_clash(t: Tone, scale: Scale, chord: Chord | None) -> Tone:
 
 
 
+def vocabulary(params: HookParams) -> int:
+    """How many different pitches a hook of this kind is built from: three
+    for a stab, a drone or a chop, four for a call or a riff, five for a
+    sung line or an arpeggio - and one more for each two degrees of span
+    past seven, and up to two more as `outside` opens the tune to the whole
+    mode, so neither dial is auditioned away by this one."""
+    base = {"stabs": 3, "drone": 3, "chop": 3, "song": 5, "arp": 5}.get(params.phrasing, 4)
+    return base + max(0, params.span - 7) // 2 + int(round(2 * params.outside))
+
+
 def score(hook: Hook, tones: list[Tone], scale: Scale, chord_at) -> tuple[float, dict]:
     """How sound the realised hook is, and how faithfully it is what its
     dials asked for, 0..1, with reasons."""
@@ -751,7 +824,15 @@ def score(hook: Hook, tones: list[Tone], scale: Scale, chord_at) -> tuple[float,
     rep["returns"] = 1.0 if any([t.step for t in u.tones] == a for u in hook.units[1:]) else 0.4
     moves = [abs(b - a) for a, b in zip(pitches, pitches[1:])]
     rep["sane"] = 0.0 if any(m == 6 or m > 12 for m in moves) else 1.0
-    rep["variety"] = 1.0 if len({x % 12 for x in pitches}) >= 4 else 0.5
+    # Economy: a hook people hum is built from a handful of pitches, said
+    # again - not the whole scale walked through. Three notes make a stab or
+    # a chop, four a riff or a call, five a sung line; a wider span earns a
+    # note more. Fewer than three is a drum, not a tune. (The old measure
+    # rewarded four *or more*, and the selector duly reached for every note
+    # the mode allowed - the clearest sign that nobody wrote it.)
+    vocab = len({x % 12 for x in pitches})
+    rep["economy"] = (0.6 if vocab < 3 else
+                      max(0.0, 1.0 - 0.35 * max(0, vocab - vocabulary(p))))
     # The opening unit is what is remembered: it has to move. Three
     # different notes for most leads; two for stabs and drones, which are
     # built from fewer.
@@ -789,7 +870,7 @@ def score(hook: Hook, tones: list[Tone], scale: Scale, chord_at) -> tuple[float,
     rep["over_bass"] = 1.0 if share <= 0.34 else max(0.0, 1.0 - (share - 0.34) * 2.5)
 
     weights = {"chord_fit": 2.0, "climax": 1.2, "closes": 0.8, "returns": 0.8,
-               "sane": 1.0, "variety": 0.5, "cell_moves": 1.5, "over_bass": 1.2,
+               "sane": 1.0, "economy": 1.4, "cell_moves": 1.5, "over_bass": 1.2,
                "f_span": 1.6, "f_motion": 1.0, "f_sync": 1.0, "f_repeat": 0.8}
     total = sum(weights[k] * max(0.0, rep[k]) for k in weights) / sum(weights.values())
     return round(total, 4), rep
@@ -838,7 +919,7 @@ def params_for(feel: str, rng: random.Random, family: str = "") -> HookParams:
     names, weights = zip(*rhythms)
     #                   call riff song stabs drone arp chop
     phrasing_weights = ((2, 3, 1, 1, 0, 1, 5) if garage else
-                        (3, 2, 2, 3, 1, 2, 1) if half else (3, 2, 3, 1, 2, 1, 0))
+                        (3, 2, 2, 3, 1, 1, 1) if half else (3, 2, 3, 1, 2, 1, 0))
     return HookParams(
         form=rng.choices(FORMS, (4, 3, 3, 3))[0],
         phrasing=rng.choices(PHRASINGS, phrasing_weights)[0],
@@ -850,12 +931,18 @@ def params_for(feel: str, rng: random.Random, family: str = "") -> HookParams:
         repeat=round(rng.uniform(0.05, 0.5), 2),
         leap=rng.choice((3, 4, 4, 5)),
         climax=round(rng.uniform(0.5, 0.8), 2),
-        span=rng.choice((5, 6, 7, 8, 9, 10)),
+        # Most hooks live inside a fifth or a sixth; a wide one is the
+        # exception that makes the rule audible. Garage and 140 leads are
+        # tighter still - a chop, a riff, a stab and its octave.
+        span=rng.choice((4, 5, 5, 6, 6, 7) if garage or family == "dubstep"
+                        else (4, 5, 5, 6, 7, 8)),
         repetition=round(rng.uniform(0.6, 0.95), 2),
         colour=round(rng.uniform(0.3, 0.9), 2),
         breath=round(rng.uniform(0.25, 0.4), 2),
         contour=rng.choice(HOOK_CONTOURS),
         contrast=round(rng.uniform(0.4, 0.9), 2),
+        # Drawn last, so every draw above is what it always was.
+        outside=round(rng.uniform(0.0, 0.3), 2),
     )
 # The other way round: a contrasting theme moves where the hook does not.
 _OPPOSITE = {"arch": "valley", "valley": "arch", "ascending": "descending",

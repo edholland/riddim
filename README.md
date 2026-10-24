@@ -79,7 +79,7 @@ the critic's fixes:
 
 | group | knobs |
 |---|---|
-| `hook` (what is sung) | `rhythm` (idiom) · `form` · `contour` · `density` · `syncopation` · `motion` (steps ↔ leaps) · `repeat` (repeated notes / re-strikes) · `leap` · `span` · `climax` · `repetition` · `colour` · `breath` · `unit_bars` · `candidates` |
+| `hook` (what is sung) | `rhythm` (idiom) · `form` · `contour` · `density` · `syncopation` · `motion` (steps ↔ leaps) · `repeat` (repeated notes / re-strikes) · `leap` · `span` · `climax` · `repetition` · `colour` · `outside` (pentatonic ↔ whole mode) · `breath` · `unit_bars` · `candidates` |
 | `lead` (how it is played) | `lead_style` (hook · call_response · riff · long_tones) · `octave` · `gate` · `slide` · `accent` · `grace` · `flick` · `echo` · `ornament` |
 | `interplay` | `presence` (how much the lead sings) · `answer` (fill its gaps) · `lock` (sub takes the hook's rhythm) · `counter` (pad counter-line) · `space` (stabs duck the lead) |
 | `dynamics` | `roll` · `riser` · `drop_gap` (beats) · `impact` · `switch_up` · `fills` |
@@ -101,6 +101,56 @@ Words resolve to moves on them: `punchier`, `smoother`, `staccato`,
 song moves somewhere new and stays itself, on the trail, undoable. **New
 hook** (UI button, or `vary --how hook`) redraws only the hook's seed: a new
 tune over the same band, and every part that answers it follows.
+
+## Writing like a person
+
+Nobody hears a generator in a wrong note. They hear it in *too many* notes:
+a hook that walks the whole scale, a sub that visits every degree, a riff
+whose ornaments land somewhere new on every pass. People write with a
+handful of pitches and say the same thing again. `riddim/tells.py` measures
+exactly that, on the first drop, against the range each family's records
+sit in:
+
+| tell | what it is | dub | dubstep | garage |
+|---|---|---|---|---|
+| `lead_vocab` | distinct pitch classes in the lead | ≤ 6 | ≤ 5 | ≤ 5 |
+| `lead_range` | semitones, octave flicks folded | ≤ 12 | ≤ 12 | ≤ 12 |
+| `lead_density` | notes per bar | ≤ 5 | ≤ 4 | ≤ 6 |
+| `lead_restated` | sung bars that repeat one 1/2/4/8 bars back | ≥ 0.45 | ≥ 0.5 | ≥ 0.45 |
+| `drop_chords` | distinct chords under the drop | ≤ 4 | ≤ 2 | ≤ 4 |
+| `sub_extra` | sub pitches beyond the chords' roots and fifths | ≤ 3 | ≤ 2 | ≤ 2 |
+| `sub_on_root` | share of sounding sub time on the chord root | ≥ .45 | ≥ .75 | ≥ .55 |
+
+```bash
+./riddim-cli tells                       # 16 songs of each family
+./riddim-cli tells --profile dubstep --count 40
+```
+
+The ranges are genre judgement written down to be argued with; calibrate
+them against reference MIDI when it is to hand. What answers them:
+
+- **The pentatonic palette** (`hook.PALETTES`). Every hook is built inside
+  its mode's five-note pentatonic, with the mode's colour tone placed once
+  on purpose; `hook.outside` is the chance a stray scale tone is let
+  through (drawn 0–0.3; words `pentatonic`, `outside`, `inside`). The hook
+  scorer rewards **economy** - three notes for a stab or chop, four for a
+  call or riff, five for a sung line - where it used to reward variety.
+- **Narrower spans.** Most hooks live inside a fifth or a sixth; garage and
+  140 hooks are drawn tighter still.
+- **A riff is played the same way every time.** Flicks, graces, trills and
+  accents are seeded by the note's place *in the hook*, not in the song, so
+  each pass is performed identically - this drop and the next. A flick only
+  pops a note up an octave if it stays within an octave of its neighbours.
+- **The 140 drop.** `Profile.drop_chords` caps the drop's loop: two chords
+  for dubstep and dark garage (a drone, i-bII, i-bVI, i-V), four elsewhere.
+  The dubstep-family drop sub keeps to the chord's root and fifth (and
+  phrygian's b2), a walking sub to the chord's four notes, with one approach
+  note into the next phrase - everything else is snapped, keeping its rhythm.
+
+Across 24 fresh seeds a family, the giveaways per song went from 2.0-4.1
+to 1.0-2.0 (dubstep 4.08 → 1.92), every family's hook range from 14-18
+semitones to 10-12, and restated drop bars from about a fifth to about a
+half. `tests/test_tells.py` holds a batch of each family to the ceiling.
 
 ## Why it is built this way
 
@@ -494,6 +544,7 @@ compose.py  the pipeline: key → progression → hook → plan → parts → So
 direct.py   steering — knobs, choice knobs, ops, word intents, mutation, trail
 critique.py the self-critic: findings, fixes, the score, the revision loop
 analyze.py  the listener: musical measures and one score to rank by
+tells.py    where a producer would hear a machine: the giveaways, measured
 corpus.py   a show: best-of-N songs, set ordering, variations, files
 song.py     Note / Part / Song / Rig — the boundary between theory and MIDI
 render/     standard MIDI file output, and an audio preview synth
