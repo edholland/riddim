@@ -132,6 +132,7 @@ _BOUNDS = {
     "dynamics.cadence": (0.0, 1.0),
     "dynamics.layering": (0.0, 1.0),
     "dynamics.lift": (0.0, 1.0),
+    "dynamics.bass_drops": (0.0, 3.0),
     "hook.contrast": (0.0, 1.0),
 }
 
@@ -653,6 +654,9 @@ INTENTS = {
     "more_breaks": [Op("dynamics.switch_up", 0.25)],
     "fewer_breaks": [Op("dynamics.switch_up", -0.25)],
     "more_fills": [Op("dynamics.fills", 0.2)],
+    # The dub desk's oldest move: pull the bass, slam it back.
+    "more_bass_drops": [Op("dynamics.bass_drops", 0.6)],
+    "fewer_bass_drops": [Op("dynamics.bass_drops", -0.6)],
     "fewer_fills": [Op("dynamics.fills", -0.2)],
 }
 
@@ -743,6 +747,7 @@ INTENT_ALIASES = {
     "organ": "organ_stabs", "vocal chop": "chop_lead", "chopped": "chop_lead",
     "chop": "chop_lead", "chops": "chop_lead", "one drop": "one_drop",
     "halftime": "half_time", "half time": "half_time",
+    "pull the bass": "more_bass_drops", "bass drops": "more_bass_drops", "drop the bass": "more_bass_drops",
     "outside": "more_outside", "out": "more_outside", "jazzier": "more_outside",
     "inside": "more_inside", "simpler tune": "more_inside", "pent": "pentatonic",
 }

@@ -898,6 +898,10 @@ def _layers(params: SongParams, sections: list[Section]) -> list:
             if sec.bars >= 16:
                 out.append((end - 2 * block, end, {("chords", None)}))
             continue
+        if kind in ("peak", "body", "release") and sec.plays("sub"):
+            drng = random.Random(f"{params.seed}:bassdrop:{i}")
+            for a, b in dynamics.bass_drop_windows(sec, params.dynamics, drng):
+                out.append((a, b, {("sub", None)}))
         if kind != "peak" or sec.bars < 16:
             continue
         if random.Random(f"{params.seed}:layers:{i}").random() >= params.dynamics.layering:

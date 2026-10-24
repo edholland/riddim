@@ -865,3 +865,26 @@ def test_bass_gate_controls_hold():
         return statistics.mean(n.length / TICKS_PER_16TH for n in s.part("sub").notes)
 
     assert median_len(0.95) > median_len(0.5) * 1.4
+
+
+def test_the_desk_pulls_the_bass_in_dub():
+    """Dub's oldest desk move: the sub muted for a bar on a phrase's turn
+    and slammed back on the next downbeat - never in a section's first bar,
+    and only where the dynamics ask for it."""
+    import random as _r
+    from riddim.arrange import dynamics
+    from riddim.arrange.structure import Section
+    sec = Section(name="peak", bars=32, energy=0.9, start_bar=8)
+    wins = dynamics.bass_drop_windows(sec, dynamics.DynamicsParams(bass_drops=2.0), _r.Random(1))
+    assert wins
+    for a, b in wins:
+        bar = a // TICKS_PER_BAR - sec.start_bar
+        assert bar > 0 and (b // TICKS_PER_BAR - sec.start_bar - 1) % 8 in (3, 7)
+        assert 1 <= (b - a) // TICKS_PER_BAR <= 2
+    assert not dynamics.bass_drop_windows(sec, dynamics.DynamicsParams(bass_drops=0.0), _r.Random(1))
+    # The dub family uses it: somewhere in a set the sub drops out mid-section.
+    dropped = 0
+    for seed in range(1, 9):
+        song = compose("roots_dub", seed=seed)
+        dropped += song.params.dynamics.bass_drops > 0
+    assert dropped == 8

@@ -82,6 +82,15 @@ TREAT_PAD = True
 # record is the loudest tell there is (measured: the same drop with its lead
 # 10 dB down goes from 0.12 to 0.64 "real record" with the judge).
 LEAD_LEVEL = 0.4
+# A dub version's melodica sits further back still (measured on six dub
+# drops against 131 roots and steppers records: lead 0.40 -> 0.25 takes the
+# judge's real-record probability 0.48 -> 0.68). Lower again and the tune
+# stops carrying the song, whatever the judge says - this is the middle.
+LEAD_LEVEL_DUB = 0.25
+# The pad is the "new age" in every genre: at half level it halves.
+PAD_LEVEL = 0.5
+# Dub's backbeat on a cross-stick (the one-drop's rimshot), not a snare.
+DUB_STICK = True
 # The Deluge's swing, applied as it applies it (profile.deluge_swing).
 SWING = True
 # Master: bus glue and soft clip. (A lighter master - nearer the records'
@@ -570,6 +579,28 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     except Exception:      # noqa: BLE001 - an unknown profile renders straight
         swing = 50
 
+    try:
+        family = _profile_mod.get(prof).family if prof else ""
+    except Exception:      # noqa: BLE001
+        family = ""
+    cross = DUB_STICK and family == "dub"
+
+    def kit(midi, dur, vel):
+        """A kit hit as this genre plays it: in dub the one-drop's backbeat
+        is a cross-stick rimshot, not a snare."""
+        if cross and midi in (SNARE, RIM):
+            name = "hands/stick_m" if midi == SNARE else "hands/stick_h"
+            x = _play(name, 1.0 + rnd.jitter(0.02), 2.2 * _vel(vel))
+            if midi == SNARE:
+                body = _drum(SNARE, dur, vel, rnd, False) * 0.3
+                m = max(len(x), len(body))
+                out = np.zeros(m, dtype=np.float32)
+                out[:len(x)] += x
+                out[:len(body)] += body
+                return out
+            return x
+        return _drum(midi, dur, vel, rnd, garage)
+
     def at(tick):
         """Sample index of a tick, swung as the Deluge would play it."""
         return int((_swing_ticks(tick, swing) - w0) * spt * SR)
@@ -594,7 +625,7 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                 _add(buf, start, _pan(x, p + rnd.jitter(0.05)))
                 continue
             if part.output == "kit":
-                x = _drum(note.midi, dur, note.velocity, rnd, garage)
+                x = kit(note.midi, dur, note.velocity)
                 p = DRUM_PAN.get(note.midi, 0.0)
                 if note.midi == HAT:
                     p += rnd.jitter(0.08)
@@ -635,7 +666,8 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     # Clear the mud: only the kick and the sub own the bottom.
     for r, hp in (("chords", 220), ("pad", 160), ("lead", 200), ("perc", 120), ("bass", 70)):
         stems[r] = _hp(stems[r], hp)
-    stems["lead"] = stems["lead"] * LEAD_LEVEL
+    stems["lead"] = stems["lead"] * (LEAD_LEVEL_DUB if family == "dub" else LEAD_LEVEL)
+    stems["pad"] = stems["pad"] * PAD_LEVEL
     sends = dict(SENDS)
     if TREAT_LEAD:
         stems["lead"] = _sat(_lp(_hp(stems["lead"], 380, order=4), 3000, order=4) * 1.6, 1.8) * 0.45
@@ -678,7 +710,7 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                 continue
             at_ = at(note.start)
             if note.midi in (SNARE, RIM):
-                _add(sn, at_, _drum(note.midi, note.length * spt, note.velocity, rnd, garage)
+                _add(sn, at_, kit(note.midi, note.length * spt, note.velocity)
                      * (1.0 if note.midi == SNARE else 0.4))
             elif note.midi in (RISER, CRASH):
                 _add(fx, at_, _drum(note.midi, note.length * spt, note.velocity, rnd))

@@ -863,7 +863,9 @@ def params_for_family(family: str, rng, bpm: int | None = None) -> StructurePara
             omit=_draw_omit(rng),
             grooves=rng.choice((0.25, 0.5, 0.5)),
         )
-    total = _bars_for_minutes(rng, bpm, 3.6, 5.4, (72, 80, 96, 104))
+    # A dub version is a record side: the roots and steppers references run
+    # ~61-70 bars at ~70 bpm, three and a half to four minutes.
+    total = _bars_for_minutes(rng, bpm, 3.0, 4.4, (64, 72, 72, 80))
     cold = rng.random() < 0.12
     return StructureParams(
         total_bars=total,
