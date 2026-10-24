@@ -93,10 +93,13 @@ PAD_LEVEL = 0.5
 # and its place - opposite the skank, as the keys sit on a reggae desk.
 BUBBLE_LEVEL = 1.0
 BUBBLE_PAN = 0.25
-# Dub's kick damped and round, not an 808 boom (the judge heard the boom as
-# "hip hop beat"); dub's kit through a 70s desk - rolled-off top, a little
-# tape - and its backbeat into the spring.
-DUB_KICK = True
+# Dub's kit through a 70s desk - rolled-off top, a little tape - and its
+# backbeat into the spring. Measured on five dub drops: the desk tone takes
+# "hip hop beat" 0.50 -> 0.37 and "dub reggae" 0.09 -> 0.17 at the same
+# real-record score; the spring is neutral (kept: it is the sound). The
+# damped kick (`_dub_kick`) reads more "reggae" (0.05 -> 0.16) but its sine
+# body reads as MIDI (real 0.94 -> 0.60): off until it has a recorded body.
+DUB_KICK = False
 DUB_KIT_TONE = True
 DUB_SPRING_KIT = 0.25
 # Dub's backbeat on a cross-stick (the one-drop's rimshot), not a snare.
