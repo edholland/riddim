@@ -38,7 +38,19 @@ import urllib.request
 AUDIO_EXT = (".mp3", ".flac", ".ogg", ".m4a", ".wav", ".aiff", ".aif")
 
 
-def _get(url, path=None):
+def _get(url, path=None, tries=4):
+    """Fetch with retries: the archive throws the odd 500 under load."""
+    for k in range(tries):
+        try:
+            return _get_once(url, path)
+        except Exception as e:      # noqa: BLE001 - network, HTTP, partial reads
+            if k == tries - 1:
+                raise
+            print(f"  retry {k + 1} ({e}) {url}", flush=True)
+            time.sleep(5 * (k + 1))
+
+
+def _get_once(url, path=None):
     req = urllib.request.Request(url, headers={"User-Agent": "riddim-collect/1.0"})
     with urllib.request.urlopen(req, timeout=120) as r:
         if path is None:
@@ -58,17 +70,23 @@ def archive_item(url, tags, audio, seen, write):
     item = urllib.parse.urlparse(url).path.rstrip("/").split("/")[-1]
     meta = json.loads(_get(f"https://archive.org/metadata/{item}"))
     m = meta.get("metadata", {})
-    for f in meta.get("files", []):
+    files = [f for f in meta.get("files", []) if f["name"].lower().endswith(AUDIO_EXT)]
+    # The archive derives MP3s from what was uploaded: take the originals
+    # only, so a FLAC album is not fetched twice.
+    originals = [f for f in files if f.get("source") != "derivative"]
+    for f in originals or files:
         name = f["name"]
-        if not name.lower().endswith(AUDIO_EXT):
-            continue
         rid = "ia_" + hashlib.sha1(f"{item}/{name}".encode()).hexdigest()[:12]
         if rid in seen:
             print(f"have {rid}  {name}")
             continue
         ext = os.path.splitext(name)[1].lower()
         dest = os.path.join(audio, rid + ext)
-        _get(f"https://archive.org/download/{item}/{urllib.parse.quote(name)}", dest)
+        try:
+            _get(f"https://archive.org/download/{item}/{urllib.parse.quote(name)}", dest)
+        except Exception as e:      # noqa: BLE001
+            print(f"failed {item}/{name}: {e} (re-run to retry)", flush=True)
+            continue
         folder, base = os.path.split(name)
         write({"id": rid, "url": f"https://archive.org/details/{item}", "source": "archive.org",
                "item": item, "path_in_item": name,
@@ -110,7 +128,10 @@ def main():
             def write(row):
                 with open(manifest, "a") as f:
                     f.write(json.dumps(row) + "\n")
-            archive_item(url, tags, audio, seen, write)
+            try:
+                archive_item(url, tags, audio, seen, write)
+            except Exception as e:  # noqa: BLE001
+                print(f"failed {url}: {e} (re-run to retry)", flush=True)
             continue
         info = subprocess.run(["yt-dlp", "--no-playlist", "--print", "id", url],
                               capture_output=True, text=True)

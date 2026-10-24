@@ -1,2 +1,32 @@
 # one URL per line, optional tags after it (see ml/collect_refs.py)
+# Digital Mystikz
 https://archive.org/details/dmzdiscog05   dubstep dmz
+# Tempa / Big Apple / DMZ
+https://archive.org/details/Artwork-RedEpbam001   dubstep bigapple artwork
+https://archive.org/details/Benga-CrunkedUpVinyl-2007-xtctempa026   dubstep tempa benga
+https://archive.org/details/Benga-InvasionEpbam008   dubstep bigapple benga
+https://archive.org/details/BengaAndSkream-HydroVINYL   dubstep benga skream
+https://archive.org/details/BengaVSkream-TheJudgmentbam003VINYL   dubstep bigapple benga skream
+https://archive.org/details/BengaWalshAndKromestar-Hf014VINYL   dubstep benga
+https://archive.org/details/D1-TrialRuntempa2007VINYL   dubstep tempa d1
+https://archive.org/details/D1-GoldenBulletROAD006Vinyl   dubstep d1
+https://archive.org/details/Cokidmz004Officer_MoodDubVINYL   dubstep dmz coki
+https://archive.org/details/01.-coki-spongebob   dubstep coki
+# Hyperdub / Kode9 / Burial
+https://archive.org/details/Kode9YouDontWashDub   dubstep hyperdub kode9
+https://archive.org/details/burial-2006-hyperdub   dubstep hyperdub burial
+https://archive.org/details/burial-untrue   dubstep hyperdub burial
+https://archive.org/details/Burial-SouthLondonBoroughsHdb001   dubstep hyperdub burial
+# Planet Mu / Skull Disco / others
+https://archive.org/details/Geiom-BlackScreen   dubstep geiom
+https://archive.org/details/ClueKidAndCotti-4nExchangeEpVINYL   dubstep cotti
+https://archive.org/details/CottiCluekid-SensiDub2007VINYL   dubstep cotti
+https://archive.org/details/Cotti-DownloadEpMp3minus30VINYL   dubstep cotti
+https://archive.org/details/variousartistscrystalskulldiscoinferno   dubstep skulldisco
+# Dark garage / grime
+https://archive.org/details/Darqwan-2003-TheRemixEp12-inchText006VINYL   dark_garage darqwan
+https://archive.org/details/rephlex-grime   grime rephlex
+https://archive.org/details/rephlex-grime-2   grime rephlex
+# UK garage
+https://archive.org/details/various-artists-vital-uk-garage   uk_garage
+https://archive.org/details/wookie-battle   uk_garage wookie
