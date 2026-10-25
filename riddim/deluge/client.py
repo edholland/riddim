@@ -72,6 +72,11 @@ class Reply:
         }
 
 
+# Statuses worth sending again: the firmware was busy. Everything else is an
+# answer - the same message would get the same refusal.
+RETRYABLE = frozenset({Status.BUSY})
+
+
 class Deluge:
     """A connection to one Deluge.
 
@@ -89,7 +94,9 @@ class Deluge:
         retries: int = 3,
         verbose: bool = False,
         dry_run: bool = False,
+        window: int = 16,
     ):
+        self.window = window
         self.timeout = timeout
         self.retries = retries
         self.verbose = verbose
@@ -179,14 +186,16 @@ class Deluge:
                 if expect is not None and command != expect:
                     continue  # stale reply from an earlier command
                 return Reply(command, status, extra)
-            time.sleep(0.001)
+            time.sleep(0.0002)
         return None
 
     def command(self, data: list[int], expect: int, label: str = "") -> bool:
         """Send with retries. Returns True if the firmware replied OK.
 
         A missing reply is treated as a failure worth retrying, but not as a
-        hard error - plenty of setups run output-only.
+        hard error - plenty of setups run output-only. A refusal (no such kit
+        row, a bad param, ...) is an answer, not a hiccup: the same message
+        would be refused again, so it is not retried.
         """
         for attempt in range(1, self.retries + 1):
             reply = self.send(data, expect)
@@ -194,11 +203,70 @@ class Deluge:
                 return self._in is None  # no input port: assume it landed
             if reply.ok:
                 return True
-            if self.verbose or attempt == self.retries:
-                name = getattr(reply.status, "name", reply.status)
-                print(f"  !! {label or expect}: {name}")
+            if reply.status not in RETRYABLE or attempt == self.retries:
+                if self.verbose or attempt == self.retries:
+                    name = getattr(reply.status, "name", reply.status)
+                    print(f"  !! {label or expect}: {name}")
+                return False
             time.sleep(0.05)
         return False
+
+    def write_notes(self, notes, window: int | None = None, on_progress=None) -> list:
+        """Write many notes into the current clip, pipelined: up to `window`
+        messages in flight, each reply matched to its note in order (the
+        firmware answers in the order it reads, and USB MIDI is flow-
+        controlled, so a window cannot overrun it). One round trip per note
+        was most of a send's time. `notes` are (midi, position, length,
+        velocity); returns one Status per note (OK, or the refusal).
+
+        A reply that never comes ends the pipeline: the notes not yet
+        answered are written again one at a time, where an ADD_FAILED means
+        the first copy landed (a note cannot be added twice).
+        """
+        window = self.window if window is None else window
+        msgs = [sysex.set_note(*n) for n in notes]
+        expect = sysex.Command.SET_CURRENT_NOTE
+        if self.dry_run or self._in is None or window <= 1:
+            out = []
+            for i, m in enumerate(msgs):
+                reply = self.send(m, expect)
+                out.append(Status.OK if reply is None else reply.status)
+                if on_progress and (i + 1) % 64 == 0:
+                    on_progress(i + 1)
+            if on_progress:
+                on_progress(len(msgs))
+            return out
+        for _ in self._in.iter_pending():
+            pass  # drain stale replies
+        results: list = [None] * len(msgs)
+        sent = acked = 0
+        while acked < len(msgs):
+            while sent < len(msgs) and sent - acked < window:
+                self._out.send(mido.Message("sysex", data=msgs[sent]))
+                self.sent += 1
+                sent += 1
+            reply = self._await(expect)
+            if reply is None:
+                break
+            results[acked] = reply.status
+            acked += 1
+            if on_progress and acked % 64 == 0:
+                on_progress(acked)
+        for i in range(acked, len(msgs)):
+            reply = None
+            for _ in range(self.retries):
+                reply = self.send(msgs[i], expect)
+                if reply is not None and reply.status not in RETRYABLE:
+                    break
+            if reply is None:
+                results[i] = None
+            elif reply.status == Status.ADD_FAILED:
+                results[i] = Status.OK       # the pipelined copy got there
+            else:
+                results[i] = reply.status
+        if on_progress:
+            on_progress(len(msgs))
+        return results
 
     def slow_command(self, data: list[int], expect: int, label: str,
                      timeout: float = 30.0) -> Reply | None:
@@ -306,10 +374,16 @@ class Deluge:
         )
 
     def kit_preset(self, text: str) -> bool:
-        return self.command(
+        """Load a kit preset: it reads every row's sample off the card, which
+        can outlast the normal reply timeout - and a retry would load it
+        again - so it is sent once and waited on."""
+        reply = self.slow_command(
             sysex.load_kit_preset(text), sysex.Command.LOAD_CURRENT_KIT_PRESET,
-            f"kit {text}",
+            f"kit {text}", timeout=20.0,
         )
+        if reply is None:
+            return self._in is None
+        return reply.ok
 
     def section_repeat(self, section, repeats=0, loop=False, start=None, end=None):
         return self.command(

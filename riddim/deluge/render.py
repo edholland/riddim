@@ -70,6 +70,7 @@ def send(
     template_rows: dict[str, int] | None = None,
     progress: bool = True,
     kits: bool = False,
+    on_progress=None,
 ) -> RenderReport:
     """Write `song` into the Deluge session.
 
@@ -86,6 +87,9 @@ def send(
 
     `start_index` defaults to the end of the current song, so this appends
     rather than assuming it is writing into an empty one.
+
+    `on_progress(done, total, label)` is called as notes land - `done` and
+    `total` count notes over the whole song - for a progress bar.
 
     `kits` loads each kit part's preset (KITS/RIDDIM DUB.XML and the like,
     made by `riddim-cli deluge-kits`) onto that part's first clip - after
@@ -138,6 +142,14 @@ def send(
     # index -> the length the clip is supposed to be, for the trim pass.
     intended_length: dict[int, int] = {}
     kits_loaded: set[str] = set()
+    total_notes = sum(
+        len(part.in_bars(s.start_bar, s.end_bar))
+        for s in sections for part in song.parts if s.plays(part.role))
+    done_notes = 0
+
+    def tell(n_in_clip, label):
+        if on_progress:
+            on_progress(min(total_notes, done_notes + n_in_clip), total_notes, label)
 
     for section_number, section in enumerate(sections):
         length = section.length_ticks
@@ -189,10 +201,14 @@ def send(
                 else:
                     report.failures.append(f"kit {part.preset} on {part.role}")
 
+            label = f"{part.role}/{section.name}"
+            tell(0, label)
             written = _write_notes(
                 deluge, notes, section.start_tick, length, report,
-                label=f"{part.role}/{section.name}",
+                label=label, on_progress=lambda n, lab=label: tell(n, lab),
             )
+            done_notes += len(notes)
+            tell(0, label)
             report.notes += written
             if part.output != "kit" or kits:
                 report.automation += _write_automation(deluge, part, section, report)
@@ -205,6 +221,8 @@ def send(
                     f"{written:>4} notes  ({action})"
                 )
 
+    if on_progress:
+        on_progress(total_notes, total_notes, "checking clip lengths")
     _trim(deluge, intended_length, report, progress)
 
     if mode != "none":
@@ -350,11 +368,17 @@ def _output_type(part: Part) -> OutputType:
     return OUTPUT_TYPES[part.output]
 
 
+# Notes go out pipelined in chunks: a small first one, so a Deluge refusing
+# everything is caught after a handful, then big ones.
+FIRST_CHUNK = 16
+CHUNK = 128
+
+
 def _write_notes(
-    deluge: Deluge, notes, section_start: int, length: int, report, label: str = ""
+    deluge: Deluge, notes, section_start: int, length: int, report, label: str = "",
+    on_progress=None,
 ) -> int:
-    written = 0
-    consecutive = 0
+    batch = []
     for note in notes:
         position = note.start - section_start
         if position < 0 or position >= length:
@@ -364,20 +388,41 @@ def _write_notes(
         note_length = min(note.length, length - position)
         if note_length <= 0:
             continue
-        if deluge.note(note.midi, position, note_length, note.velocity):
-            written += 1
-            consecutive = 0
-        else:
-            report.failures.append(f"note {note.midi}@{position}")
-            consecutive += 1
-            if consecutive >= MAX_CONSECUTIVE_FAILURES:
-                raise DelugeError(
-                    f"aborted while writing {label or 'a clip'}: "
-                    f"{consecutive} notes rejected in a row after "
-                    f"{report.notes + written} written. The clip length or "
-                    f"selection is probably wrong - check the Deluge is on "
-                    f"the session screen and not mid-recording."
-                )
+        batch.append((note.midi, position, note_length, note.velocity))
+
+    written = 0
+    consecutive = 0
+    missing_rows: dict[int, int] = {}
+    i = 0
+    while i < len(batch):
+        size = FIRST_CHUNK if i == 0 else CHUNK
+        chunk = batch[i:i + size]
+        statuses = deluge.write_notes(
+            chunk, on_progress=(lambda n, base=i: on_progress(base + n)) if on_progress else None)
+        for (midi, position, _l, _v), status in zip(chunk, statuses):
+            if status == sysex.Status.OK:
+                written += 1
+                consecutive = 0
+            elif status == sysex.Status.NO_KIT_ROW:
+                # The kit on this clip has no such row: one line per row, not
+                # one per note (a template kit smaller than riddim's rows).
+                missing_rows[midi] = missing_rows.get(midi, 0) + 1
+            else:
+                report.failures.append(f"note {midi}@{position}")
+                consecutive += 1
+                if consecutive >= MAX_CONSECUTIVE_FAILURES:
+                    raise DelugeError(
+                        f"aborted while writing {label or 'a clip'}: "
+                        f"{consecutive} notes rejected in a row after "
+                        f"{report.notes + written} written. The clip length or "
+                        f"selection is probably wrong - check the Deluge is on "
+                        f"the session screen and not mid-recording."
+                    )
+        i += size
+    for midi, n in sorted(missing_rows.items()):
+        report.failures.append(
+            f"{label}: kit has no row for note {midi} ({n} notes dropped) - "
+            f"use --kits or a kit with riddim's rows")
     return written
 
 

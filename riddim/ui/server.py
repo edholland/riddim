@@ -28,6 +28,7 @@ import mimetypes
 import random
 import sys
 import threading
+import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -439,6 +440,9 @@ class Handler(BaseHTTPRequestHandler):
                 d = song_to_dict(self.state.baseline)
                 d["knobs"] = [asdict(k) for k in read_knobs(self.state.base_params).values()]
                 return self._json(d)
+            if self.path == "/api/send_status":
+                with _SEND_LOCK:
+                    return self._json(dict(_SEND_JOB))
             if self.path == "/api/session":
                 return self._json(session_info())
             if self.path == "/api/ports":
@@ -501,6 +505,8 @@ class Handler(BaseHTTPRequestHandler):
                 song = self.state.model_lead(body.get("style") or "rhythm")
                 return self._json(song_to_dict(song, self.state))
             if self.path == "/api/send":
+                if body.get("background"):
+                    return self._json(self._send_in_background(body))
                 return self._json(self._send(body))
             if self.path == "/api/save":
                 return self._json(self._save(body))
@@ -549,7 +555,7 @@ class Handler(BaseHTTPRequestHandler):
                 return {"name": name, "session": session, "next": n + 1}
         return {"error": "no free number in this session"}
 
-    def _send(self, body: dict) -> dict:
+    def _send(self, body: dict, on_progress=None, song=None) -> dict:
         from ..deluge import render
         from ..deluge.client import Deluge
 
@@ -559,11 +565,44 @@ class Handler(BaseHTTPRequestHandler):
             if not deluge.ping():
                 return {"error": "Deluge did not answer the ping"}
             report = render.send(
-                self.state.song, deluge, mode=body.get("mode", "jam"),
+                song or self.state.song, deluge, mode=body.get("mode", "jam"),
                 template_rows=template, progress=False, kits=bool(body.get("kits")),
+                on_progress=on_progress,
             )
         return {"clips": report.clips, "notes": report.notes, "trimmed": report.trimmed,
                 "failures": report.failures}
+
+    def _send_in_background(self, body: dict) -> dict:
+        """Start a send on its own thread and return at once; the page polls
+        /api/send_status for the progress bar. One send at a time."""
+        with _SEND_LOCK:
+            if _SEND_JOB.get("running"):
+                return {"error": "a send is already running"}
+            song = self.state.song
+            _SEND_JOB.clear()
+            _SEND_JOB.update(running=True, done=0, total=song.note_count(), label="connecting",
+                             started=time.time())
+
+        def progress(done, total, label):
+            with _SEND_LOCK:
+                _SEND_JOB.update(done=done, total=total, label=label)
+
+        def run():
+            try:
+                result = self._send(body, on_progress=progress, song=song)
+            except Exception as exc:          # noqa: BLE001 - shown on the page
+                result = {"error": str(exc)}
+            with _SEND_LOCK:
+                _SEND_JOB.update(running=False, result=result,
+                                 seconds=round(time.time() - _SEND_JOB["started"], 1))
+
+        threading.Thread(target=run, daemon=True).start()
+        return {"started": True}
+
+
+# The one send in flight (the page's progress bar reads it).
+_SEND_LOCK = threading.Lock()
+_SEND_JOB: dict = {}
 
 
 def serve(port: int = 8765, open_browser: bool = True, params: SongParams | None = None,

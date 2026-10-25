@@ -99,6 +99,11 @@
   #check .clean { color:var(--dim); }
   #check .dot.ok { background:var(--accent); opacity:0.6; }
   #check .tells-h { margin:10px 0 2px; padding-top:7px; border-top:1px solid var(--line); color:var(--dim); }
+  #sendbar { display:none; position:relative; height:22px; margin:0 14px 6px; background:var(--panel2);
+             border:1px solid var(--line); border-radius:4px; overflow:hidden; font-size:11px; }
+  #sendbar .fill { position:absolute; inset:0 auto 0 0; width:0; background:var(--accent); opacity:0.35;
+                   transition:width 0.25s linear; }
+  #sendbar .txt { position:relative; padding:3px 8px; color:var(--text); white-space:nowrap; }
   #studio.on { background:var(--accent); color:#10131a; border-color:var(--accent); }
   #status { color:var(--warn); }
   .c-drums { background:var(--drums);} .c-perc{background:var(--perc);} .c-sub{background:var(--sub);} .c-chords{background:var(--chords);} .c-pad{background:var(--pad);} .c-lead{background:var(--lead);}
@@ -128,6 +133,7 @@
   <button id="save" title="save the song now on the Deluge as '<session> NN title' (never overwrites)">💾 save</button>
   <span id="status"></span>
 </header>
+<div id="sendbar"><div class="fill"></div><div class="txt"></div></div>
 <div id="changed-bar"></div>
 
 <main>
@@ -924,13 +930,45 @@ $('send').onclick=async()=>{
   const port=await delugePort(); if(!port) return;
   const rows=prompt('Template rows (row 1 = top of screen), or blank to create new instruments:', 'sub=1,chords=2,lead=3,pad=4,drums=5,perc=6');
   if(rows===null) return;
-  status('sending to '+port+'…');
   let kits=false; try { kits=localStorage.getItem('riddim.kits')==='1'; } catch(e) {}
   kits=confirm(`Load the riddim kits and write the drum desk moves (sweeps, echo throws)?\n\nNeeds firmware ai-kit-automation and the kits on the card (riddim-cli deluge-kits).\nOK = yes, Cancel = keep the template's kits.${kits?'\n(last time: yes)':''}`);
   try { localStorage.setItem('riddim.kits', kits?'1':'0'); } catch(e) {}
-  const r=await api('/api/send',{port, template_rows:rows||null, mode:'jam', kits});
-  status(r.error?r.error:`sent: ${r.clips} clips, ${r.notes} notes, ${r.trimmed} trimmed${r.failures.length?', '+r.failures.length+' failures':''}`, !!r.error);
+  const start=await api('/api/send',{port, template_rows:rows||null, mode:'jam', kits, background:true});
+  if(!start.started) return;
+  watchSend();
 };
+// The send's progress: notes written of the song's total, the clip being
+// written, and the time left at the rate so far.
+async function watchSend(){
+  const bar=$('sendbar'), fill=bar.querySelector('.fill'), txt=bar.querySelector('.txt');
+  bar.style.display='block'; $('send').disabled=true;
+  const t0=performance.now();
+  try {
+    while(true){
+      const j=await (await fetch('/api/send_status')).json();
+      const frac=j.total?Math.min(1,j.done/j.total):0;
+      fill.style.width=(100*frac).toFixed(1)+'%';
+      const secs=(performance.now()-t0)/1000;
+      const left=frac>0.03?Math.max(0,secs/frac-secs):null;
+      txt.textContent=`→ deluge  ${j.done||0} / ${j.total||0} notes · ${j.label||''}`
+        +(left!=null&&j.running?` · ~${Math.ceil(left)}s left`:'');
+      if(!j.running){
+        const r=j.result||{};
+        if(r.error){ status(r.error,true); txt.textContent='→ deluge failed: '+r.error; }
+        else {
+          const msg=`sent: ${r.clips} clips, ${r.notes} notes in ${j.seconds}s`
+            +`${r.trimmed?', '+r.trimmed+' trimmed':''}${(r.failures||[]).length?', '+r.failures.length+' failures':''}`;
+          status(msg, !!(r.failures||[]).length); txt.textContent=msg;
+          if((r.failures||[]).length) txt.title=r.failures.slice(0,20).join('\n');
+        }
+        fill.style.width='100%';
+        setTimeout(()=>{ bar.style.display='none'; fill.style.width='0'; }, 6000);
+        break;
+      }
+      await new Promise(res=>setTimeout(res,250));
+    }
+  } finally { $('send').disabled=false; }
+}
 
 (async function init(){ S.options=await api('/api/options');
   if(S.options.model_lead){ const b=$('model-hook'); b.disabled=true; b.title='model unavailable: '+S.options.model_lead; }

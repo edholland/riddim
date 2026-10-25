@@ -545,14 +545,19 @@ def test_systemic_failure_aborts_quickly(song):
 def test_isolated_failures_are_reported_not_swallowed(song):
     """One bad note should be recorded and the rest of the song still sent."""
     fake = FakeDeluge()
-    real_note = fake.note
+    real_send = fake.send
     calls = {"n": 0}
 
-    def flaky(*args, **kwargs):
-        calls["n"] += 1
-        return False if calls["n"] == 5 else real_note(*args, **kwargs)
+    def flaky(data, expect=None):
+        if expect == Command.SET_CURRENT_NOTE:
+            calls["n"] += 1
+            if calls["n"] == 5:
+                from riddim.deluge.client import Reply
+                fake.log.append((expect, list(data)))
+                return Reply(expect, Status.ADD_FAILED, [])
+        return real_send(data, expect)
 
-    fake.note = flaky
+    fake.send = flaky
     report = render.send(song, fake, progress=False)
     assert len(report.failures) == 1
     assert report.notes == song.note_count() - 1
