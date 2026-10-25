@@ -32,6 +32,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -87,7 +88,9 @@ def archive_item(url, tags, audio, seen, write):
     item = urllib.parse.urlparse(url).path.rstrip("/").split("/")[-1]
     meta = json.loads(_get(f"https://archive.org/metadata/{item}"))
     m = meta.get("metadata", {})
-    files = [f for f in meta.get("files", []) if f["name"].lower().endswith(AUDIO_EXT)]
+    files = [f for f in meta.get("files", []) if f["name"].lower().endswith(AUDIO_EXT)
+             # the archive's low-bitrate and preview copies of the same tracks
+             and not f["name"].lower().endswith(("_64kb.mp3", "_vbr.mp3", "_sample.mp3"))]
     # The archive derives MP3s from what was uploaded: take the originals
     # only, so a FLAC album is not fetched twice.
     originals = [f for f in files if f.get("source") != "derivative"]
@@ -100,15 +103,18 @@ def archive_item(url, tags, audio, seen, write):
     for f in originals or files:
         name = f["name"]
         rid = "ia_" + hashlib.sha1(f"{item}/{name}".encode()).hexdigest()[:12]
-        if rid in seen:
-            print(f"have {rid}  {name}")
-            continue
+        with MANIFEST_LOCK:
+            if rid in seen:
+                continue
+            seen.add(rid)
         ext = os.path.splitext(name)[1].lower()
         dest = os.path.join(audio, rid + ext)
         try:
             _get(f"https://archive.org/download/{item}/{urllib.parse.quote(name)}", dest)
         except Exception as e:      # noqa: BLE001
             print(f"failed {item}/{name}: {e} (re-run to retry)", flush=True)
+            with MANIFEST_LOCK:
+                seen.discard(rid)
             continue
         folder, base = os.path.split(name)
         write({"id": rid, "url": f"https://archive.org/details/{item}", "source": "archive.org",
@@ -120,18 +126,112 @@ def archive_item(url, tags, audio, seen, write):
                "bytes": int(f.get("size", 0)), "md5": f.get("md5"),
                "fetched": time.strftime("%Y-%m-%dT%H:%M:%S"),
                "silent": audible(dest) is False})
-        seen.add(rid)
-        print(f"got {rid}  {name}")
+        print(f"got {rid}  {name}", flush=True)
         time.sleep(1)
 
 
+YTDLP = None
+MANIFEST_LOCK = threading.Lock()
+BOT_CHECK = ("confirm you", "not a bot", "sign in to confirm")
+
+
+def _ytdlp():
+    """yt-dlp as a module of this python when it is installed there (the
+    project venv), else the command on PATH."""
+    global YTDLP
+    if YTDLP is None:
+        try:
+            import yt_dlp  # noqa: F401
+            YTDLP = [sys.executable, "-m", "yt_dlp"]
+        except ImportError:
+            YTDLP = ["yt-dlp"]
+    return YTDLP
+
+
+def _have_ffmpeg():
+    try:
+        subprocess.run(["ffmpeg", "-version"], capture_output=True, timeout=20)
+        return True
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def _entries(url, cap):
+    """The single videos/tracks/shows behind a URL: a playlist, channel,
+    user page or album expands to its entries (newest first, at most `cap`),
+    a single item is itself. Returns (entries, error)."""
+    r = subprocess.run(_ytdlp() + ["--flat-playlist", "--playlist-end", str(cap),
+                                   "--print", "%(id)s\t%(webpage_url,url)s", url],
+                       capture_output=True, text=True)
+    out = []
+    for line in r.stdout.splitlines():
+        rid, _, u = line.partition("\t")
+        if rid and rid != "NA":
+            out.append((rid, u if u and u != "NA" else url))
+    return out, r.stderr
+
+
+def stream_source(url, tags, audio, seen, write, ffmpeg):
+    """Everything yt-dlp reads: expand, then fetch each entry as audio.
+    A site asking to prove we are not a bot is respected: the source is
+    skipped, never worked around."""
+    cap = 40
+    for t in tags:
+        if t.startswith("max:"):
+            cap = int(t[4:])
+    tags = [t for t in tags if not t.startswith("max:")]
+    entries, err = _entries(url, cap)
+    if not entries:
+        print(f"skip (nothing listed): {url}\n  {err.strip()[-300:]}", flush=True)
+        return
+    host = urllib.parse.urlparse(url).netloc.replace("www.", "").split(".")[0]
+    for rid0, u in entries:
+        rid = f"{host}_{rid0}"
+        with MANIFEST_LOCK:
+            if rid in seen:
+                continue
+            seen.add(rid)
+        tmpl = os.path.join(audio, rid + ".%(ext)s")
+        fmt = ["-x", "--audio-format", "m4a"] if ffmpeg else ["-f", "bestaudio[ext=m4a]/bestaudio"]
+        r = subprocess.run(_ytdlp() + ["--no-playlist", *fmt, "--write-info-json",
+                                       "--no-progress", "-o", tmpl, u],
+                           capture_output=True, text=True)
+        meta_path = os.path.join(audio, rid + ".info.json")
+        if any(b in r.stderr.lower() for b in BOT_CHECK):
+            print(f"bot check at {host} - leaving {url} alone", flush=True)
+            with MANIFEST_LOCK:
+                seen.discard(rid)
+            return
+        if r.returncode != 0 or not os.path.exists(meta_path):
+            print(f"failed {u}\n  {r.stderr.strip()[-300:]}", flush=True)
+            with MANIFEST_LOCK:
+                seen.discard(rid)
+            continue
+        meta = json.load(open(meta_path))
+        got = [f for f in os.listdir(audio) if f.startswith(rid + ".") and not f.endswith(".json")]
+        write({"id": rid, "url": u, "source": host, "from": url, "title": meta.get("title"),
+               "uploader": meta.get("uploader"), "duration": meta.get("duration"),
+               "upload_date": meta.get("upload_date"),
+               "license": meta.get("license") or "none stated - study only",
+               "tags": tags, "file": os.path.join("audio", got[0]) if got else None,
+               "fetched": time.strftime("%Y-%m-%dT%H:%M:%S")})
+        print(f"got {rid}: {meta.get('uploader')} - {meta.get('title')}", flush=True)
+        time.sleep(2)     # be polite
+
+
 def main():
+    """collect_refs.py LIST [LIST...] [--out DIR] [--prefer-mp3] [--jobs N]
+
+    Sources run N at a time (default 4); a line's `max:N` tag caps how many
+    entries a playlist / channel / user page contributes (default 40)."""
     args = sys.argv[1:]
     if not args:
         print(__doc__)
         return 1
     out = os.path.expanduser(args[args.index("--out") + 1]) if "--out" in args else "references"
-    src = args[0]
+    jobs = int(args[args.index("--jobs") + 1]) if "--jobs" in args else 4
+    skip = {args[i + 1] for i, a in enumerate(args) if a in ("--out", "--jobs")}
+    srcs = [a for a in args if not a.startswith("--") and a not in skip]
     audio = os.path.join(out, "audio")
     os.makedirs(audio, exist_ok=True)
     manifest = os.path.join(out, "manifest.jsonl")
@@ -143,47 +243,36 @@ def main():
             except (ValueError, KeyError):
                 pass
 
-    for line in open(src):
-        line = line.split("#", 1)[0].strip()
-        if not line:
-            continue
-        url, *tags = line.split()
-        if "archive.org/details/" in url:
-            def write(row):
-                with open(manifest, "a") as f:
-                    f.write(json.dumps(row) + "\n")
-            try:
+    def write(row):
+        with MANIFEST_LOCK:
+            with open(manifest, "a") as f:
+                f.write(json.dumps(row) + "\n")
+
+    lines = []
+    for src in srcs:
+        for line in open(src):
+            line = line.split("#", 1)[0].strip()
+            if line:
+                url, *tags = line.split()
+                lines.append((url, tags))
+    ffmpeg = _have_ffmpeg()
+    print(f"{len(lines)} sources from {len(srcs)} lists, {jobs} at a time, "
+          f"ffmpeg {'yes' if ffmpeg else 'no (native audio formats)'}", flush=True)
+
+    def one(job):
+        url, tags = job
+        try:
+            if "archive.org/details/" in url:
                 archive_item(url, tags, audio, seen, write)
-            except Exception as e:  # noqa: BLE001
-                print(f"failed {url}: {e} (re-run to retry)", flush=True)
-            continue
-        info = subprocess.run(["yt-dlp", "--no-playlist", "--print", "id", url],
-                              capture_output=True, text=True)
-        rid = info.stdout.strip()
-        if not rid:
-            print(f"skip (no id): {url}\n  {info.stderr.strip()[-300:]}")
-            continue
-        if rid in seen:
-            print(f"have {rid}")
-            continue
-        r = subprocess.run(["yt-dlp", "--no-playlist", "-x", "--audio-format", "m4a",
-                            "--write-info-json", "-o", os.path.join(audio, "%(id)s.%(ext)s"),
-                            url], capture_output=True, text=True)
-        meta_path = os.path.join(audio, f"{rid}.info.json")
-        if r.returncode != 0 or not os.path.exists(meta_path):
-            print(f"failed {url}\n  {r.stderr.strip()[-300:]}")
-            continue
-        meta = json.load(open(meta_path))
-        row = {"id": rid, "url": url, "title": meta.get("title"),
-               "uploader": meta.get("uploader"), "duration": meta.get("duration"),
-               "upload_date": meta.get("upload_date"), "license": meta.get("license"),
-               "tags": tags, "file": os.path.join("audio", f"{rid}.m4a"),
-               "fetched": time.strftime("%Y-%m-%dT%H:%M:%S")}
-        with open(manifest, "a") as f:
-            f.write(json.dumps(row) + "\n")
-        seen.add(rid)
-        print(f"got {rid}: {row['uploader']} - {row['title']}")
-        time.sleep(2)     # be polite
+            else:
+                stream_source(url, tags, audio, seen, write, ffmpeg)
+        except Exception as e:  # noqa: BLE001
+            print(f"failed {url}: {e} (re-run to retry)", flush=True)
+
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        for i, _ in enumerate(pool.map(one, lines), 1):
+            print(f"[{i}/{len(lines)}] sources done", flush=True)
     return 0
 
 
