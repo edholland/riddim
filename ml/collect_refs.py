@@ -230,7 +230,7 @@ def main():
         return 1
     out = os.path.expanduser(args[args.index("--out") + 1]) if "--out" in args else "references"
     jobs = int(args[args.index("--jobs") + 1]) if "--jobs" in args else 4
-    skip = {args[i + 1] for i, a in enumerate(args) if a in ("--out", "--jobs")}
+    skip = {args[i + 1] for i, a in enumerate(args) if a in ("--out", "--jobs", "--keep-free-gb")}
     srcs = [a for a in args if not a.startswith("--") and a not in skip]
     audio = os.path.join(out, "audio")
     os.makedirs(audio, exist_ok=True)
@@ -259,8 +259,14 @@ def main():
     print(f"{len(lines)} sources from {len(srcs)} lists, {jobs} at a time, "
           f"ffmpeg {'yes' if ffmpeg else 'no (native audio formats)'}", flush=True)
 
+    import shutil
+    floor = int(args[args.index("--keep-free-gb") + 1]) if "--keep-free-gb" in args else 60
+
     def one(job):
         url, tags = job
+        if shutil.disk_usage(out).free < floor * 2**30:
+            print(f"skip (under {floor} GB free on disk): {url}", flush=True)
+            return
         try:
             if "archive.org/details/" in url:
                 archive_item(url, tags, audio, seen, write)

@@ -1,0 +1,295 @@
+# riddim reference list, part 3: Bandcamp labels/artists, Free Music Archive (CC), samples (generated 2026-10-25).
+# Same format as refs.txt: URL, tags, optional '# note'. Every Bandcamp URL was fetched 2026-10-25 (HTTP 200,
+# title read from the page, >=1 streamable track; '[N tr]' = streamable tracks). Licence tag per line:
+#   free-dl    = free / name-your-price on Bandcamp (minimum price 0)
+#   study_only = paid release whose full stream is public: personal listening analysis only, never redistribute
+#   cc-*       = Creative Commons licence stated on the Free Music Archive / ccMixter page
+# First tag = family: from the label's genre, refined by the release's own Bandcamp tags (dubstep/grime/uk_garage).
+# Label sections include releases on artists' own subdomains that the label page lists.
+# Brief labels with no usable Bandcamp page: DMZ, Basic Channel / Rhythm & Sound, Wackies, Greensleeves (folded into VP),
+# Iration Steppas, 2nd Drop, Locked On, Public Demand, Oil Gang, Basscamp (pages exist but list no releases),
+# Hessle Audio and Hyperboloid (custom domains, not fetchable from here), Box Clever, Gorgon Sound, Truthoughts, Seven Seals,
+# Dubquake, Ice Cream, Coyote (grime), Butterz/Kapsize/Black Box (subdomains belong to someone else), Baroque Dub,
+# Echodub (now 'Late Echo', empty), Dub Revolutionaries; Jamendo pages are JS-only and could not be verified.
+# URLs already in refs.txt / refs_more.txt are left out.
+
+
+# ======================================================================
+# DUBSTEP
+# ======================================================================
+
+# Deep Medi Musik
+https://tworangers.bandcamp.com/track/two-rangers-mixtape   dubstep deepmedi bandcamp free-dl   # Two Rangers - Two Rangers Mixtape (name-your-price) [1 tr]
+https://deepmedimusik.bandcamp.com/track/what-i-need-free-download   dubstep deepmedi bandcamp free-dl   # A/T/O/S - What I Need [Free Download] (name-your-price) [1 tr]
+
+# Tectonic
+
+# Tempa
+
+# Sentry
+
+# System Music
+
+# Innamind
+
+# Keysound
+
+# Swamp 81
+https://swamp81.bandcamp.com/track/i-feel   dubstep swamp81 bandcamp free-dl   # Baytrilla - I Feel (name-your-price) [1 tr]
+https://swamp81.bandcamp.com/track/sub-water-dub   dubstep swamp81 bandcamp free-dl   # Big Kani & Baytrilla - Sub Water Dub (name-your-price) [1 tr]
+
+# Hotflush
+
+# Punch Drunk
+
+# Hemlock
+
+# Wheel & Deal
+
+# Lion Charge
+
+# Kode9
+
+# Appleblim
+
+# Silkie
+
+# Dub Police
+
+# Chestplate
+
+# Kahn / Bandulu
+
+# Peverelist / Livity Sound
+
+# Gantz
+
+# Hench
+
+# ======================================================================
+# GRIME / INSTRUMENTAL GRIME
+# ======================================================================
+
+# Hyperdub
+
+# Slackk / Boxed
+https://slackk.bandcamp.com/album/tropical-aggro-2-145bpm-mix   grime slackk bandcamp free-dl   # Slackk - Tropical Aggro 2 (145bpm+ mix) (name-your-price) [1 tr]
+https://slackk.bandcamp.com/album/tropical-aggro-145bpm-mix   grime slackk bandcamp free-dl   # Slackk - Tropical Aggro (145bpm+ mix) (name-your-price) [1 tr]
+https://slackk.bandcamp.com/album/minor-triads   grime slackk bandcamp free-dl   # Slackk - Minor Triads (name-your-price) [11 tr]
+https://slackk.bandcamp.com/album/something-on-my-mind   grime slackk bandcamp free-dl   # DJ Slacko - Something On My Mind (name-your-price) [15 tr]
+https://slackk.bandcamp.com/album/all-inclusive   grime slackk bandcamp free-dl   # Seaview Lovers - All Inclusive (name-your-price) [10 tr]
+https://slackk.bandcamp.com/album/spring-mix-26   grime slackk bandcamp free-dl   # Slackk - Spring Mix '26 (name-your-price) [1 tr]
+https://boxedldn.bandcamp.com/album/the-last-boxed   grime boxed bandcamp free-dl   # Boxed LDN - The Last Boxed (name-your-price) [20 tr]
+https://boxedldn.bandcamp.com/album/boxed-present-sinclair-x-slackk-ep   grime boxed bandcamp free-dl   # Sinclair x Slackk - Boxed present: Sinclair x Slackk EP (name-your-price) [2 tr]
+https://boxedldn.bandcamp.com/album/boxed-mmxx   grime boxed bandcamp free-dl   # boxedldn - Boxed MMXX (name-your-price) [24 tr]
+https://boxedldn.bandcamp.com/album/boxed-v   grime boxed bandcamp free-dl   # boxedldn - Boxed V (name-your-price) [25 tr]
+
+# Local Action
+
+# Gobstopper
+
+# Sir Spyro
+
+# Terror Danjah
+
+# Planet Mu
+
+# Mumdance
+
+# Different Circles
+https://differentcircles.bandcamp.com/album/imperial-flood   grime differentcircles bandcamp free-dl   # Logos - Imperial Flood (name-your-price) [9 tr]
+
+# ======================================================================
+# UK GARAGE / 2-STEP / BASSLINE
+# ======================================================================
+
+# Zed Bias
+
+# MJ Cole
+
+# Todd Edwards
+https://toddedwards.bandcamp.com/album/unofficials   uk_garage toddedwards bandcamp free-dl   # Todd Edwards - "Unofficials" (name-your-price) [9 tr]
+
+# Groove Chronicles
+
+# Swing Ting
+https://swingting.bandcamp.com/track/kiyano-ocean-swing-ting-remix   uk_garage swingting bandcamp free-dl   # Kiyano - Kiyano - Ocean (Swing Ting Remix) (name-your-price) [1 tr]
+https://swingting.bandcamp.com/track/cumin-bounce   uk_garage swingting bandcamp free-dl   # Swing Ting - Cumin Bounce (name-your-price) [1 tr]
+https://mcfoxmcr.bandcamp.com/track/vacio-ft-trigganom-epic-b-remix   uk_garage swingting bandcamp free-dl   # Fox - Vacio ft. Trigganom (Epic B remix) (name-your-price) [1 tr]
+
+# Rinse
+
+# Southpoint
+
+# ======================================================================
+# ROOTS DUB / JA REISSUES
+# ======================================================================
+
+# Pressure Sounds
+https://pressuresounds.bandcamp.com/album/psalms-16   roots_dub pressuresounds bandcamp free-dl   # Diggory Kenrick & The Prophets - Psalms 16 (name-your-price) [2 tr]
+
+# Dub Store Records
+
+# On-U Sound
+
+# Dennis Bovell
+
+# Studio One
+
+# Roots dub artist pages
+
+# ======================================================================
+# UK STEPPERS / MODERN DUB
+# ======================================================================
+
+# Mungo's Hi Fi / Scotch Bonnet
+https://mungoshifi.bandcamp.com/track/mungos-hi-fi-with-eva-lazarus-solo-banton-online-session-teaser   steppers_dub mungos bandcamp free-dl   # Mungo's Hi Fi - Mungo's Hi Fi with Eva Lazarus & Solo Banton - ONLINE SESSION TEASER (name-your-price) [1 tr]
+https://mungoshifi.bandcamp.com/track/amsterdam-dub   steppers_dub mungos bandcamp free-dl   # Mungo's Hi Fi x Eva Lazarus - Amsterdam dub (name-your-price) [1 tr]
+https://scotchbonnetrecords.bandcamp.com/album/puffins-digest   steppers_dub scotchbonnet bandcamp free-dl   # Scotch Bonnet Records - Puffin's Digest (name-your-price) [2 tr]
+https://dannyttradesman.bandcamp.com/track/boom-the-riddim   steppers_dub scotchbonnet bandcamp free-dl   # Danny T & Tradesman ft Dark Angel - Boom The Riddim (name-your-price) [1 tr]
+https://mungoshifi.bandcamp.com/album/dutty-diseases-riddim-collection   steppers_dub mungos bandcamp free-dl   # Mungo's Hi Fi - Dutty Diseases riddim collection (name-your-price) [6 tr]
+
+# Ariwa / Mad Professor
+
+# Vibronics / Scoops
+
+# Alpha & Omega
+
+# Partial Records
+https://partialrecords.bandcamp.com/album/almighty-jah-almighty-dub   steppers_dub partial bandcamp free-dl   # Alpha & Omega / Dub Judah - Almighty Jah / Almighty Dub (name-your-price) [2 tr]
+
+# Dubophonic
+https://dubophonic.bandcamp.com/album/new-jerusalem-new-jerusalem-dub-vinyl   steppers_dub dubophonic bandcamp free-dl   # Leo Tan & I-niverse - New Jerusalem / New Jerusalem Dub [VINYL] (name-your-price) [2 tr]
+https://dubophonic.bandcamp.com/album/resident-resident-dub-vinyl   steppers_dub dubophonic bandcamp free-dl   # Starlight & Med Dred - Resident / Resident Dub [VINYL] (name-your-price) [1 tr]
+
+# Steppas Records
+https://steppas.bandcamp.com/track/ceasefire-now-remix-feat-soom-t-masta-quba   steppers_dub steppas bandcamp free-dl   # Lengualerta, Soom T, Masta Quba, Alpha Steppa - Ceasefire Now Remix (Feat. Soom T & Masta Quba) (name-your-price) [1 tr]
+https://steppas.bandcamp.com/album/ceasefire-now   steppers_dub steppas bandcamp free-dl   # Lengualerta, Nai-Jah, Alpha Steppa - Ceasefire Now (name-your-price) [2 tr]
+
+# Zion Train / Universal Egg
+
+# The Disciples / Boom Shacka Lacka
+https://russdisciples.bandcamp.com/track/vivian-jones-disciples-reparations-free-download   steppers_dub disciples bandcamp free-dl   # The Disciples - Vivian Jones & Disciples - Reparations (FREE DOWNLOAD) (name-your-price) [1 tr]
+
+# UK dub misc
+
+# Dubkasm
+https://dubkasm.bandcamp.com/album/higher-meds-ep-ft-yt-and-rudey-lee   steppers_dub dubkasm bandcamp free-dl   # Dubkasm - Higher Meds EP (Ft YT and Rudey Lee) (name-your-price) [3 tr]
+
+# Roots Hitek
+
+# Blackboard Jungle
+
+# Jah Warrior
+
+# Reggae Roast
+
+# Dubmission (Zion Train / Select Cuts / SUBSET)
+
+# Dubcreator (riddim instrumentals)
+
+# Channel One Sound System
+
+# Danny Red
+
+# Weeding Dub
+
+# King Shiloh
+https://kingshiloh.bandcamp.com/album/marijuana-i-schence   steppers_dub kingshiloh bandcamp free-dl   # Kare, Infinte, Dubcreator, King Shiloh - Marijuana / I-Schence (name-your-price) [1 tr]
+https://kingshiloh.bandcamp.com/album/jah-reigneth   steppers_dub kingshiloh bandcamp free-dl   # Idren Natural, UK Players, Jah Works, King Shiloh - Jah Reigneth (name-your-price) [1 tr]
+https://kingshiloh.bandcamp.com/album/battle-of-adowa   steppers_dub kingshiloh bandcamp free-dl   # Ras Ibi & The Soldiers, Majestic Warriors, King Shiloh - Battle Of Adowa (name-your-price) [1 tr]
+https://kingshiloh.bandcamp.com/album/rasta-ska-lie-dem-a-tell   steppers_dub kingshiloh bandcamp free-dl   # Ranking Joe, Teddy Dan, Dub Creator, King Shiloh - RASTA SKA / LIE DEM A TELL (name-your-price) [1 tr]
+https://kingshiloh.bandcamp.com/album/trod-on-dat-dubplate-mixes   steppers_dub kingshiloh bandcamp free-dl   # Ras Ibi & The Soldiers, King Shiloh - Trod On (DAT Dubplate Mixes) (name-your-price) [1 tr]
+
+# Indica Dubs
+https://indicadubs.bandcamp.com/album/eye-i-eye   steppers_dub indicadubs bandcamp free-dl   # Kibir La Amlak - Eye I Eye (name-your-price) [4 tr]
+https://indicadubs.bandcamp.com/album/ancient-pulse   steppers_dub indicadubs bandcamp free-dl   # Kibir La Amlak - Ancient Pulse (name-your-price) [4 tr]
+https://indicadubs.bandcamp.com/album/lion-step-2020   steppers_dub indicadubs bandcamp free-dl   # Kibir La Amlak - Lion Step 2020 (name-your-price) [4 tr]
+
+# Radikal Guru
+https://radikalguru.bandcamp.com/album/haunted   steppers_dub radikalguru bandcamp free-dl   # Radikal Guru - Haunted (name-your-price) [1 tr]
+https://radikalguru.bandcamp.com/album/radical-dub-free-download   steppers_dub radikalguru bandcamp free-dl   # Radikal Guru - Radical Dub [FREE DOWNLOAD] (name-your-price) [1 tr]
+https://radikalguru.bandcamp.com/album/overcome-dub-ft-junior-dread-free-download   steppers_dub radikalguru bandcamp free-dl   # Radikal Guru - Overcome Dub ft. Junior Dread *FREE DOWNLOAD (name-your-price) [1 tr]
+https://radikalguru.bandcamp.com/album/ireland-violinbwoy-remix-free-download   steppers_dub radikalguru bandcamp free-dl   # Radikal Guru & Cian Finn - Ireland (Violinbwoy Remix) *FREE DOWNLOAD (name-your-price) [2 tr]
+https://radikalguru.bandcamp.com/album/10-ton-dub-elephant-dub-free-download   steppers_dub radikalguru bandcamp free-dl   # Radikal Guru - 10 Ton Dub / Elephant Dub *FREE DOWNLOAD (name-your-price) [2 tr]
+https://radikalguru.bandcamp.com/album/tundra-dub-bukkha-remix-free-download   steppers_dub radikalguru bandcamp free-dl   # Radikal Guru - Tundra Dub (Bukkha Remix) *FREE DOWNLOAD (name-your-price) [1 tr]
+
+# ======================================================================
+# DIGITAL DUB
+# ======================================================================
+
+# Jahtari
+https://jahtari.bandcamp.com/album/meanwhile-deep-beneath-the-island   digital_dub jahtari bandcamp free-dl   # Various Artists - Meanwhile Deep Beneath the Island (name-your-price) [16 tr]
+https://jahtari.bandcamp.com/album/waqwaq-kingdom-live-at-bassm-ssage   digital_dub jahtari bandcamp free-dl   # WaqWaq Kingdom - WaqWaq Kingdom live at Bassmæssage (name-your-price) [13 tr]
+
+# ======================================================================
+# DUB TECHNO
+# ======================================================================
+
+# Echospace (dub techno)
+
+# ======================================================================
+# VOCAL REGGAE / DANCEHALL (reference for vocals)
+# ======================================================================
+
+# VP Records (vocal reggae / dancehall reference)
+
+# ======================================================================
+# FREE MUSIC ARCHIVE (Creative Commons; from genre pages Reggae - Dub / Dubstep / Jungle; licence read from each album page)
+# ======================================================================
+https://freemusicarchive.org/music/Negritage/Negritage_-_Guetto_Roots_Of_Dub_Vol1/   steppers_dub fma cc-by-nc-nd   # Negritage - Guetto Roots Of Dub (Vol.1) [18 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Negritage/Greetings_From_Planet_Dub/   steppers_dub fma cc-by-nc-nd   # Negritage - Greetings From Planet Dub [17 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/Warrior_Way/   dubstep fma cc-by-nc-nd   # Shaolin Dub - Warrior Way [14 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/the-great-divide/   dubstep fma cc-by-nc-nd   # Shaolin Dub - The Great Divide [12 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/joint-force/   dubstep fma cc-by-nc-nd   # Shaolin Dub - Joint Force [13 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/macro-micro/   dubstep fma cc-by-nc-nd   # Shaolin Dub - Macro Micro [17 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/preservation/   dubstep fma cc-by-nc-nd   # Shaolin Dub - Preservation [14 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/dual-realities/   dubstep fma cc-by-nc-nd   # Shaolin Dub - Dual Realities [16 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/dark-waters/   dubstep fma cc-by-nc-nd   # Shaolin Dub - Dark Waters [12 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/New_Normals/   dubstep fma cc-by-nc-nd   # Shaolin Dub - New Normals [12 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/The_Urban_Chronicle/   dubstep fma cc-by-nc-nd   # Shaolin Dub - The Urban Chronicle [11 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/Enclosed_Systems/   dubstep fma cc-by-nc-nd   # Shaolin Dub - Enclosed Systems [11 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/punk-step/   dubstep fma cc-by-nc-nd   # Shaolin Dub - Punk Step [6 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/horizon-event/   dubstep fma cc-by cc-by-nc-nd   # Shaolin Dub - Horizon Event [6 tr] (CC BY 4.0, CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Shaolin_Dub/reimagined/   dubstep fma cc-by   # Shaolin Dub - Reimagined [1 tr] (CC BY 4.0)
+https://freemusicarchive.org/music/Red_Star_Martyrs/Red_Star_Martyrs/   steppers_dub fma cc-by-nc-nd   # Red Star Martyrs - Red Star Martyrs [14 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/The_Dingees/Rebel_Soul_Sound_System/   steppers_dub fma cc-by-nc-sa   # The Dingees - Rebel Soul Sound System [13 tr] (CC BY-NC-SA 4.0)
+https://freemusicarchive.org/music/Panda_Dub/Psychotic_Symphony/   steppers_dub fma cc-by-nc-sa   # Panda Dub - Psychotic Symphony [10 tr] (CC BY-NC-SA 4.0)
+https://freemusicarchive.org/music/Panda_Dub/Lost_ship/   steppers_dub fma cc-by-nc-nd   # Panda Dub - Lost ship [10 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Frequency_Decree/Dubbed/   digital_dub fma cc-by-nc-sa   # Frequency Decree - Dubbed [9 tr] (CC BY-NC-SA 4.0)
+https://freemusicarchive.org/music/Frequency_Decree/undercurrent/   digital_dub fma cc-by-nc-nd cc-by-nc-sa   # Frequency Decree - Undercurrent [12 tr] (CC BY-NC-ND 4.0, CC BY-NC-SA 4.0)
+https://freemusicarchive.org/music/Frequency_Decree/cenote/   digital_dub fma cc-by-nc-sa   # Frequency Decree - Cenote [6 tr] (CC BY-NC-SA 4.0)
+https://freemusicarchive.org/music/Frequency_Decree/lithosphere/   digital_dub fma cc-by-nc-sa   # Frequency Decree - Lithosphere [4 tr] (CC BY-NC-SA 4.0)
+https://freemusicarchive.org/music/Frequency_Decree/digital-dub/   digital_dub fma cc-by-nc-sa   # Frequency Decree - digital dub [1 tr] (CC BY-NC-SA 4.0)
+https://freemusicarchive.org/music/Foshan_Roots/Sky_Warrior_Dub/   steppers_dub fma cc-by-nc-nd   # Foshan Roots - Sky Warrior Dub [9 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/The_Dubbstyle/Sun_Is_Dub/   steppers_dub fma cc-by-nc-nd   # The Dubbstyle - Sun Is Dub [8 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/SUBSET/Series70/   steppers_dub fma cc-by-nc   # SUBSET - Series70 [6 tr] (CC BY-NC 4.0)
+https://freemusicarchive.org/music/SUBSET/Dub_City_Sounds/   steppers_dub fma cc-by-nc-nd   # SUBSET - Dub City Sounds [5 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/SUBSET/SUBSET_meets_Netlabel_Day_2016_at_The_Dub_Factory/   steppers_dub fma cc-by-nc-nd   # SUBSET - SUBSET meets Netlabel Day 2016 at The Dub Factory [4 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/OLM/Book_of_Daniel/   steppers_dub fma cc-by-nc-nd   # O.L.M. - Book of Daniel [6 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Le_Projet_Ardchois/Dubectomie/   steppers_dub fma cc-by-nc-nd   # Le Projet Ardéchois - Dubectomie [6 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/The_Dubwegians/South_Of_The_River_Clyde/   steppers_dub fma cc-by-nc-nd   # The Dubwegians - South Of The River Clyde [5 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Miku/Dub_Mirror/   steppers_dub fma cc-by   # Mikuś - Dub Mirror [5 tr] (CC BY 4.0)
+https://freemusicarchive.org/music/Hollie_Cook/Live_at_WFMU_for_Sophisticated_Boom_Boom_with_Sheila_B_3232018/   steppers_dub fma cc-by-nc-nd   # Live at WFMU for Sophisticated Boom Boom with Sheila B, 3/23/2018 [5 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Bio_Dread/Parasite_War/   steppers_dub fma cc-by-nc-sa   # Bio Dread - Parasite War [5 tr] (CC BY-NC-SA 3.0)
+https://freemusicarchive.org/music/Zion_Dirty_Sound/Celebrity_fever__Reworks_and_dubs/   steppers_dub fma cc-by-nc-nd   # Zion Dirty Sound - Celebrity fever / Reworks and dubs [9 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Bass_Culture_Players/Sin_papeles/   steppers_dub fma cc-by-sa   # Bass Culture Players - Sin papeles [2 tr] (CC BY-SA 4.0)
+https://freemusicarchive.org/music/Downbeat/Introspeccion/   steppers_dub fma cc-by-nc-nd   # Downbeat - Introspección [7 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/DubRaJah/Reprise/   steppers_dub fma cc-by-nc-nd   # DubRaJah - Reprise [8 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Simon_Mathewson/space-bugs/   digital_dub fma cc-by-nc-sa   # Simon Mathewson - Space Bugs [10 tr] (CC BY-NC-SA 4.0)
+https://freemusicarchive.org/music/nul-tiel-records/dub-reggae/   steppers_dub fma cc-by-nc-sa   # Nul Tiel Records - Dub Reggae [7 tr] (CC BY-NC-SA 4.0)
+https://freemusicarchive.org/music/OKAM/dub-noir/   dubstep fma cc-by-nc-sa   # OKAM - Dub Noir [5 tr] (CC BY-NC-SA 4.0)
+https://freemusicarchive.org/music/Yaka-anima/Darkest_Streets/   dubstep fma cc-by-nc-nd   # Yaka-anima (Sábila Orbe) - Darkest Streets [5 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/SPCZ/Holism/   dubstep fma cc-by-nc-nd   # SPCZ - Holism [12 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/FRAIL/Numeric_Handcraft/   dubstep fma cc-by-nc-nd   # FRAIL - Numeric Handcraft LP [13 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Bio_Unit/resistor/   dubstep fma cc-by-nc-sa   # Bio Unit - Resistor [4 tr] (CC BY-NC-SA 4.0)
+https://freemusicarchive.org/music/Tzelalot/Labyrinth_1392/   dubstep fma cc-by-nc-nd   # Tzelalot - Labyrinth [15 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/GOYMAMBA/Impact_1635/   steppers_dub fma cc-by-nc-sa   # GOYMAMBA - Impact [10 tr] (CC BY-NC-SA 3.0)
+https://freemusicarchive.org/music/Ervalizer/DE4VIDA_volumen_2/   steppers_dub fma cc-by-nc-sa   # Ervalizer - DE4VIDA volumen 2 [12 tr] (CC BY-NC-SA 3.0)
+https://freemusicarchive.org/music/The_Bandulus/Live_at_KBOO_for_Higher_Reasoning_Reggae_Time_Jan_31_2016/   steppers_dub fma cc-by-nc-nd   # Live at KBOO for Higher Reasoning Reggae Time, Jan. 31, 2016 [1 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Collection_of_Lone_Souljahs/Live_at_KBOO_for_Higher_Reasoning_Reggae_Time_10302016/   steppers_dub fma cc-by-nc-nd   # Live at KBOO for Higher Reasoning Reggae Time, 10/30/2016 [7 tr] (CC BY-NC-ND 4.0)
+https://freemusicarchive.org/music/Karamanti/Dont_Give_Up/   steppers_dub fma cc-by-nd   # Karamanti - Don't Give Up [1 tr] (CC BY-ND 4.0)
+https://freemusicarchive.org/music/iriemasdub/visitantes-ep/   steppers_dub fma cc-by   # IrieMasDub - Visitantes EP [8 tr] (CC BY 4.0)
+https://freemusicarchive.org/music/Neuroleptic_Trio/Beast_Off_2011_-_2007/   dubstep fma cc-by-nc-sa   # Neuroleptic Trio - Beast Off 2011 - 2007 [10 tr] (CC BY-NC-SA 3.0)
+
+# ======================================================================

@@ -1,0 +1,68 @@
+# SAMPLES (not for yt-dlp: download pages for riddim's kits - vocals/toasts/MC, sirens, melodica, organ, skank guitar)
+# ======================================================================
+
+# samples: SampleRadar (MusicRadar) - royalty-free for use in your own music; do not redistribute the raw samples
+https://www.musicradar.com/news/tech/sampleradar-281-free-dub-samples-220465   samples free-dl dub   # 281 free dub samples: drums, bass, skank guitar, organ, FX
+https://www.musicradar.com/news/sampleradar-250-free-dub-designer-samples   samples free-dl dub sirens   # 250 free dub designer samples (sirens, delays, FX)
+https://www.musicradar.com/news/tech/sampleradar-358-free-dark-dub-samples-318898   samples free-dl dub   # 358 free dark dub samples
+https://musicradar.com/news/tech/sampleradar-567845   samples free-dl dub   # 201 free deep dub samples
+https://musicradar.com/news/sampleradar-253-free-dub-percussion-samples   samples free-dl dub   # 253 free dub percussion samples
+https://musicradar.com/news/tech/sampleradar-204-free-dub-drums-samples-629201   samples free-dl dub   # 204 free dub drums samples
+https://musicradar.com/news/tech/sampleradar-269269   samples free-dl dub skank_guitar   # 320 free ska samples (skank guitar, horns, organ)
+https://musicradar.com/news/tech/sampleradar-212-free-dancehall-samples-250784   samples free-dl dancehall vocals   # 212 free dancehall samples
+https://musicradar.com/news/tech/sampleradar-217768   samples free-dl dubstep   # 342 free dubstep samples
+https://www.musicradar.com/news/tech/sampleradar-160-free-dubstep-bonus-samples-264294   samples free-dl dubstep   # 160 free dubstep bonus samples
+https://musicradar.com/news/tech/sampleradar-484521   samples free-dl dubstep   # 50 free Mistabishi DnB and dubstep samples
+https://www.musicradar.com/news/tech/sampleradar-316-free-uk-garage-samples-629719   samples free-dl uk_garage   # 316 free UK garage samples
+https://musicradar.com/news/sampleradar-nukg-samples   samples free-dl uk_garage   # 510 free NUKG samples
+https://musicradar.com/news/sampleradar-free-uk-urban-samples   samples free-dl grime uk_garage vocals   # 435 free UK urban samples
+https://www.musicradar.com/news/tech/sampleradar-703-free-grime-samples-225947   samples free-dl grime   # 703 free grime samples
+https://musicradar.com/news/tech/sampleradar-495261   samples free-dl grime   # 176 free dirty grime samples
+https://www.musicradar.com/news/tech/sampleradar-327-free-vocal-ad-lib-samples-564055   samples free-dl vocals   # 327 free vocal ad-lib samples (shouts, hype one-shots)
+https://www.musicradar.com/news/tech/free-female-vocal-samples   samples free-dl vocals   # 1,338 free female vocal samples
+https://www.musicradar.com/news/tech/free-music-samples-download-loops-hits-and-multis-627820   samples free-dl index   # SampleRadar index of every free pack
+
+# samples: other free royalty-free packs (price 0 checked 2026-10-25)
+https://99sounds.org/dub-reggae-sounds   samples free-dl dub   # 99Sounds Dub Reggae Sounds: royalty-free incl. commercial, no redistribution (99sounds.org/license)
+https://www.loopmasters.com/genres/136-Free-Samples/products/18218-Free-Sample-Pack-Reggae-Dub   samples free-dl dub   # Loopmasters free Reggae Dub pack (free account; royalty-free)
+https://soundpacks.com/free-sound-packs/chilled-reggae-guitar-loops/   samples free-dl dub skank_guitar   # SoundPacks Chilled Reggae Guitar Loops (free, royalty-free)
+https://ghostsyndicate.gumroad.com/l/free-samples-vol4   samples free-dl dubstep grime   # Ghost Syndicate Free Samples Vol.4: deep dubstep, grime, bass (price 0; licence not stated)
+https://ghostsyndicate.gumroad.com/l/free-samples-vol3-bass-music   samples free-dl dubstep uk_garage   # Ghost Syndicate Free Samples Vol.3: dubstep, future garage (price 0; licence not stated)
+https://loopcult.gumroad.com/l/capital-grime   samples free-dl grime dubstep   # Loopcult Capital Grime (price 0; licence not stated)
+
+# samples: Looperman (user uploads; loops are royalty-free, a cappellas carry per-artist terms - read each, credit the artist)
+https://www.looperman.com/acapellas/genres/dancehall-acapellas-vocals-sounds-samples-download   samples free-dl vocals dancehall   # dancehall a cappellas / MC vocals
+https://www.looperman.com/acapellas/genres/reggae-acapellas-vocals-sounds-samples-download   samples free-dl vocals reggae   # reggae a cappellas / toasts
+https://www.looperman.com/acapellas/genres/grime-acapellas-vocals-sounds-samples-download   samples free-dl vocals grime   # grime MC a cappellas
+https://www.looperman.com/acapellas/genres/garage-acapellas-vocals-sounds-samples-download   samples free-dl vocals uk_garage   # garage vocal a cappellas
+https://www.looperman.com/acapellas/genres/dubstep-acapellas-vocals-sounds-samples-download   samples free-dl vocals dubstep   # dubstep a cappellas
+https://www.looperman.com/loops/genres/royalty-free-reggae-loops-samples-sounds-wavs-download   samples free-dl dub   # reggae loops: skank guitar, organ bubble, melodica
+https://www.looperman.com/loops/genres/royalty-free-dancehall-loops-samples-sounds-wavs-download   samples free-dl dancehall   # dancehall loops
+https://www.looperman.com/loops/genres/royalty-free-dubstep-loops-samples-sounds-wavs-download   samples free-dl dubstep   # dubstep loops
+https://www.looperman.com/loops/genres/royalty-free-garage-loops-samples-sounds-wavs-download   samples free-dl uk_garage   # garage loops
+https://www.looperman.com/loops/genres/royalty-free-grime-loops-samples-sounds-wavs-download   samples free-dl grime   # grime loops
+https://www.looperman.com/loops?mid=270518   samples free-dl dub organ   # Dubmaster321's loops: organ bubble, dub keys
+
+# samples: ccMixter a cappellas and stems (Creative Commons, licence per upload as tagged)
+https://ccmixter.org/files/Gshepherd/48953   samples cc-by vocals dancehall toasting   # Gshepherd - Rasta chanting vol. I (zip of chants)
+https://ccmixter.org/files/Gshepherd/48957   samples cc-by vocals dancehall   # Gshepherd - Cena za teba (reggae/soca a cappella)
+https://ccmixter.org/files/andrewfranco/23076   samples cc-by vocals dancehall   # andrewfranco - Put your Hands Up (a cappella)
+https://ccmixter.org/files/andrewfranco/21090   samples cc-by vocals dancehall   # Jhonblack - Wayo Wayo (a cappella)
+https://ccmixter.org/files/andrewfranco/42204   samples cc-by-nc vocals dancehall ragga   # andrewfranco - No se si tu (ragga a cappella)
+https://ccmixter.org/files/andrewfranco/45003   samples cc-by vocals ragga   # andrewfranco - Ahi vienen (ragga a cappella)
+https://ccmixter.org/files/deliveReasurrance/3437   samples cc-by vocals ragga   # deliveReasurrance - Jambulani Freestyle (ragga a cappella)
+https://ccmixter.org/files/deleve/23972   samples cc-by-nc vocals ragga   # deleve - Minha Maluca (ragga a cappella)
+https://ccmixter.org/files/i_rebel/66874   samples cc-by vocals dub   # i_rebel - What A World (a cappella, 175 bpm)
+https://ccmixter.org/files/i_rebel/55061   samples cc-by-nc vocals dub   # i_rebel - Stop war inna Syria (roots a cappella)
+https://ccmixter.org/files/i_rebel/38490   samples cc-by-nc vocals dub roots   # Droegenbwoys - Tinx Globally lead vox
+https://ccmixter.org/files/i_rebel/38489   samples cc-by-nc vocals dub roots   # Droegenbwoys - Tinx Globally backing vox
+https://ccmixter.org/files/LCL_netlabel/27442   samples cc-by-nc vocals dub   # Volatil - No bans (a cappella, 124 bpm)
+https://ccmixter.org/files/donnieozone/38174   samples cc-by-nc vocals dub   # donnieozone - All For Free (a cappella)
+https://ccmixter.org/files/admiralbob77/30717   samples cc-by-nc vocals dub   # admiralbob77 - Let That Monkey Be (pella)
+https://ccmixter.org/files/snowflake/46440   samples cc-by-nc vocals reggae   # snowflake - Jah Wisdom (Change) (a cappella)
+https://ccmixter.org/files/getatmic/41691   samples cc-by-nc vocals reggae   # getatmic - Sweetness (a cappella)
+https://ccmixter.org/files/MTGakaCaraMelG/12930   samples cc-by-nc vocals grime   # MTG - Dirty Grimey (grime MC a cappella)
+https://ccmixter.org/files/Kamihamiha/60829   samples cc-by-nc vocals grime   # Kamihamiha - Duality (grime a cappella)
+https://ccmixter.org/files/adisa/28618   samples cc-by vocals dubstep   # adisa - Rich (a cappella)
+https://ccmixter.org/files/LCL_netlabel/27440   samples cc-by-nc vocals dub   # Volfoniq - Loops Mystic riddim 85 bpm (stems)
+https://ccmixter.org/files/militiamix/126   samples cc-nc-sampling-plus vocals dub dubstep   # Militia Mix Samples Library 03
