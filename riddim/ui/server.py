@@ -510,6 +510,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(self._send(body))
             if self.path == "/api/save":
                 return self._json(self._save(body))
+            if self.path == "/api/template_kits":
+                return self._json(self._template_kits(body))
             self.send_error(404)
         except Exception as exc:
             self._json({"error": str(exc)}, 500)
@@ -566,11 +568,30 @@ class Handler(BaseHTTPRequestHandler):
                 return {"error": "Deluge did not answer the ping"}
             report = render.send(
                 song or self.state.song, deluge, mode=body.get("mode", "jam"),
-                template_rows=template, progress=False, kits=bool(body.get("kits")),
+                template_rows=template, progress=False, kits=bool(body.get("kits", True)),
                 on_progress=on_progress,
             )
         return {"clips": report.clips, "notes": report.notes, "trimmed": report.trimmed,
                 "failures": report.failures}
+
+    def _template_kits(self, body: dict) -> dict:
+        """Put the song's family kit into the template on the card."""
+        from ..deluge import render
+        from ..deluge.client import Deluge, DelugeError
+
+        family = profile_mod.get(self.state.song.params.profile).family
+        kit = body.get("kit") or profile_mod.KIT_PRESETS.get(family, "RIDDIM DUB")
+        rows = render.parse_template(body.get("template_rows") or render.DEFAULT_TEMPLATE_ROWS)
+        log: list[str] = []
+        try:
+            with Deluge(output=body.get("port"), input=body.get("port")) as deluge:
+                if not deluge.ping():
+                    return {"error": "Deluge did not answer the ping"}
+                render.install_kits_in_template(deluge, body.get("template") or "Template",
+                                                rows, kit, log=log.append)
+        except DelugeError as exc:
+            return {"error": str(exc), "log": log}
+        return {"ok": True, "kit": kit, "log": log}
 
     def _send_in_background(self, body: dict) -> dict:
         """Start a send on its own thread and return at once; the page polls

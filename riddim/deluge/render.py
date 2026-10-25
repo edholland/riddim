@@ -194,12 +194,14 @@ def send(
             if (kits and part.output == "kit" and part.preset
                     and part.role not in kits_loaded):
                 kits_loaded.add(part.role)
-                if deluge.kit_preset(part.preset):
-                    # The loaded kit is this clip's own: the rest of the
-                    # part clones from here, not from the template.
-                    first_clip_for_role[part.role] = index
-                else:
-                    report.failures.append(f"kit {part.preset} on {part.role}")
+                reply = deluge.kit_preset(part.preset)
+                if reply is not None and not reply.ok or reply is None and deluge._in is not None:
+                    # Without its kit the part plays on whatever the template
+                    # had - other sounds on riddim's rows. Stop and say why.
+                    raise DelugeError(kit_failure(part.preset, reply, part.role))
+                # The loaded kit is this clip's own: the rest of the part
+                # clones from here, not from the template.
+                first_clip_for_role[part.role] = index
 
             label = f"{part.role}/{section.name}"
             tell(0, label)
@@ -424,6 +426,66 @@ def _write_notes(
             f"{label}: kit has no row for note {midi} ({n} notes dropped) - "
             f"use --kits or a kit with riddim's rows")
     return written
+
+
+def kit_failure(kit: str, reply, where: str = "") -> str:
+    """Why a kit did not load, and what to do about it."""
+    if reply is None:
+        return (f"no reply loading kit {kit!r}{' on ' + where if where else ''} within 20 s - "
+                f"is the Deluge still connected and on a main view?")
+    status = reply.status
+    why = {
+        sysex.Status.FILE_NOT_FOUND: f"KITS/{kit}.XML is not on the card - copy the kits on "
+                                     f"(riddim-cli deluge-kits /Volumes/<card>)",
+        sysex.Status.BAD_LENGTH: "the firmware does not know LOAD_CURRENT_KIT_PRESET - flash the "
+                                 "ai-kit-automation build",
+        sysex.Status.BAD_PARAM: "that clip is not a kit clip - check the template rows "
+                                "(drums and perc must point at kit clips)",
+        sysex.Status.NO_INSTRUMENT_CLIP: "no clip selected for the kit",
+        sysex.Status.SD_CARD_UNAVAILABLE: "the Deluge cannot read its card",
+        sysex.Status.ACTION_FAILED: f"the kit file or one of its samples failed to load - check "
+                                    f"SAMPLES/RIDDIM is on the card",
+    }.get(status, "")
+    name = getattr(status, "name", status)
+    return f"kit {kit!r}{' on ' + where if where else ''} did not load: {name}. {why}".strip()
+
+
+def install_kits_in_template(deluge: Deluge, template: str, rows: dict[str, int],
+                             kit: str, backup: bool = True, log=print) -> None:
+    """Put a riddim kit into a template song on the card, so every song made
+    from it starts on riddim's rows: load SONGS/<template>.XML, save an
+    untouched copy as '<template> BACKUP' (once), load `kit` onto the
+    template's drums and perc clips and save the template over itself.
+    Needs firmware ai-kit-automation (kit loading) and ai-save-load."""
+    r = deluge.load_song(template)
+    if r is not None and not r.ok:
+        why = {sysex.Status.BUSY: "stop playback and leave any menu, then run again",
+               sysex.Status.FILE_NOT_FOUND: f"no SONGS/{template}.XML on the card"}
+        raise DelugeError(f"load {template!r} failed: {r.status.name} - {why.get(r.status, '')}")
+    log(f"loaded SONGS/{template}.XML")
+    if backup:
+        b = deluge.save_song(f"{template} BACKUP", overwrite=False)
+        if b is None or b.ok:
+            log(f"saved an untouched copy as SONGS/{template} BACKUP.XML")
+        elif b.status == sysex.Status.FILE_EXISTS:
+            log(f"SONGS/{template} BACKUP.XML already exists - kept as it was")
+        else:
+            raise DelugeError(f"backup save failed: {b.status.name}")
+    indices = rows_to_indices({k: v for k, v in rows.items() if k in ("drums", "perc")},
+                              deluge.count_clips())
+    for role, index in sorted(indices.items()):
+        if not deluge.select_index(index):
+            raise DelugeError(f"could not select the template's {role} clip (row {rows[role]})")
+        reply = deluge.kit_preset(kit)
+        if reply is not None and not reply.ok or reply is None and deluge._in is not None:
+            raise DelugeError(kit_failure(kit, reply, f"the template's {role} clip"))
+        log(f"{role}: {kit}")
+    s = deluge.save_song(template, overwrite=True)
+    if s is not None and not s.ok:
+        hint = {sysex.Status.NEEDS_UI_SAVE: "the template uses collected/recorded samples - "
+                                            "save it once from the Deluge's Save menu"}
+        raise DelugeError(f"saving {template!r} failed: {s.status.name} {hint.get(s.status, '')}")
+    log(f"saved SONGS/{template}.XML with the riddim kit")
 
 
 def _write_automation(deluge: Deluge, part: Part, section, report) -> int:

@@ -445,6 +445,24 @@ def cmd_vary(args) -> int:
     return 0
 
 
+def cmd_template_kits(args) -> int:
+    """A riddim kit into the template song itself (firmware ai-kit-automation)."""
+    from .deluge import render
+    from .deluge.client import Deluge, DelugeError
+    try:
+        with Deluge(output=args.port, input=args.input) as deluge:
+            if not deluge.ping():
+                print("Deluge did not answer the ping.", file=sys.stderr)
+                return 1
+            render.install_kits_in_template(
+                deluge, args.template, render.parse_template(args.template_rows),
+                args.kit, backup=not args.no_backup)
+    except DelugeError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_deluge_kits(args) -> int:
     """The preview's drums as Deluge kits: one-shots and kit presets."""
     try:
@@ -580,10 +598,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-fx-rows", action="store_true",
                    help="drop the crash (row 42) and riser (row 43) notes, for "
                         "a drum kit that has no sounds on those rows")
-    p.add_argument("--kits", action="store_true",
-                   help="load the family's riddim kit (KITS/RIDDIM DUB.XML etc., from "
-                        "`deluge-kits`) on the drum and perc clips and write the kit's "
-                        "desk moves - sweeps, echo throws (firmware ai-kit-automation)")
+    p.add_argument("--no-kits", dest="kits", action="store_false",
+                   help="keep the template's kits: by default the family's riddim kit "
+                        "(KITS/RIDDIM DUB.XML etc., from `deluge-kits`) is loaded on the "
+                        "drum and perc clips with the kit's desk moves - sweeps, echo "
+                        "throws (firmware ai-kit-automation)")
+    p.add_argument("--kits", dest="kits", action="store_true", default=True,
+                   help=argparse.SUPPRESS)
     p.add_argument("--dry-run", action="store_true",
                    help="run the whole send path without opening a port")
     p.add_argument("--verbose", action="store_true")
@@ -656,13 +677,29 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--port", default=None)
     p.add_argument("--input", default=None)
     p.add_argument("--verbose", action="store_true")
-    p.add_argument("--kits", action="store_true",
-                   help="load the family's riddim kit (KITS/RIDDIM DUB.XML etc., from "
-                        "`deluge-kits`) on the drum and perc clips and write the kit's "
-                        "desk moves - sweeps, echo throws (firmware ai-kit-automation)")
+    p.add_argument("--no-kits", dest="kits", action="store_false",
+                   help="keep the template's kits: by default the family's riddim kit "
+                        "(KITS/RIDDIM DUB.XML etc., from `deluge-kits`) is loaded on the "
+                        "drum and perc clips with the kit's desk moves - sweeps, echo "
+                        "throws (firmware ai-kit-automation)")
+    p.add_argument("--kits", dest="kits", action="store_true", default=True,
+                   help=argparse.SUPPRESS)
     p.add_argument("--dry-run", action="store_true",
                    help="compose and walk the set without a Deluge")
     p.set_defaults(func=cmd_set)
+
+    p = subs.add_parser(
+        "template-kits", help="put a riddim kit into a template song on the Deluge: its drums "
+                              "and perc clips, saved (an untouched copy kept as '<name> BACKUP')")
+    p.add_argument("--template", default="Template",
+                   help="the template song on the card (SONGS/<name>.XML)")
+    p.add_argument("--template-rows", default=DEFAULT_TEMPLATE_ROWS,
+                   help="which row of the template holds each role's clip (row 1 = top)")
+    p.add_argument("--kit", default="RIDDIM DUB", help="KITS/<kit>.XML to load")
+    p.add_argument("--no-backup", action="store_true")
+    p.add_argument("--port", default=None)
+    p.add_argument("--input", default=None)
+    p.set_defaults(func=cmd_template_kits)
 
     p = subs.add_parser(
         "deluge-kits", help="write the riddim kits (samples + KITS/*.XML) for the Deluge's card")

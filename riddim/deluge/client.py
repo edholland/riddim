@@ -373,17 +373,16 @@ class Deluge:
             sysex.Command.SET_ROW_PARAM_AUTOMATION, f"row {note} automation {param}",
         )
 
-    def kit_preset(self, text: str) -> bool:
-        """Load a kit preset: it reads every row's sample off the card, which
-        can outlast the normal reply timeout - and a retry would load it
-        again - so it is sent once and waited on."""
-        reply = self.slow_command(
+    def kit_preset(self, text: str) -> Reply | None:
+        """Load a kit preset onto the current kit clip. It reads every row's
+        sample off the card, which can outlast the normal reply timeout - and
+        a retry would load it again - so it is sent once and waited on. The
+        reply (None without a reply port) says why it failed: see
+        render.kit_failure."""
+        return self.slow_command(
             sysex.load_kit_preset(text), sysex.Command.LOAD_CURRENT_KIT_PRESET,
             f"kit {text}", timeout=20.0,
         )
-        if reply is None:
-            return self._in is None
-        return reply.ok
 
     def section_repeat(self, section, repeats=0, loop=False, start=None, end=None):
         return self.command(

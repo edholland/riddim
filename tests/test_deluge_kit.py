@@ -161,3 +161,49 @@ def test_kit_export(tmp_path):
     # dub's backbeat goes to the echo
     assert by["SNARE"].find("defaultParams").get("delayFeedback") != "0x80000000"
     assert os.path.getsize(xml_path) > 1000
+
+
+def test_a_kit_that_does_not_load_stops_the_send():
+    """Without its kit a part plays the template's sounds on riddim's rows:
+    the send stops and says why, instead of writing on."""
+    from riddim.deluge.client import DelugeError
+    song = compose("roots_dub", seed=3)
+    fake = FakeDeluge(fail_on={sysex.Command.LOAD_CURRENT_KIT_PRESET}, clips=6)
+    rows = {"sub": 1, "chords": 2, "lead": 3, "pad": 4, "drums": 5, "perc": 6}
+    with pytest.raises(DelugeError, match="RIDDIM DUB.*did not load"):
+        render.send(song, fake, template_rows=rows, progress=False, kits=True)
+
+
+def test_kit_failure_says_what_to_do():
+    from riddim.deluge.client import Reply
+    msg = render.kit_failure("RIDDIM DUB", Reply(23, sysex.Status.FILE_NOT_FOUND, []), "drums")
+    assert "KITS/RIDDIM DUB.XML" in msg and "deluge-kits" in msg
+    assert "flash" in render.kit_failure("X", Reply(23, sysex.Status.BAD_LENGTH, []))
+
+
+def test_install_kits_in_template():
+    """Load the template, keep an untouched copy, load the kit on its drums
+    and perc clips, save it over itself."""
+    fake = FakeDeluge(clips=6)
+    rows = {"sub": 1, "chords": 2, "lead": 3, "pad": 4, "drums": 5, "perc": 6}
+    log = []
+    render.install_kits_in_template(fake, "Template", rows, "RIDDIM DUB", log=log.append)
+    order = [e for e, _ in fake.log if e in (sysex.Command.LOAD_SONG, sysex.Command.SAVE_SONG,
+                                             sysex.Command.LOAD_CURRENT_KIT_PRESET)]
+    assert order == [sysex.Command.LOAD_SONG, sysex.Command.SAVE_SONG,
+                     sysex.Command.LOAD_CURRENT_KIT_PRESET, sysex.Command.LOAD_CURRENT_KIT_PRESET,
+                     sysex.Command.SAVE_SONG]
+    saves = fake.commands_of(sysex.Command.SAVE_SONG)
+    assert bytes(saves[0][7:]).decode() == "Template BACKUP" and saves[0][6] == 0
+    assert bytes(saves[1][7:]).decode() == "Template" and saves[1][6] == 1
+    # the kits went onto the template's drums (row 5) and perc (row 6) clips
+    selects = [sysex.dec14(*c[6:8]) for c in fake.commands_of(sysex.Command.SELECT_SESSION_INDEX)]
+    idx = render.rows_to_indices({"drums": 5, "perc": 6}, 6)
+    assert idx["drums"] in selects and idx["perc"] in selects
+
+
+def test_cli_sends_with_kits_by_default():
+    from riddim.cli import build_parser
+    args = build_parser().parse_args(["send", "--dry-run"])
+    assert args.kits is True
+    assert build_parser().parse_args(["send", "--no-kits"]).kits is False

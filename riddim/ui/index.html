@@ -130,6 +130,7 @@
   <button id="midi">↓ midi</button>
   <button id="send">→ deluge</button>
   <input id="session" title="session: saves are named '<session> NN title', so a night's songs stay together and in order on the card" style="width:62px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:4px 6px;font:inherit">
+  <button id="template-kits" title="put this family's riddim kit into the template song on the card (its drums and perc clips) and save it - an untouched copy is kept as '<template> BACKUP'">🥁 kits → template</button>
   <button id="save" title="save the song now on the Deluge as '<session> NN title' (never overwrites)">💾 save</button>
   <span id="status"></span>
 </header>
@@ -930,12 +931,23 @@ $('send').onclick=async()=>{
   const port=await delugePort(); if(!port) return;
   const rows=prompt('Template rows (row 1 = top of screen), or blank to create new instruments:', 'sub=1,chords=2,lead=3,pad=4,drums=5,perc=6');
   if(rows===null) return;
-  let kits=false; try { kits=localStorage.getItem('riddim.kits')==='1'; } catch(e) {}
-  kits=confirm(`Load the riddim kits and write the drum desk moves (sweeps, echo throws)?\n\nNeeds firmware ai-kit-automation and the kits on the card (riddim-cli deluge-kits).\nOK = yes, Cancel = keep the template's kits.${kits?'\n(last time: yes)':''}`);
-  try { localStorage.setItem('riddim.kits', kits?'1':'0'); } catch(e) {}
-  const start=await api('/api/send',{port, template_rows:rows||null, mode:'jam', kits, background:true});
+  // Always the riddim kits: the family's kit is loaded on the drum and perc
+  // clips (a template's own kit plays other sounds on riddim's rows).
+  const start=await api('/api/send',{port, template_rows:rows||null, mode:'jam', kits:true, background:true});
   if(!start.started) return;
   watchSend();
+};
+$('template-kits').onclick=async()=>{
+  const port=await delugePort(); if(!port) return;
+  const template=prompt('Template song on the card to give the riddim kit (its drums and perc clips; a copy is kept as "<name> BACKUP"). Stop playback first.', 'Template');
+  if(!template) return;
+  const rows=prompt('Template rows (row 1 = top of screen):', 'sub=1,chords=2,lead=3,pad=4,drums=5,perc=6');
+  if(rows===null) return;
+  status('putting the kit into '+template+'…');
+  const r=await fetch('/api/template_kits',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({port, template, template_rows:rows})}).then(x=>x.json());
+  if(r.error){ status(r.error,true); return; }
+  status(`${template}: drums and perc now on ${r.kit} - saved`);
 };
 // The send's progress: notes written of the song's total, the clip being
 // written, and the time left at the rate so far.

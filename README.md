@@ -412,7 +412,16 @@ With it, `send --kits` / `set --kits` (and **→ deluge** in the UI, which asks)
 load the family's kit on each song's drum and perc clips and write the kit's
 desk moves: the whole-kit high-pass sweep across the last two bars of every
 build into a drop, the backbeat's echo opened up in a dub throw, and running
-away into each drop. Without `--kits` nothing changes for older firmware.
+away into each drop. Sends load the kits by default (`--no-kits` keeps the
+template's own); a kit that does not load stops the send with the reason
+(not on the card, firmware without kit loading, a template row that is not a
+kit clip).
+
+To put a kit into the template itself - so a song made from it is on
+riddim's rows even before a send - `riddim-cli template-kits --template
+Template` (or **🥁 kits → template** in the UI) loads the template, keeps an
+untouched copy as `Template BACKUP`, loads the kit on its drums and perc clips
+and saves it.
 
 ## Template songs
 
