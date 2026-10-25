@@ -2257,12 +2257,17 @@ def _add_automation(part: Part, role: str, arrangement: Arrangement, prof: Profi
 
 # The kit's desk moves (Deluge kit clips, firmware ai-kit-automation): the
 # same moves the audio preview's desk makes. Values are 0..1 of the Deluge
-# knob. The kit presets set the snare's delay send at about 0.24 in dub, 0.12
-# at 140; a throw opens it, a build runs it away.
+# knob. A Deluge sound's delay knob IS its feedback, linearly (knob 50 =
+# 1.0, repeating for ever) - and a jam loops a build or a throw clip, so a
+# high value stacks up into a wall that rings on after the stop. 0.4 keeps
+# about seven audible repeats (Delay::setTimeToAbandon); nothing goes past
+# DELAY_CEILING. The kit presets set the backbeat's send at 0.14 in dub.
+DELAY_CEILING = 0.4
 KIT_SWEEP = (0.0, 0.6)          # whole-kit HPF across a build's last two bars
-SNARE_THROW = 0.5               # the backbeat's delay send in a dub throw
-SNARE_RUNAWAY = (0.3, 0.7)      # ... and running away into a drop
-SNARE_THROW_REVERB = 0.45
+SNARE_THROW = 0.3               # the backbeat's echo opened in a dub throw
+SNARE_RUNAWAY = (0.18, 0.4)     # ... and running on into a drop
+SNARE_THROW_REVERB = 0.4
+assert max(SNARE_THROW, *SNARE_RUNAWAY) <= DELAY_CEILING
 
 
 def _add_kit_automation(part: Part, role: str, arrangement: Arrangement, prof: Profile):

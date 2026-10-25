@@ -203,16 +203,17 @@ def render_rows(family: str, seed: int = 1) -> list[Row]:
 def _sends(family: str, rows: list[Row]) -> None:
     """What stays live on the Deluge: the sends the preview's desk makes.
     The backbeat into the reverb (the plate at 140, the spring in dub) and
-    into the dotted-eighth delay; toms and the crash into the reverb; dub's
+    into the dotted-eighth delay - lightly: a Deluge delay knob is its
+    feedback, so the send is a few repeats, not a wash; toms and the crash into the reverb; dub's
     stick and congas into the echo."""
     by = {r.note: r for r in rows}
     snare, rim = by[KIT_ROWS["snare"]], by[KIT_ROWS["rim"]]
     if family == "dub":
-        snare.reverb, snare.delay = 14.0, 12.0
-        rim.reverb, rim.delay = 10.0, 8.0
-        by[KIT_ROWS["conga_hi"]].delay = 6.0
+        snare.reverb, snare.delay = 14.0, 7.0
+        rim.reverb, rim.delay = 10.0, 4.0
+        by[KIT_ROWS["conga_hi"]].delay = 3.0
     elif family == "dubstep":
-        snare.reverb, snare.delay = 20.0, 6.0
+        snare.reverb, snare.delay = 20.0, 4.0
         rim.reverb = 10.0
     else:
         snare.reverb = 10.0

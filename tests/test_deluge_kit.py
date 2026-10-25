@@ -236,3 +236,22 @@ def test_kits_refused_on_an_older_firmware_build():
     new.ping()
     assert new.protocol == render.KIT_PROTOCOL
     render._check_kit_firmware(new)          # passes
+
+
+def test_delay_moves_never_run_away():
+    """A Deluge sound's delay knob is its feedback (50 = for ever), and a jam
+    loops build and throw clips: no delay move goes past the ceiling, and
+    the kits' own sends stay low."""
+    from riddim.compose import DELAY_CEILING
+    for name in ("roots_dub", "steppers_dub", "dubstep_140", "uk_garage"):
+        for seed in (1, 2, 3):
+            song = compose(name, seed=seed)
+            for p in song.parts:
+                for a in p.automation:
+                    if a.param == "delay":
+                        assert a.start_value <= DELAY_CEILING
+                        assert (a.end_value or 0) <= DELAY_CEILING
+    kit = pytest.importorskip("riddim.deluge.kit")
+    pytest.importorskip("scipy")
+    for fam in ("dub", "dubstep", "garage"):
+        assert max(r.delay for r in kit.render_rows(fam)) <= 10       # of 50
