@@ -1758,6 +1758,10 @@ def _answer_breaths(notes, line: Line, lo_step, nxt_root, m: Material, prof, rng
     return sorted(out, key=lambda n: n[1])
 
 
+# The most stabs in a chord answer to the lead (see _build_chords).
+ANSWER_STABS = 3
+
+
 def _build_chords(part, section, prof, m: Material, rng):
     """Offbeat stabs that leave the lead room - and answer it.
 
@@ -1817,23 +1821,37 @@ def _build_chords(part, section, prof, m: Material, rng):
             # ordinary stabs stand aside inside the window.
             for a, b, _, fig in line.response_in(lo, lo + STEPS_PER_BAR, "chords"):
                 wa, wb = a - lo, b - lo
-                # The answer says the call's figure - and, where the breath
-                # is long, says it again a beat or two later, quieter (the
-                # band's call-back) - then the skank comes back in. It takes
-                # only the room it needs: a two-stab answer that silences ten
-                # steps of groove is a hole, not a reply.
-                span = fig[-1][0] if fig else 0
-                every = max(4, int(math.ceil((span + 2) / 2.0)) * 2)
-                starts = [wa] + ([wa + every] if wb - wa >= every + span + 1 else [])
-                own = min(wb, starts[-1] + span + 2)
-                hits = [h for h in hits if not wa <= h[0] < own]
-                for n_, st0 in enumerate(starts):
-                    for rel, deg in fig:
-                        st = st0 + rel
-                        if 0 <= st < min(wb, STEPS_PER_BAR):
-                            hits.append((st, max(prof.skank_length * 1.6, 0.6), 100 if n_ == 0 else 86))
-                            if deg > 0 and n_ == 0:
-                                lifts.add(st)
+                # The answer is the call's figure as a keys player answers
+                # it: its strong points only - on the eighths, an eighth
+                # apart at least, three stabs at most - and said once. A run
+                # of sixteenth chords, said again as a "call-back", read as an
+                # echo through the preview's delay; on a real synth with its
+                # own release, swung by the Deluge, it was a pile-up. The
+                # echo is the delay's job, not the notes'. Then a beat of air,
+                # and the skank comes back in.
+                stabs: list[tuple[int, int]] = []
+                for rel, deg in fig:
+                    st = wa + rel
+                    st += st % 2                     # onto the eighth grid
+                    if st >= min(wb, STEPS_PER_BAR) or st < 0:
+                        continue
+                    if stabs and st - stabs[-1][0] < 2:
+                        continue
+                    stabs.append((st, deg))
+                    if len(stabs) == ANSWER_STABS:
+                        break
+                if not stabs:
+                    continue
+                # a beat of air after the answer before the skank returns
+                own = stabs[-1][0] + 4
+                # ...and an eighth clear before it, so it stands apart from
+                # the skank (a double chop's pair would run into it)
+                clear = stabs[0][0] - 2
+                hits = [h for h in hits if not clear <= h[0] < own]
+                for st, deg in stabs:
+                    hits.append((st, max(prof.skank_length * 1.6, 0.6), 100))
+                    if deg > 0:
+                        lifts.add(st)
         if section.bars >= 8 and bar % 8 == 7:
             hits = [h for h in hits if h[0] < 12]
         if not hits:

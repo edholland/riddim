@@ -1159,3 +1159,27 @@ def test_old_firmware_is_named_not_failed(monkeypatch):
     handler = server.Handler.__new__(server.Handler)
     server.Handler.state = server.State(SongParams(profile="uk_garage", seed=3))
     assert "flash" in handler._save({"session": "FRI"})["error"]
+
+
+def test_chord_answers_are_a_keys_players():
+    """The chords answer the lead on the eighths, never with a run: no bar
+    of stabs has four in a row an eighth or less apart, and no stab of an
+    answer sits on an off-sixteenth (a sixteenth chord run, swung on the
+    Deluge through a synth with its own release, is a pile-up)."""
+    for profile in ("roots_dub", "steppers_dub", "dubstep_140", "uk_garage", "dark_garage"):
+        for seed in range(1, 6):
+            song = compose(profile=profile, seed=seed)
+            chords = song.part("chords")
+            if chords is None:
+                continue
+            bars = {}
+            for n in chords.notes:
+                bars.setdefault(n.start // TICKS_PER_BAR, set()).add(
+                    (n.start % TICKS_PER_BAR) / TICKS_PER_16TH)
+            for b, steps in bars.items():
+                st = sorted(steps)
+                run = best = 1
+                for x, y in zip(st, st[1:]):
+                    run = run + 1 if y - x <= 2 else 1
+                    best = max(best, run)
+                assert best < 4, (profile, seed, b, st)
