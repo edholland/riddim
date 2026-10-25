@@ -373,6 +373,24 @@ def _make_live(params: SongParams) -> SongParams:
     return params
 
 
+def bass_style_pool(prof: Profile) -> tuple:
+    """The kinds of bassline a profile draws from, with their weights."""
+    pool = {"dubstep": (("sustain", 3), ("walk", 3), ("bounce", 2), ("sparse", 2),
+                        ("skip", 2)),
+            "garage": (("skip", 4), ("walk", 3), ("bounce", 2), ("sustain", 1)),
+            "dub": (("walk", 4), ("sparse", 2), ("bounce", 2), ("sustain", 1), ("pulse", 1))}
+    if prof.name == "steppers_dub":
+        return (("pulse", 3), ("walk", 3), ("bounce", 2))
+    if prof.name == "dark_garage":
+        return (("skip", 4), ("walk", 3), ("sustain", 2), ("bounce", 1))
+    return pool.get(prof.family, pool["dub"])
+
+
+# Bass styles whose notes come from the sub's own seed; the others are fixed
+# shapes over the chords, so a fresh seed alone would not change a note.
+SEEDED_BASS = ("walk", "sparse")
+
+
 def regenerate(song: Song, part: str, rig: Rig | None = None, rng=None) -> Song:
     """A new take on one part; every other part is byte-identical.
 
@@ -383,6 +401,16 @@ def regenerate(song: Song, part: str, rig: Rig | None = None, rng=None) -> Song:
     """
     params = song.params.copy()
     params.reseed(part, rng)
+    if part == "sub" and params.bass is not None:
+        # A new bassline, not the same shape: a fixed-shape style always
+        # moves to another kind; a seeded one half the time.
+        r = rng or random.Random()
+        cur = params.bass.style
+        if cur not in SEEDED_BASS or r.random() < 0.5:
+            pool = [(n, w) for n, w in bass_style_pool(profile_mod.get(params.profile)) if n != cur]
+            if pool:
+                names, weights = zip(*pool)
+                params.bass = replace(params.bass, style=r.choices(names, weights)[0])
     if part == "structure":
         # A redraw means a new shape, not the same shape with new lengths.
         params.sections = None
@@ -598,15 +626,7 @@ def _resolve_material(
     if params.bass is None:
         params.bass = bassline.params_for_feel(feel, rng, energy=0.6)
         srng = random.Random(f"{params.seed}:bassstyle")
-        pool = {"dubstep": (("sustain", 3), ("walk", 3), ("bounce", 2), ("sparse", 2),
-                            ("skip", 2)),
-                "garage": (("skip", 4), ("walk", 3), ("bounce", 2), ("sustain", 1)),
-                "dub": (("walk", 4), ("sparse", 2), ("bounce", 2), ("sustain", 1), ("pulse", 1))}
-        if prof.name == "steppers_dub":
-            pool = {"dub": (("pulse", 3), ("walk", 3), ("bounce", 2))}
-        elif prof.name == "dark_garage":
-            pool = {"dubstep": (("skip", 4), ("walk", 3), ("sustain", 2), ("bounce", 1))}
-        names, weights = zip(*pool.get(prof.family, pool.get("dub")))
+        names, weights = zip(*bass_style_pool(prof))
         params.bass = replace(params.bass, style=srng.choices(names, weights)[0])
     bass_rng = random.Random(params.seed_for("sub"))
     cells = [

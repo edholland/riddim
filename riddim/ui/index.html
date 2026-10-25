@@ -57,9 +57,28 @@
   .knob .ends span.hi { text-align:right; }
   .knob .ends input[type=range] { flex:1; min-width:0; }
   .knob select { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:3px; padding:3px 6px; font:inherit; margin-top:3px; }
-  .knob .help { display:none; color:var(--dim); font-size:11px; line-height:1.4; margin-top:3px; }
-  .knob:hover .help, .knob:focus-within .help { display:block; }
+  .knob .help { color:var(--dim); font-size:11px; line-height:1.4; margin-top:2px; }
   #more-knobs summary { margin-top:6px; }
+  /* steer: the big moves, always explained; auditions to compare before keeping */
+  #steer .macro { margin:10px 0 12px; }
+  #steer .macro .top { display:flex; justify-content:space-between; align-items:baseline; }
+  #steer .macro .name { font-weight:600; color:var(--text); text-transform:capitalize; font-size:13px; }
+  #steer .macro .name.moved { color:var(--warn); }
+  #steer .macro .val { color:var(--dim); font-size:11px; }
+  #steer .macro .ends { display:flex; align-items:center; gap:6px; }
+  #steer .macro .ends span { color:var(--dim); font-size:10px; width:70px; flex:none; }
+  #steer .macro .ends span.hi { text-align:right; }
+  #steer .macro .track { flex:1; position:relative; }
+  #steer .macro .track:before { content:""; position:absolute; left:50%; top:2px; bottom:2px; width:1px; background:var(--dim); opacity:.6; pointer-events:none; }
+  #steer .macro input[type=range] { width:100%; }
+  #steer .macro .help { color:var(--dim); font-size:11px; line-height:1.4; }
+  #steer .macro .moves { color:var(--dim); font-size:10px; opacity:.75; margin-top:1px; }
+  #aud-kinds { margin:6px 0; }
+  .aud { display:flex; align-items:center; gap:6px; padding:5px 6px; margin:4px 0; border:1px solid var(--line); border-radius:4px; background:var(--panel2); }
+  .aud.on { border-color:var(--accent); }
+  .aud .lbl { flex:1; min-width:0; line-height:1.35; }
+  .aud .lbl small { color:var(--dim); display:block; }
+  .aud button.hear.on { background:var(--accent); color:#0b1a16; border-color:var(--accent); }
   #ruler { display:block; cursor:pointer; }
   #rolls canvas { cursor:pointer; }
   .hint { color:var(--dim); font-size:11px; }
@@ -139,8 +158,26 @@
 
 <main>
   <div class="col">
+    <div class="panel" id="steer">
+      <h2>steer - push the song a way <button class="small" id="steer-reset" title="put every big move back to where this take started">centre all</button></h2>
+      <div class="hint">Each slider moves a handful of the detailed controls together. The middle mark is the song as it was rolled; the music recomposes as you drag, nothing is re-rolled.</div>
+      <div id="macros"></div>
+      <h2 style="margin-top:12px">audition - hear options, keep one</h2>
+      <div class="hint">Instead of re-rolling blind: make three candidates, flip between them while it plays, keep the one you like.</div>
+      <div class="row chips" id="aud-kinds">
+        <button class="small" data-kind="directions" title="this song pushed three different ways by the sliders above - same song, somewhere new">3 directions</button>
+        <button class="small" data-kind="hook" title="three new hooks over the same band">3 hooks</button>
+        <button class="small" data-kind="sub" title="three new basslines">3 basslines</button>
+        <button class="small" data-kind="drums" title="three new drum patterns, same feel">3 beats</button>
+        <button class="small" data-kind="chords" title="three new stab patterns">3 stabs</button>
+        <button class="small" data-kind="perc" title="three new hand percussion parts">3 percs</button>
+        <button class="small" data-kind="harmony" title="three new chord progressions">3 progressions</button>
+        <button class="small" data-kind="structure" title="three new arrangements: intro, builds, drops">3 structures</button>
+      </div>
+      <div id="aud-list"></div>
+    </div>
     <div class="panel" id="sound">
-      <h2>sound - shape this song <button class="small" id="reset-take" title="put every control back where this take started">reset take</button></h2>
+      <h2>detail - every control <button class="small" id="reset-take" title="put every control back where this take started">reset take</button></h2>
       <div class="row" id="say-row"><input type="text" id="say" placeholder="say it: catchier, bigger drop, tighter, mutate hook…" style="flex:1">
         <button class="small" id="say-go">go</button></div>
       <div class="row chips" id="quick">
@@ -155,7 +192,7 @@
       <div id="tab-blurb"></div>
       <div class="row chips" id="tab-words"></div>
       <div id="sound-body"></div>
-      <details id="more-knobs"><summary>fine controls</summary><div id="more-body"></div></details>
+      <details id="more-knobs"><summary>more detail</summary><div id="more-body"></div></details>
     </div>
 
     <div class="panel" id="check">
@@ -222,6 +259,7 @@ function live(){ return S.live || S.song; }
 function setSong(song){
   const same = S.song && song && S.song.seed===song.seed && S.song.name===song.name;
   S.song = song; S.params = song.params; S.live = song;
+  S.aud = []; S.audI = null; renderAud();
   // A retake moves where the take began; drop the cached baseline so the next
   // A/B and the diff shading fetch the take that is actually live.
   S.baseline = null; S.baseKnobs = []; S.baseNotes = null;
@@ -389,7 +427,7 @@ function renderSound(){
   $('more-knobs').style.display = fine ? '' : 'none';
 }
 async function refreshKnobs(){
-  const r=await api('/api/knobs'); S.knobs=r.knobs;
+  const r=await api('/api/knobs'); S.knobs=r.knobs; S.macros=r.macros||[]; renderMacros();
   if(!S.baseKnobs.length){ try{ await baselineLoaded(); }catch(e){} }
   renderSound();
 }
@@ -404,6 +442,93 @@ $('reset-take').onclick=async()=>{
   if(!ops.length) return;
   status('resetting take…'); setSong(await api('/api/mutate', {ops})); status('ok');
 };
+
+
+// ---------------------------------------------------------------- steer: the big moves
+// Each macro pushes a handful of knobs one way from where the take began
+// (0 = as rolled). The server reads the position back from the knobs, so
+// undo, reset and hand twists all show on the sliders.
+function renderMacros(){
+  const box=$('macros'); if(!box) return;
+  if(box.contains(document.activeElement) && document.activeElement.type==='range') {
+    // do not yank a slider out from under the hand; just refresh the numbers
+    for(const m of S.macros||[]){ const r=box.querySelector(`[data-m="${m.name}"] .val`); if(r) r.textContent=macroWord(m, m.value); }
+    return;
+  }
+  box.innerHTML='';
+  for(const m of S.macros||[]){
+    const row=document.createElement('div'); row.className='macro'; row.dataset.m=m.name;
+    const moves=m.knobs.map(p=>PRETTY[p]||p).join(' · ');
+    row.innerHTML=`<div class="top"><span class="name ${Math.abs(m.value)>0.02?'moved':''}">${m.name}</span><span class="val">${macroWord(m,m.value)}</span></div>
+      <div class="ends"><span class="lo">← ${m.low}</span><div class="track"><input type="range" min="-1" max="1" step="0.05" value="${m.value}"></div><span class="hi">${m.high} →</span></div>
+      <div class="help">${m.help}</div><div class="moves" title="the detailed controls this slider moves">moves: ${moves}</div>`;
+    const el=row.querySelector('input'), val=row.querySelector('.val');
+    el.oninput=()=>{ val.textContent=macroWord(m,+el.value); steerSoon(m.name, +el.value); };
+    el.ondblclick=()=>{ el.value=0; el.oninput(); };
+    box.appendChild(row);
+  }
+}
+function macroWord(m, v){
+  if(Math.abs(v)<0.03) return 'as rolled';
+  const amt = Math.abs(v)>0.66 ? 'much ' : Math.abs(v)>0.33 ? '' : 'a bit ';
+  return amt + (v>0 ? 'more '+m.high : 'more '+m.low);
+}
+const _steerPending=new Map();
+const steerFlush=debounce(async()=>{
+  const items=[..._steerPending.entries()]; _steerPending.clear();
+  let song=null;
+  for(const [name,to] of items){ status('steering '+name+'…'); song=await api('/api/steer',{name,to}); }
+  if(song){ setSong(song); status('ok'); }
+}, 280);
+function steerSoon(name,to){ _steerPending.set(name,to); steerFlush(); }
+$('steer-reset').onclick=async()=>{
+  let song=null;
+  for(const m of S.macros||[]) if(Math.abs(m.value)>0.02) song=await api('/api/steer',{name:m.name,to:0});
+  if(song) setSong(song);
+};
+
+// ---------------------------------------------------------------- audition: compare, then keep
+// Three candidates made on the server and held there; "hear" swaps the
+// one playing (same bar, so the comparison is honest), "keep" commits it.
+function renderAud(){
+  const box=$('aud-list'); if(!box) return; box.innerHTML='';
+  (S.aud||[]).forEach((v,i)=>{
+    const row=document.createElement('div'); row.className='aud'+(S.audI===i?' on':'');
+    const cur=S.song, delta=r=>{ const a=(cur.parts[r]||{notes:[]}).notes.length, b=(v.parts[r]||{notes:[]}).notes.length; return b===a?'':`${r} ${b>a?'+':''}${b-a}`; };
+    const counts=ROLES.map(delta).filter(Boolean).slice(0,4).join(' · ');
+    const tells=(v.tells||[]).filter(t=>!t.ok).length;
+    row.innerHTML=`<span class="lbl">${v.label}<small>${v.key} · ${v.progression} · critic ${(+v.score).toFixed(2)}${tells?` · ${tells} giveaway${tells>1?'s':''}`:''}${counts?' · '+counts:''}</small></span>
+      <button class="small hear ${S.audI===i?'on':''}" title="hear this one (click again: back to yours)">${S.audI===i?'◼ hearing':'▶ hear'}</button>
+      <button class="small primary keep" title="${v.retake?'keep it - starts a new take':'keep it - a step you can undo'}">✓ keep</button>`;
+    row.querySelector('.hear').onclick=()=>hearAud(S.audI===i?null:i);
+    row.querySelector('.keep').onclick=async()=>{ status('keeping…'); const song=await api('/api/adopt',{i}); setSong(song); status('kept: '+v.label); };
+    box.appendChild(row);
+  });
+  if((S.aud||[]).length){
+    const back=document.createElement('div'); back.className='aud'+(S.audI===null?' on':'');
+    back.innerHTML=`<span class="lbl">yours, as it is<small>${S.song.key} · ${S.song.progression} · critic ${(+S.song.score).toFixed(2)}</small></span><button class="small hear ${S.audI===null?'on':''}">${S.audI===null?'◼ hearing':'▶ hear'}</button><button class="small discard" title="drop the candidates">✕</button>`;
+    back.querySelector('.hear').onclick=()=>hearAud(null);
+    back.querySelector('.discard').onclick=()=>{ hearAud(null); S.aud=[]; renderAud(); };
+    box.appendChild(back);
+  }
+}
+function hearAud(i){
+  S.audI=i;
+  const song = i===null ? S.song : S.aud[i];
+  const tick=currentTick();
+  S.live=song;
+  if(S.playing){ halt(); startPlayback(tick); }
+  renderRolls(); renderRuler(); renderAud();
+  $('song-meta').innerHTML = `<b>${song.key}</b> · ${song.progression} · <b>${song.bpm}</b>bpm · ${song.bars} bars${i===null?'':' · <span style="color:var(--warn)">auditioning '+(i+1)+'</span>'}`;
+}
+document.querySelectorAll('#aud-kinds button').forEach(b=>b.onclick=async()=>{
+  const kind=b.dataset.kind; status('making three '+(kind==='directions'?'directions':kind+' takes')+'…');
+  const tick=currentTick(), was=S.audI;
+  const r=await api('/api/audition',{kind,n:3});
+  S.aud=r.variants; S.audI=null;
+  if(was!==null){ S.live=S.song; if(S.playing){ halt(); startPlayback(tick); } renderRolls(); }
+  renderAud(); status('three to hear - ▶ hear flips while it plays');
+});
 
 // ---------------------------------------------------------------- A/B: hold to hear the take start
 async function baselineLoaded(){
@@ -800,7 +925,7 @@ async function studioQueue(bar, gen, first=false){
   if(first) status(`rendering bars ${bar+1}–${bar+bars}…`);
   let buf;
   try {
-    const r=await fetch(`/api/render?from=${bar}&bars=${bars}&mute=${[...S.muted].join(',')}`);
+    const r=await fetch(`/api/render?from=${bar}&bars=${bars}&mute=${[...S.muted].join(',')}&variant=${S.audI??-1}`);
     if(!r.ok){ let m='HTTP '+r.status; try { m=(await r.json()).error||m; } catch(e) {} throw new Error(m); }
     const raw=await r.arrayBuffer();
     if(gen!==STUDIO.gen || !AC) return;

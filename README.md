@@ -72,6 +72,25 @@ tension that builds, clear roles, and real hooks. Each is a module:
 | **Harmony that serves the hook** | `theory/harmony.realise_cycle` | Where the hook sings, the chord cycle is laid to the phrase length, so every pass meets the same chords and comes back note for note. Borrowed chords lend their tones: over a major V the tune raises its seventh with the chord. |
 | **The listener** | `analyze.py` | Hook strength, chord fit, clashes, register, space, answers, contrast, arc, tension, length, hook presence — one 0..1 score that ranks a batch. Across 64 songs it averages ~0.92 (the original engine scored ~0.72 on the same measure). |
 
+### Steer and audition (the top of the UI)
+
+Sixty dials is honest but nobody steers with sixty dials. The **steer** panel
+(`riddim/steer.py`) has seven plain sliders, each moving a handful of the
+dials below together: **energy** (laid back ↔ driving), **weight** (light ↔
+heavy sub pressure), **space** (packed ↔ dubby), **hook** (subtle ↔ catchy),
+**groove** (on the grid ↔ pushed), **mood** (dark ↔ bright), **flair**
+(plain ↔ ornate). The middle mark is the take as rolled; dragging recomposes
+with every seed frozen. A slider's position is read back from its dials, so
+undo, reset and a hand twist all show on it, and a hand twist on a shared
+dial survives moving another slider.
+
+**Audition** replaces blind re-rolling: *3 directions* (this song pushed
+three ways by the sliders), or three takes of one part (hooks, basslines,
+beats, stabs, percs, progressions, structures) over everything else
+unchanged. ▶ hear flips the playing song at the same bar (sketch or studio
+sound); ✓ keep commits it - a direction as an undoable step, a part take as a
+new take.
+
 ### The dials
 
 Every one of these is a knob in the UI and a path for `Op` / the trail /

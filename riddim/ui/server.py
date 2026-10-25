@@ -35,6 +35,7 @@ from pathlib import Path
 
 from .. import critique, profile as profile_mod
 from .. import tells as tells_mod
+from .. import steer as steer_mod
 from ..compose import compose
 from ..direct import Op, apply_ops, diff as params_diff, direct as parse_direct
 from ..direct import knobs as read_knobs
@@ -97,6 +98,10 @@ class State:
         self.history: list[_Snap] = []
         self.future: list[_Snap] = []
         self.model_take = -1
+        # Auditions: candidate songs to hear before keeping one. Each is
+        # (label, song, retake) - a part re-roll keeps as a new take, a
+        # direction (a macro move) as a step on the trail.
+        self.variants: list[tuple[str, Song, bool]] = []
 
     def _compose(self, params: SongParams) -> Song:
         return compose(params=params, live=self.live)
@@ -154,6 +159,66 @@ class State:
                     setattr(fresh, k, v)
             song = self._compose(fresh)
             return self._retake(song.params, song)
+
+    def steer(self, name: str, to: float) -> Song:
+        """Move one macro (energy, weight, space...) to `to` in -1..1."""
+        return self.mutate(steer_mod.steer(name, to, self.base_params, self.params))
+
+    def macros(self) -> list[dict]:
+        return steer_mod.positions(self.base_params, self.params)
+
+    def audition(self, kind: str, n: int = 3) -> list[tuple[str, Song, bool]]:
+        """`n` candidates to hear side by side, nothing committed.
+
+        kind "directions": the song as it is, each pushed a different way by
+        one or two macros (seeds frozen - same song, somewhere new).
+        Otherwise kind is a part (hook, sub, drums, chords, structure,
+        harmony...): n fresh rolls of that part over the same everything else.
+        """
+        from ..compose import regenerate
+        n = max(1, min(int(n), 6))
+        out: list[tuple[str, Song, bool]] = []
+        with self.lock:
+            if kind == "directions":
+                rng = random.Random()
+                names = [m.name for m in steer_mod.MACROS]
+                now = {m["name"]: m["value"] for m in self.macros()}
+                used: set = set()
+                for _ in range(n):
+                    picks = rng.sample(names, 2 if rng.random() < 0.6 else 1)
+                    while tuple(sorted(picks)) in used:
+                        picks = rng.sample(names, 2)
+                    used.add(tuple(sorted(picks)))
+                    params, label = self.params, []
+                    for name in picks:
+                        cur = now[name]
+                        sign = rng.choice((-1, 1)) if abs(cur) < 0.5 else (-1 if cur > 0 else 1)
+                        to = max(-1.0, min(1.0, cur + sign * rng.uniform(0.35, 0.6)))
+                        params = apply_ops(params, steer_mod.steer(name, to, self.base_params, params))
+                        mac = steer_mod.BY_NAME[name]
+                        label.append(f"{name} → {mac.high if sign > 0 else mac.low}")
+                    out.append((" · ".join(label), self._compose(params), False))
+            else:
+                for i in range(n):
+                    song = regenerate(self.song, kind)
+                    if self.live and not (song.params.structure and song.params.structure.live):
+                        song = self._compose(song.params)
+                    out.append((f"{kind} take {i + 1}", song, True))
+            self.variants = out
+        return out
+
+    def adopt(self, i: int) -> Song:
+        """Keep audition `i`."""
+        with self.lock:
+            label, song, retake = self.variants[int(i)]
+            self.variants = []
+        if retake:
+            with self.lock:
+                return self._retake(song.params, song)
+        with self.lock:
+            self._push()
+            self.song, self.params = song, song.params
+            return self.song
 
     def model_lead(self, style: str = "rhythm") -> Song:
         """The drops' lead from the trained model: a step on the trail, so
@@ -435,7 +500,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"key": str(scale), "progressions": items})
             if self.path == "/api/knobs":
                 knobs = [asdict(k) for k in read_knobs(self.state.params).values()]
-                return self._json({"knobs": knobs, "key": str(self.state.song.scale)})
+                return self._json({"knobs": knobs, "key": str(self.state.song.scale),
+                                   "macros": self.state.macros()})
             if self.path == "/api/baseline":
                 d = song_to_dict(self.state.baseline)
                 d["knobs"] = [asdict(k) for k in read_knobs(self.state.base_params).values()]
@@ -452,6 +518,9 @@ class Handler(BaseHTTPRequestHandler):
                 from urllib.parse import parse_qs, urlparse
                 q = parse_qs(urlparse(self.path).query)
                 song = self.state.song
+                v = q.get("variant", [""])[0]
+                if v not in ("", "-1") and int(v) < len(self.state.variants):
+                    song = self.state.variants[int(v)][1]
                 mute = tuple(m for m in (q.get("mute", [""])[0]).split(",") if m)
                 data = render_window(song, int(q.get("from", ["0"])[0]),
                                      int(q.get("bars", ["16"])[0]), mute)
@@ -494,6 +563,16 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(song_to_dict(self.state.regenerate(body["part"]), self.state))
             if self.path == "/api/reroll":
                 return self._json(song_to_dict(self.state.reroll(body.get("keep", {})), self.state))
+            if self.path == "/api/steer":
+                song = self.state.steer(body["name"], float(body["to"]))
+                return self._json(song_to_dict(song, self.state))
+            if self.path == "/api/audition":
+                takes = self.state.audition(body.get("kind", "directions"), body.get("n", 3))
+                return self._json({"variants": [
+                    dict(song_to_dict(song), label=label, retake=retake)
+                    for label, song, retake in takes]})
+            if self.path == "/api/adopt":
+                return self._json(song_to_dict(self.state.adopt(body["i"]), self.state))
             if self.path == "/api/undo":
                 return self._json(song_to_dict(self.state.undo(), self.state))
             if self.path == "/api/redo":
