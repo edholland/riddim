@@ -431,9 +431,10 @@ def _write_notes(
     return written
 
 
-# The AI protocol build that loads kits by exact path, with their samples
-# (firmware ai-kit-automation 96a21da+, which answers PING with its version).
-KIT_PROTOCOL = 2
+# The AI protocol build that loads kits by exact path, with their samples, and
+# reads their names without the SysEx end byte (firmware bc8a9b4+; 2 = 4860a90,
+# which looked kits up as "<name>w").
+KIT_PROTOCOL = 3
 
 
 def _check_kit_firmware(deluge: Deluge) -> None:
