@@ -1,0 +1,269 @@
+# riddim reference list, part 2 (generated 2026-10-25). Same format as refs.txt: URL then tags.
+# Every archive.org line was checked against https://archive.org/metadata/<id> (audio files present).
+# Licence tag per line: cc-* / cc0 / public_domain where the item carries a licenseurl,
+# study_only where it does not (personal listening analysis only; do not redistribute).
+# Inline '# ...' after the tags is ignored by ml/collect_refs.py.
+
+
+# Roots dub: King Tubby and the Waterhouse school
+https://archive.org/details/KingTubbyMeetsJacobMillerInATenementYard   roots_dub tubby study_only   # King Tubby meets Jacob Miller - In a Tenement Yard (Tubby dubs of Jacob Miller)
+https://archive.org/details/KingTubbyAndYabbyYou   roots_dub tubby yabby cc0   # King Tubby & Yabby You
+https://archive.org/details/07-yabby-u-rock-vibration   roots_dub tubby yabby study_only   # King Tubby / Yabby You - Prophecy of Dub (1976)
+https://archive.org/details/ConqueringLionYabbyYou   roots_dub yabby study_only   # Yabby You - Conquering Lion
+https://archive.org/details/YabbyYouRunComeRally   roots_dub yabby study_only   # Yabby You - Run Come Rally
+https://archive.org/details/soundclash-dubplate-style   roots_dub tubby study_only   # King Tubby's Presents Soundclash Dubplate Style (Tubby studio dubplates)
+https://archive.org/details/sattamassagana   roots_dub tubby study_only   # Satta Massagana (Tubby)
+
+# Roots dub: Lee Perry / Black Ark
+https://archive.org/details/the-upsetters-super-ape   roots_dub perry blackark study_only   # The Upsetters - Super Ape (1976): Black Ark phaser/Echoplex, Mu-Tron skank
+https://archive.org/details/lee-scratch-perry-the-upsetters-the-original-super-ape   roots_dub perry blackark study_only   # Lee Perry & The Upsetters - The Original Super Ape
+https://archive.org/details/LeePerry-ScratchInDub   roots_dub perry cc0   # Lee Perry - Scratch in Dub (fan compilation)
+https://archive.org/details/LuscombesChoiceLeePerrysBlackArkInDub   roots_dub perry blackark cc-by-nc-nd   # Luscombe's Choice: Lee Perry's Black Ark in Dub
+https://archive.org/details/lee-scratch-perry-spiritual-healing-1990   roots_dub perry study_only   # Lee Scratch Perry - Spiritual Healing (1990)
+https://archive.org/details/le-produzioni-di-lee-scratch-perry   roots_dub perry study_only   # Le Produzioni di Lee Scratch Perry
+https://archive.org/details/1.-i-am-the-upsetter-lee-scratch-perry   roots_dub perry study_only   # I Am The Upsetter
+https://archive.org/details/17.-lee-perry-the-upsetters-french-connection   roots_dub perry study_only   # Complete UK Upsetter Singles Collection Vol. 4
+https://archive.org/details/02SuperApeInAGoodShape   roots_dub perry madprof ariwa study_only   # Lee Perry & Mad Professor - Black Ark Experryments (1995)
+
+# Roots dub: Augustus Pablo / Rockers
+https://archive.org/details/augustus-pablo-ital-dub   roots_dub pablo study_only   # Augustus Pablo - Ital Dub (1975)
+https://archive.org/details/augustus-pablo-raggamuffin-dub-1990_202201   roots_dub pablo study_only   # Augustus Pablo - Raggamuffin Dub (1990): digital-era Rockers
+https://archive.org/details/augustus-pablo-skanking-easy-cd1   roots_dub pablo study_only   # Augustus Pablo - Skanking Easy CD1
+https://archive.org/details/augustus-pablo-the-red-sea   roots_dub pablo study_only   # Augustus Pablo - The Red Sea
+https://archive.org/details/PowerOfTheTrinityAugustusPabloA   roots_dub pablo study_only   # Augustus Pablo - Power of the Trinity
+https://archive.org/details/CrucialBurialAugustusPabloA   roots_dub pablo study_only   # Augustus Pablo - Crucial Burial
+https://archive.org/details/AugustusPablocassavaPieceHotStuff   roots_dub pablo study_only   # Augustus Pablo - Cassava Piece
+
+# Roots dub: Channel One / Revolutionaries, Roots Radics, Sly & Robbie, Hudson, Niney, Prince Far I (Scientist + Jammy items are already in refs.txt)
+https://archive.org/details/the-revolutionaries-reaction-in-dub-1978   roots_dub revolutionaries channelone sly_robbie study_only   # The Revolutionaries - Reaction in Dub (1978): Channel One rockers, Sly & Robbie
+https://archive.org/details/the-revolutionaries-green-bay-dub-1979   roots_dub revolutionaries channelone sly_robbie study_only   # The Revolutionaries - Green Bay Dub (1979)
+https://archive.org/details/TheRevolutionariesLpRipDontUnderestimateTheForceTheForceIsWithin   roots_dub revolutionaries study_only   # The Revolutionaries - Don't Underestimate the Force (LP rip)
+https://archive.org/details/roots-radics-outfit-dread-at-the-controls-dub-catalogue-1982   roots_dub rootsradics study_only   # Roots Radics - Dread at the Controls Dub (1982)
+https://archive.org/details/the-aggrovators-instrumental-reggae-1992   roots_dub aggrovators bunnylee study_only   # The Aggrovators - Instrumental Reggae (Bunny Lee / flying cymbal)
+https://archive.org/details/Sly-Wicked-and-Slick-Sly-Dunbar-1979   roots_dub sly_robbie cc-by-nd   # Sly Dunbar - Sly, Wicked and Slick (1979)
+https://archive.org/details/03-fire-in-de-oven   roots_dub sly_robbie study_only   # Sly & Robbie - Mambo Taxi (1997)
+https://archive.org/details/black-uhuru-guess-whos-coming-to-dinner-1981   roots_dub sly_robbie uhuru study_only   # Black Uhuru - Guess Who's Coming to Dinner (Sly & Robbie riddims)
+https://archive.org/details/niney-the-observer   roots_dub niney study_only   # Niney the Observer
+https://archive.org/details/keith-hudson-pick-a-dub-1994   roots_dub hudson study_only   # Keith Hudson - Pick a Dub (1974; 1994 issue): earliest dub LP
+https://archive.org/details/02-the-soul-syndicate-man-from-shooters-hill   roots_dub hudson study_only   # Keith Hudson - Entering the Dragon
+https://archive.org/details/burning-spear-dry-and-heavy-1977   roots_reggae spear study_only   # Burning Spear - Dry and Heavy (1977)
+https://archive.org/details/07-no-more-war_202606   roots_dub farI study_only   # Prince Far I - Dubwise (1979)
+https://archive.org/details/10-psalm-2   roots_dub farI study_only   # Prince Far I - Psalms for I (1975)
+https://archive.org/details/01-negusa-nagast   roots_dub farI study_only   # Prince Far I - Megabit 25, 1922 Dub (1985)
+https://archive.org/details/lph073   roots_dub mix study_only   # Dub for tha Sista (1976-83) - continuous mix of Jamaican dub
+https://archive.org/details/sub-kids_202206   roots_dub study_only   # Sub Kids - Sub in Dub (1979-84)
+https://archive.org/details/greensleeves_dub_jamaican   roots_dub greensleeves study_only   # Greensleeves 12-inch run (GRED) 1978- : vocal+dub plates, 403 tracks, ~2.9 GB [~2.9 GB]
+https://archive.org/details/va-heavy-dub   digital_dub coldtear free-dl   # Coldtear netlabel - Heavy Dub (free birthday comp; modern digital dub, not roots)
+https://archive.org/details/heavy-dub-vol2   digital_dub coldtear free-dl   # Coldtear netlabel - Heavy Dub Vol.2 (free comp)
+https://archive.org/details/mixman-the-early-dub-tapes   roots_dub study_only   # Mixman - The Early Dub Tapes
+https://archive.org/details/the-mighty-diamonds-the-roots-is-there-1982   roots_reggae study_only   # The Mighty Diamonds - The Roots Is There (1982)
+
+# UK roots dub 70s-80s: Aswad, Bovell, Misty, On-U
+https://archive.org/details/aswad-new-chapter-of-dub-1982   roots_dub aswad uk study_only   # Aswad - New Chapter of Dub (1982): UK band dub, horns and space
+https://archive.org/details/aswad-aswad-1976   roots_reggae aswad uk study_only   # Aswad - Aswad (1976)
+https://archive.org/details/aswad-live-and-direct-1983   roots_reggae aswad uk study_only   # Aswad - Live and Direct (1983)
+https://archive.org/details/dennis-bovell-brain-damage-1981   roots_dub bovell uk study_only   # Dennis Bovell - Brain Damage (1981)
+https://archive.org/details/04.-homeland-dub-12-mix   roots_dub bovell uk study_only   # Dennis Bovell & Friends - Different (Singles Collection)
+https://archive.org/details/linton-kwesi-johnson-making-history-1990   roots_reggae lkj bovell uk study_only   # Linton Kwesi Johnson - Making History (Bovell production)
+https://archive.org/details/misty-in-roots-earth-1993   roots_reggae misty uk study_only   # Misty in Roots - Earth (1993)
+https://archive.org/details/creation-rebel-dub-from-creation-1978   roots_dub onu creationrebel study_only   # Creation Rebel - Dub from Creation (1978): early Sherwood
+
+# UK steppers / digital dub: Shaka, Fatman, Mad Professor, Aba Shanti, Channel One
+https://archive.org/details/jah-shaka-my-prayer-1989_202112   steppers_dub shaka study_only   # Jah Shaka - My Prayer (1989)
+https://archive.org/details/JahShakaSouthallWestLondon19thAug1988   steppers_dub shaka soundsystem live study_only   # Jah Shaka live, Southall 19 Aug 1988 (6h dance tape)
+https://archive.org/details/JahShaka1984ReadingUKOriginal   steppers_dub shaka soundsystem live study_only   # Jah Shaka live, Reading 1984 (original tape)
+https://archive.org/details/JahShakaArklowRdDeptfordSELondon4thJuly1986   steppers_dub shaka soundsystem live study_only   # Jah Shaka live, Deptford 4 Jul 1986
+https://archive.org/details/JahShaka1994DubClubTheDomeTufnellParkLondon3rdNov1994   steppers_dub shaka soundsystem live study_only   # Jah Shaka at the Dome, Tufnell Park 1994 (90s steppers era)
+https://archive.org/details/JahShakaDalstonEastLondon1996   steppers_dub shaka soundsystem live study_only   # Jah Shaka, Dalston 1996
+https://archive.org/details/JahShaka1990sBestOfJahShakaDancesLondonPt1   steppers_dub shaka soundsystem live study_only   # Best of Jah Shaka dances, London 1990s pt1
+https://archive.org/details/JahShakaTop100DubplatesTributePt129thDec2012   steppers_dub shaka dubplates study_only   # Jah Shaka Top 100 Dubplates Tribute pt1
+https://archive.org/details/JahShakaFatman1991AdiCentreLambethSouthLondon12thJan1991   steppers_dub shaka fatman soundclash live study_only   # Jah Shaka vs Fatman, Lambeth 1991 (clash)
+https://archive.org/details/3_sa_t2_13h_4-Shaka_a   steppers_dub shaka live cc-by-nc-sa   # Jah Shaka at WOS 4 (2004)
+https://archive.org/details/Irationvibrationpresents-jahShakasobs-6-23-98-pt2   steppers_dub shaka live public_domain   # Jah Shaka at SOBs NYC 1998 pt2
+https://archive.org/details/mad-professor-dub-me-crazy_202112   steppers_dub madprof ariwa study_only   # Mad Professor - Dub Me Crazy!! (1982): Ariwa UK dub
+https://archive.org/details/mad-professor-true-born-african-dub   steppers_dub madprof ariwa study_only   # Mad Professor - True Born African Dub (1992)
+https://archive.org/details/mad-professor-ras-portraits   steppers_dub madprof ariwa study_only   # Mad Professor - RAS Portraits
+https://archive.org/details/mad-professor-meets-dark-fantom-featuring-sly-robbie-the-next-revolution-wil   steppers_dub madprof sly_robbie study_only   # Mad Professor meets Dark Fantom ft Sly & Robbie - The Next Revolution
+https://archive.org/details/bob-andy-mad-professor-bob-andys-dub-book-as-revealed-to-mad-professor   steppers_dub madprof ariwa study_only   # Bob Andy & Mad Professor - Dub Book (1989)
+https://archive.org/details/no-protection-massive-attack-vs.-mad-professor   steppers_dub madprof study_only   # Massive Attack vs Mad Professor - No Protection (1995)
+https://archive.org/details/AbaShantiISun28thAug2016NottingHillCarnival   steppers_dub abashanti soundsystem live study_only   # Aba Shanti-I, Notting Hill Carnival 2016
+https://archive.org/details/aba-shanti-i-mon-28th-aug-2023-notting-hill-carnival   steppers_dub abashanti soundsystem live study_only   # Aba Shanti-I, Notting Hill Carnival 2023
+https://archive.org/details/ChannelOneSoundSystemSun27thAug2017NottingHillCarnival   steppers_dub channelone soundsystem live study_only   # Channel One Sound System, Notting Hill Carnival 2017
+https://archive.org/details/KingAddiesVs.TrevorSaxon-SoundClash1994-04   soundclash live study_only   # King Addies vs Trevor Saxon - sound clash 1994
+https://archive.org/details/ajc03612_dubsyndicate_1996-02-10   steppers_dub onu dubsyndicate live study_only   # Dub Syndicate live, Metro 1996 [~1.2 GB]
+
+# Digital dub netlabels (Creative Commons): Jahtari, Baroque Dub
+https://archive.org/details/JTREP01   digital_dub jahtari cc-by-nc-nd   # Disrupt - Roots Matrix EP (Jahtari): 8-bit digital steppers
+https://archive.org/details/JTRNET03   digital_dub jahtari cc-by-nc-nd   # Disrupt - Tubby ROM Module (Jahtari)
+https://archive.org/details/JTREP04   digital_dub jahtari cc-by-nc-nd   # Ras Amerlock - Farther East (Jahtari)
+https://archive.org/details/JTRNET15   digital_dub jahtari cc-by-nc-nd   # Jahtari Riddim Force - Farmer in the Sky / Depth Charge
+https://archive.org/details/JTREP06   digital_dub jahtari cc-by-nc-nd   # Tapes - Compuriddims (Jahtari)
+https://archive.org/details/JTREP02   digital_dub jahtari cc-by-nc-nd   # Various - Drum Song Source Codes EP (Jahtari)
+https://archive.org/details/bd0011   digital_dub baroquedub cc-by-nc-nd   # Baroque Dub - Dark Side Dubs
+https://archive.org/details/bd0001   digital_dub baroquedub cc-by-nc-nd   # Baroque Dub - Version Excursions
+
+# Dub techno: Basic Channel / Rhythm & Sound lineage
+https://archive.org/details/basic-channel-quadrant-dub-01-quadrant-dub-i   dub_techno basicchannel cc-by-nd   # Basic Channel - Quadrant Dub (1994)
+https://archive.org/details/BasicChannelDubmix   dub_techno basicchannel study_only   # Basic Channel - Dubmix
+https://archive.org/details/xcasalibre_gmail_RSER   dub_techno rhythm_sound study_only   # Rhythm & Sound (ER)
+https://archive.org/details/Rythm__Sound-Rythm__Sound_special_burial_mix   dub_techno rhythm_sound study_only   # Rhythm & Sound special Burial Mix
+https://archive.org/details/Scion-ArrangeAndProcessBasicChannelTracks2002   dub_techno basicchannel study_only   # Scion - Arrange and Process Basic Channel Tracks (2002)
+https://archive.org/details/01-first-point-of-aries   dub_techno echospace cc-by-nd   # DeepChord presents Echospace - The Coldest Season
+https://archive.org/details/masters_of_dubtechno_mixed_by_maurizio   dub_techno mix cc-by-nc-nd   # Masters of Dub Techno (netlabel mix, CC)
+
+# Dubstep 2002-2010: DMZ / Digital Mystikz
+https://archive.org/details/DigitalMystikzdmz002JahFireVINYL   dubstep dmz mala coki study_only   # Digital Mystikz - Jah Fire (DMZ002, 2005)
+https://archive.org/details/DigitalMystikzdmz007AntiWarDubVINYL   dubstep dmz mala study_only   # Digital Mystikz - Anti War Dub (DMZ007, 2006)
+https://archive.org/details/DigitalMystikz-Pathways-vinyl-2005-bossbam004   dubstep bigapple mala coki study_only   # Digital Mystikz - Pathways (Big Apple BAM004, 2004)
+https://archive.org/details/03-digital-mystikz-mountain-dread-march   dubstep dmz mala coki study_only   # Digital Mystikz - Return II Space (2010)
+https://archive.org/details/Digital_Mystikz-Digital_Mystikz_Essential_Mix_12-Feb-2006   dubstep dmz mix radio study_only   # Digital Mystikz - Radio 1 Essential Mix (Feb 2006)
+https://archive.org/details/Digital_Mystikz-John_Peel_Tribute_Show_16-Dec-2004   dubstep dmz radio study_only   # Digital Mystikz - John Peel tribute show (Dec 2004)
+https://archive.org/details/DMZ-Annie_Nightingale   dubstep dmz radio study_only   # DMZ on Annie Nightingale
+https://archive.org/details/DMZ-Tayo_Kiss100   dubstep dmz radio study_only   # DMZ guest mix, Tayo Kiss 100
+https://archive.org/details/Mala_Loefah-Mala_b2b_Loefah_and_Sgt._Pokes_05-Jun-2007   dubstep dmz mala loefah pokes radio study_only   # Mala b2b Loefah & Sgt Pokes (Jun 2007)
+https://archive.org/details/Loefah_b2b_Mala_ft._Pokes__Crazy_D-Kiss_FM   dubstep dmz loefah mala pokes radio study_only   # Loefah b2b Mala ft Pokes & Crazy D - Kiss FM
+https://archive.org/details/Digital_Mystikz_Loefah_Sgt._Pokes-Live_at_Co_Pop__Cologne_Germany__14-08-2007   dubstep dmz live study_only   # DMZ (Mala, Coki, Loefah, Pokes) live, Cologne 2007
+https://archive.org/details/Mala-WNYU_FM_New_York   dubstep mala radio study_only   # Mala - WNYU FM New York
+https://archive.org/details/Kode9_b2b_Mala_b2b_Joe_Nice-So_nice_you_play_it_twice   dubstep mala kode9 joenice study_only   # Kode9 b2b Mala b2b Joe Nice
+https://archive.org/details/20130821Coki   dubstep coki study_only   # Coki 2013-08-21
+
+# Dubstep: Tempa / Big Apple / FWD>> (Skream, Benga, Hatcha, Youngsta)
+https://archive.org/details/Benga-Benga_-_BigApple_Nov.2002   dubstep bigapple benga mix study_only   # Benga - Big Apple mix (Nov 2002): proto-dubstep
+https://archive.org/details/Skream-Skream_-_Big_Apple_Mix_Jan.2004   dubstep bigapple skream mix study_only   # Skream - Big Apple mix (Jan 2004)
+https://archive.org/details/Skream-Skream_Mix_Aug-2005   dubstep skream mix study_only   # Skream mix (Aug 2005)
+https://archive.org/details/Skream-Skream_Essential_Mix_17th_June_2007   dubstep skream radio study_only   # Skream - Radio 1 Essential Mix (Jun 2007)
+https://archive.org/details/EssentialMix20080202Benga   dubstep benga radio study_only   # Benga - Radio 1 Essential Mix (Feb 2008)
+https://archive.org/details/Benga-Numbers   dubstep benga study_only   # Benga - Numbers
+https://archive.org/details/SkreamVsBengaLiveFwd   dubstep fwd skream benga live study_only   # Skream vs Benga live at FWD>> (2009)
+https://archive.org/details/SkreamAndBengaFwdSkreamsB-dayBash07.06.09   dubstep fwd skream benga live study_only   # Skream & Benga at FWD>> (Jun 2009)
+https://archive.org/details/SkreamLiveInFwd   dubstep fwd skream live study_only   # Skream live at FWD>>
+https://archive.org/details/Skream_Benga_Hatcha_Crazy_D-Hatcha_b2b_Benga_b2b_Skream_20-Sep-2006   dubstep tempa hatcha benga skream radio study_only   # Hatcha b2b Benga b2b Skream ft Crazy D (Sep 2006)
+https://archive.org/details/Benga_b2b_Skream_b2b_Hatcha_ft_Crazy_D-Kiss_FM   dubstep hatcha benga skream radio study_only   # Benga b2b Skream b2b Hatcha - Kiss FM
+https://archive.org/details/Hatcha-Hatcha_studio_mix_2002   dubstep hatcha mix study_only   # Hatcha studio mix 2002 (dark garage into dubstep)
+https://archive.org/details/Hatcha-Hatcha_-_Practice_Hours_June.2005   dubstep hatcha mix study_only   # Hatcha - Practice Hours (Jun 2005)
+https://archive.org/details/Hatcha_B2B_D1_ft._Crazy_D-KISS_FM   dubstep hatcha d1 radio study_only   # Hatcha b2b D1 ft Crazy D - Kiss FM
+https://archive.org/details/Kromestar_Hatcha-Hatcha_b2b_Kromestar_ft._Crazy_D_13-Sep-2006   dubstep hatcha kromestar radio study_only   # Hatcha b2b Kromestar ft Crazy D (Sep 2006)
+https://archive.org/details/Youngsta_Mary_Anne_Hobbs-Mary_Anne_Hobbs_with_Youngsta_-_TempaFWD_special_-_17.Aug.2007   dubstep tempa youngsta radio study_only   # Mary Anne Hobbs with Youngsta - Tempa/FWD special (Aug 2007)
+https://archive.org/details/youngsta_-_live_at_channel_mannheim_sept_2004   dubstep youngsta live study_only   # Youngsta live, Mannheim (Sep 2004)
+https://archive.org/details/YoungstaB2bKrypticMindsRinseFm19.09.2011   dubstep youngsta krypticminds rinse radio study_only   # Youngsta b2b Kryptic Minds - Rinse FM (2011)
+https://archive.org/details/Mala_Skream_Kode9_Vexd._Hatcha_Loefah_Distance.-Dubstep_Warz_Special__Breezeblock_-_10.Jan.2006   dubstep radio landmark study_only   # Dubstep Warz - Mary Anne Hobbs Breezeblock (Jan 2006): the show that broke dubstep
+https://archive.org/details/Plastician-Plasmix   dubstep plastician mix study_only   # Plastician - Plasmix
+https://archive.org/details/PlasticmanPlastician-1XTRA   dubstep grime plastician radio study_only   # Plasticman / Plastician - 1Xtra
+https://archive.org/details/Plastician-Plasticman_Filthy_Dub_Promo   dubstep grime plastician mix study_only   # Plasticman - Filthy Dub promo mix
+https://archive.org/details/Skepta_b2b_Plastician-Skeptician   grime dubstep plastician radio study_only   # Skepta b2b Plastician - Skeptician
+https://archive.org/details/Distance-Distance_-_Deleted_Scenes_Mix_19.May.2005   dubstep distance mix study_only   # Distance - Deleted Scenes mix (May 2005)
+
+# Dubstep: Hyperdub / Kode9 / Burial
+https://archive.org/details/01-street-halo   dubstep hyperdub burial cc-by-nd   # Burial - Street Halo / Kindred (2011)
+https://archive.org/details/Burial-Breezeblock_-_Kode9_Presents_Burial_04-Apr-2006   dubstep hyperdub burial kode9 radio study_only   # Kode9 presents Burial - Breezeblock (Apr 2006)
+https://archive.org/details/Kode9_ft._Spaceape-_Maida_Vale   dubstep hyperdub kode9 spaceape live study_only   # Kode9 ft Spaceape - Maida Vale session
+https://archive.org/details/Kode9-Hyperdub_02-06_XFM   dubstep hyperdub kode9 radio study_only   # Kode9 - Hyperdub 2002-2006 (XFM)
+https://archive.org/details/Kode9__Benny_Ill-Kode9__Benny_Ill_on_GT_Radio_13-Feb-2002   dubstep dark_garage kode9 radio study_only   # Kode9 & Benny Ill on GT Radio (Feb 2002): proto-dubstep
+https://archive.org/details/Kode9-Sinogrime   grime kode9 mix study_only   # Kode9 - Sinogrime mix
+https://archive.org/details/Kode9-21st_century_skank   dubstep kode9 mix study_only   # Kode9 - 21st Century Skank
+https://archive.org/details/Kode9-Dubsteppa   dubstep kode9 mix study_only   # Kode9 - Dubsteppa
+https://archive.org/details/Kode9FlyingLotus-RinseFm20071120   dubstep hyperdub kode9 rinse radio study_only   # Kode9 - Rinse FM (Nov 2007, w/ Flying Lotus)
+https://archive.org/details/Kode9WileyRinseFm   grime dubstep kode9 wiley rinse radio study_only   # Kode9 & Wiley - Rinse FM
+https://archive.org/details/Kode9EssentialMix20110312   dubstep hyperdub kode9 radio study_only   # Kode9 - Radio 1 Essential Mix (2011)
+https://archive.org/details/Kode9_b2b_Loefah-Kode9_b2b_Loefah   dubstep kode9 loefah study_only   # Kode9 b2b Loefah
+
+# Dubstep: Bristol / Tectonic / Punch Drunk / Skull Disco / others
+https://archive.org/details/Pinch-TectonicIntroductionForMixmag-March2012   dubstep tectonic pinch mix cc0   # Pinch - Tectonic introduction for Mixmag (2012)
+https://archive.org/details/pinch-old-skool-dubstep-mix-for-electronic-explorations   dubstep pinch mix study_only   # Pinch - old skool dubstep mix (Electronic Explorations)
+https://archive.org/details/Appleblim_B2B_Wedge-Dark_FM   dubstep skulldisco appleblim radio study_only   # Appleblim b2b Wedge - Dark FM
+https://archive.org/details/Vexd-Breezeblock   dubstep vexd radio study_only   # Vex'd - Breezeblock
+https://archive.org/details/Vexd-Vexd_-_Square_Roots_Dubstep_Special_Resonance_FM_18.Dec.2006   dubstep vexd radio study_only   # Vex'd - Square Roots dubstep special, Resonance FM (Dec 2006)
+https://archive.org/details/aob_032306_vexd   dubstep vexd radio cc-by-nc-nd   # Art of Beatz presents Vex'd (2006)
+https://archive.org/details/vexd-degenerate   dubstep vexd planetmu study_only   # Vex'd - Degenerate (Planet Mu, 2005)
+https://archive.org/details/KromestarSunOfSelah-LiveInMoscow02may10   dubstep kromestar live study_only   # Kromestar & Sun of Selah - live Moscow 2010
+https://archive.org/details/Scuba-Scuba__A_Very_Old_Mix_of_Proto-Dubstep_Stuff_1999-2003   dubstep dark_garage hotflush scuba mix study_only   # Scuba - proto-dubstep mix 1999-2003
+https://archive.org/details/Scuba-Hotflush_podcast_01   dubstep hotflush scuba mix study_only   # Scuba - Hotflush podcast 01
+https://archive.org/details/Blackdown-Keysound_For_Bristol   dubstep keysound blackdown mix study_only   # Blackdown - Keysound for Bristol
+https://archive.org/details/Headhunter_Distinction-Distinction_b2b_Headhunter_05-Nov-2006_-_Radio_Frequency   dubstep headhunter radio study_only   # Distinction b2b Headhunter (Nov 2006)
+https://archive.org/details/Boxcutter-Breezeblock   dubstep planetmu boxcutter radio study_only   # Boxcutter - Breezeblock
+https://archive.org/details/The_Bug_vs_Soundmurderer-John_Peel   dubstep ragga bug radio study_only   # The Bug vs Soundmurderer - John Peel
+https://archive.org/details/Joe_Nice__MC_Child-Dubwar   dubstep joenice live study_only   # Joe Nice & MC Child - Dubwar NYC
+https://archive.org/details/N-Type-Dubstep_Forum_Anniversary_Mix   dubstep ntype mix study_only   # N-Type - Dubstep Forum anniversary mix
+https://archive.org/details/Mark_One-Mark_One_-_3_Deck_Set_19.Nov.2005   dubstep markone mix study_only   # Mark One - 3-deck set (Nov 2005)
+https://archive.org/details/Gutterbreakz-Afterimage   dubstep gutterbreakz study_only   # Gutterbreakz - Afterimage
+https://archive.org/details/cve-1   dubstep echodub cc-by-nc-nd   # CaN vs Echodub (deep dubstep netlabel) [~1.3 GB]
+
+# Dubstep: pirate/community radio (Sub FM official uploads)
+https://archive.org/details/wedge-on-sub-fm-2007   dubstep subfm radio study_only   # Wedge on Sub FM 2007 [~1.5 GB]
+https://archive.org/details/threnody-on-sub-fm-2007   dubstep subfm radio study_only   # Threnody on Sub FM 2007 [~1.5 GB]
+https://archive.org/details/Threnody-Toasty_Special_-_18.Jul.2007_Sub_FM   dubstep subfm toasty radio study_only   # Threnody - Toasty special, Sub FM (Jul 2007)
+https://archive.org/details/rockaway-old-skool-garage-special-28-dec-2005-sub-fm   uk_garage subfm radio study_only   # Rockaway old skool garage special, Sub FM (Dec 2005)
+https://archive.org/details/lj-old-school-garage-special-01-jan-2010-sub-fm   uk_garage subfm radio study_only   # LJ old school garage special, Sub FM (Jan 2010)
+
+# Dark garage / proto-dubstep 2000-2004
+https://archive.org/details/Oris_Jay__El-B-MAH   dark_garage elb orisjay radio study_only   # Oris Jay & El-B on Mary Anne Hobbs
+https://archive.org/details/Oris_Jay_vs_J_Da_Flex-Future_Garage   dark_garage orisjay jdaflex mix study_only   # Oris Jay vs J Da Flex - Future Garage
+https://archive.org/details/J_Da_Flex-John_Peel   dark_garage jdaflex radio study_only   # J Da Flex - John Peel session
+https://archive.org/details/Slaughter_Mob-Slaughter_Mob_at_TwenFM_June_25   dark_garage slaughtermob radio study_only   # Slaughter Mob on Twen FM
+https://archive.org/details/Mac_10-Deja_Vu   dark_garage grime dejavu radio study_only   # Mac 10 - Deja Vu FM
+https://archive.org/details/DJ_Distinction-Distinction_-_Spectrum_Analysis_Mix_2004   dubstep dark_garage mix study_only   # Distinction - Spectrum Analysis mix (2004)
+
+# Grime / eskibeat: pirate radio tapes
+https://archive.org/details/WileysHistoryOfGrimeMAH20070518   grime wiley radio study_only   # Wiley's History of Grime - Mary Anne Hobbs (May 2007)
+https://archive.org/details/DizzeeDoogsMaxwellSlimzee   grime dizzee slimzee radio study_only   # Dizzee Rascal, Durrty Doogz, Maxwell D, Slimzee (grimetapes)
+https://archive.org/details/KarnageFtWileyDDoubleEFootsie   grime wiley radio study_only   # Karnage ft Wiley, D Double E & Footsie
+https://archive.org/details/KarnageFtWileyTrimScratchyFlowdanBubblesTinchyStryder   grime wiley roll_deep radio study_only   # Karnage ft Wiley, Trim, Scratchy, Flowdan, Tinchy Stryder
+https://archive.org/details/231104KarnageB2bMaximumFtWileyFlowDan   grime wiley radio study_only   # Karnage b2b Maximum ft Wiley & Flowdan (23 Nov 2004)
+https://archive.org/details/WileyDemonSharkeyMajorJookieMundoArmourMaximumB2bDiesel   grime wiley radio study_only   # Wiley, Demon, Sharkey Major et al.
+https://archive.org/details/RuffSqwadMadMaxScratchy   grime ruffsqwad radio study_only   # Ruff Sqwad, Mad Max & Scratchy
+https://archive.org/details/RuffSqwadRiko   grime ruffsqwad radio study_only   # Ruff Sqwad & Riko
+https://archive.org/details/GeeneusGodsGiftBeatboxFamily   grime geeneus rinse radio study_only   # Geeneus, God's Gift & Beatbox Family
+https://archive.org/details/MeridianCrazyTitch   grime meridian radio study_only   # Meridian Crew & Crazy Titch
+https://archive.org/details/ClashOfTheCrews   grime clash radio study_only   # Clash of the Crews
+https://archive.org/details/HeartlessCrewRadioOne   uk_garage grime heartless radio study_only   # Heartless Crew on Radio One
+https://archive.org/details/grimetapes   grime archive public_domain   # grimetapes.com archive (big multi-tape item) [~4.1 GB]
+https://archive.org/details/Mak10RinseFM20050624   grime rinse mak10 radio study_only   # Mak 10 - Rinse FM (Jun 2005)
+https://archive.org/details/DarksideRinseFM20061011   grime rinse radio study_only   # Darkside - Rinse FM (Oct 2006, w/ Trim & Roachee)
+https://archive.org/details/SpyroKamikaze-RawBlazeFm20040605   grime pirate spyro radio study_only   # Sir Spyro - Raw Blaze FM (Jun 2004)
+https://archive.org/details/Spyro-RinseFm20060121   grime rinse spyro radio study_only   # Sir Spyro - Rinse FM (Jan 2006)
+https://archive.org/details/SpyroB2bPlasticianWithFudaGuy-RinseFm20060203   grime dubstep rinse spyro plastician radio study_only   # Sir Spyro b2b Plastician - Rinse FM (Feb 2006)
+https://archive.org/details/DJPetchieDesireFM2004   grime pirate radio study_only   # Petchie - Desire FM 2004
+https://archive.org/details/SpyroWithGhettoWiley-Fwdrinse20091120   grime fwd rinse wiley radio study_only   # Sir Spyro - FWD+Rinse (Nov 2009, w/ Ghetts & Wiley)
+https://archive.org/details/JokerRinseFM20081222   dubstep grime joker rinse radio study_only   # Joker - Rinse FM (Dec 2008)
+https://archive.org/details/TerrorDanjahBadnessLiveNightSlugs9   grime terrordanjah live study_only   # Terror Danjah & Badness live
+https://archive.org/details/ZombyBasslineMix   uk_garage bassline zomby mix study_only   # Zomby - Bassline mix
+
+# UK garage / 2-step / speed garage
+https://archive.org/details/artful-dodger-live-at-glastonbury-festival-2000   uk_garage artfuldodger live study_only   # Artful Dodger - live at Glastonbury 2000
+https://archive.org/details/artful-dodger-garage-mix-vol.-1-cassette   uk_garage artfuldodger mix study_only   # Artful Dodger - Garage Mix Vol.1 (cassette) [~1.4 GB]
+https://archive.org/details/2013-05-17-essential-mix-todd-edwards   uk_garage toddedwards radio study_only   # Todd Edwards - Radio 1 Essential Mix (2013): cut-up vocal garage
+https://archive.org/details/djfez_mixes_2199   uk_garage mix study_only   # DJ Relentless - UK Garage Classics
+https://archive.org/details/djfez_mixes_2216   uk_garage mix study_only   # DJ Relentless - UK Garage Classics 2
+https://archive.org/details/oldskoolgaragemixukg1   uk_garage mix study_only   # Oldskool garage mix (UKG)
+https://archive.org/details/DjChicoUkGarageMixAugustus07   uk_garage mix study_only   # DJ Chico UK garage mix
+https://archive.org/details/GarageMix   uk_garage spyro mix study_only   # Sir Spyro - Garage Mix
+https://archive.org/details/1f90y5armjo3e0otioxnbh602t2ybpvezd2qq4ks   uk_garage radio study_only   # Todd Edwards vs MJ Cole vs Sunship vs Zed Bias (garage show)
+https://archive.org/details/rave_Norris_Windross_Driving_Hard   uk_garage speed_garage norris mix study_only   # Norris 'Da Boss' Windross - Driving Hard
+https://archive.org/details/rave_Norris_Windross_Cruisin   uk_garage speed_garage norris mix study_only   # Norris 'Da Boss' Windross - Cruisin'
+
+# Speed garage
+https://archive.org/details/90sSpeedGarageClassicsMixedByLyndonEdwards   speed_garage mix study_only   # 90s Speed Garage Classics mixed by Lyndon Edwards
+https://archive.org/details/90s-speed-garage-classics-mark-2-mixed-by-lyndon-edwards   speed_garage mix study_only   # 90s Speed Garage Classics Mk2
+https://archive.org/details/187LockdownPresents...speedGarage   speed_garage 187lockdown double99 study_only   # 187 Lockdown presents Speed Garage (Double 99, RIP Groove...)
+https://archive.org/details/speed-garage   speed_garage mix study_only   # speed-garage
+https://archive.org/details/scott-garcia-uptempo-the-sound-of-speed-garage_202307   speed_garage study_only   # Scott Garcia - Uptempo: The Sound of Speed Garage
+https://archive.org/details/rave_Unknown_DJ_Speed_Garage_5   speed_garage mix study_only   # Speed garage tape 5
+
+# ---------------------------------------------------------------------------
+# Official Bandcamp album pages (label-run; yt-dlp reads the streams).
+# Page existence + title checked 2026-10-25. Only "Secret Level" is name-your-price;
+# the rest are paid releases whose full streams are public: study_only, keep a minority.
+https://jahtari.bandcamp.com/album/secret-level-mixtape   digital_dub jahtari disrupt bandcamp free-dl   # disrupt - Secret Level mixtape (NYP)
+https://jahtari.bandcamp.com/album/jahtarian-dubbers-vol-1-re-issue   digital_dub jahtari bandcamp study_only   # Jahtarian Dubbers Vol.1: lo-fi digital steppers
+https://pressuresounds.bandcamp.com/album/musicism-dub   roots_dub chinloy aquarius bandcamp study_only   # Herman Chin Loy - Musicism Dub (Aquarius, early-70s dub)
+https://pressuresounds.bandcamp.com/album/dub-in-blood   roots_dub skinfleshbones bandcamp study_only   # Skin Flesh & Bones - Dub in Blood (pre-Revolutionaries Sly drumming)
+https://pressuresounds.bandcamp.com/album/living-in-mount-zion   roots_dub yabby bandcamp study_only   # Patrick Andy / Yabby You - Living in Mount Zion (vocal+dub showcase)
+https://ariwa.bandcamp.com/album/ariwa-riddims-dub-series-2019   steppers_dub madprof ariwa bandcamp study_only   # Ariwa Riddims & Dub Series 2019
+https://vibronics.bandcamp.com/album/chant-down-babylon   steppers_dub vibronics bandcamp study_only   # Joseph Lalibela meets Vibronics & Mafia & Fluxy - UK steppers
+https://vibronics.bandcamp.com/album/polarity-dub   steppers_dub vibronics bandcamp study_only   # Vibronics meets Sista Habesha - Polarity Dub
+https://mungoshifi.bandcamp.com/album/soundsystem-champions-2   steppers_dub mungos bandcamp study_only   # Mungo's Hi Fi - Soundsystem Champions 2 (modern steppers/dancehall)
+https://tempa.bandcamp.com/album/tempa-allstars-vol-9   dubstep tempa bandcamp study_only   # Tempa Allstars Vol.9
+https://tectonicrecordings.bandcamp.com/album/tectonic-sound-vol-2   dubstep tectonic pinch bandcamp study_only   # Tectonic Sound Vol.2
+https://tectonicrecordings.bandcamp.com/album/wha-happen   dubstep grime tectonic pinch bandcamp study_only   # Pinch & Neffa-T x Trim - Wha Happen
+https://sentryrecords.bandcamp.com/album/dark-times   dubstep sentry youngsta bandcamp study_only   # Boylan & Youngsta - Dark Times (modern deep/half-step)
+https://sentryrecords.bandcamp.com/album/ascension   dubstep sentry youngsta bandcamp study_only   # Nomine & Youngsta - Ascension
