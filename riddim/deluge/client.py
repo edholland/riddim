@@ -97,6 +97,7 @@ class Deluge:
         window: int = 16,
     ):
         self.window = window
+        self.protocol: int | None = None
         self.timeout = timeout
         self.retries = retries
         self.verbose = verbose
@@ -312,7 +313,19 @@ class Deluge:
     # -- commands --------------------------------------------------------
 
     def ping(self) -> bool:
-        return self.command(sysex.ping(), sysex.Command.PING, "ping")
+        """Is the Deluge there? Also reads which build of the AI protocol it
+        runs (`protocol`): builds since the exact-path kit loader answer a
+        PING with a version byte; older ones answer with none (0). None
+        without a reply port, or on a dry run."""
+        for _ in range(self.retries):
+            reply = self.send(sysex.ping(), sysex.Command.PING)
+            if reply is None:
+                self.protocol = None
+                return self._in is None
+            if reply.ok:
+                self.protocol = None if self.dry_run else (reply.extra[0] if reply.extra else 0)
+                return True
+        return False
 
     def select_index(self, index: int) -> bool:
         return self.command(

@@ -177,7 +177,7 @@ def test_a_kit_that_does_not_load_stops_the_send():
 def test_kit_failure_says_what_to_do():
     from riddim.deluge.client import Reply
     msg = render.kit_failure("RIDDIM DUB", Reply(23, sysex.Status.FILE_NOT_FOUND, []), "drums")
-    assert "KITS/RIDDIM DUB.XML" in msg and "deluge-kits" in msg
+    assert "KITS/RIDDIM DUB.XML" in msg and "deluge-kits" in msg and "card" in msg
     assert "flash" in render.kit_failure("X", Reply(23, sysex.Status.BAD_LENGTH, []))
 
 
@@ -207,3 +207,32 @@ def test_cli_sends_with_kits_by_default():
     args = build_parser().parse_args(["send", "--dry-run"])
     assert args.kits is True
     assert build_parser().parse_args(["send", "--no-kits"]).kits is False
+
+
+def test_kits_refused_on_an_older_firmware_build():
+    """A build that answers PING without the kit protocol version cannot
+    load the kits right: refuse before writing anything."""
+    from riddim.deluge.client import DelugeError, Reply
+    song = compose("roots_dub", seed=3)
+
+    def fake_with(extra):
+        fake = FakeDeluge(clips=6)
+        fake.dry_run = False                  # so ping() reads the version
+        real = fake.send
+
+        def send(data, expect=None):
+            if expect == sysex.Command.PING:
+                return Reply(expect, sysex.Status.OK, extra)
+            return real(data, expect)
+        fake.send = send
+        fake._in = object()                   # a reply port is there
+        return fake
+
+    old = fake_with([])
+    with pytest.raises(DelugeError, match="older firmware build"):
+        render.send(song, old, progress=False, kits=True)
+    assert not old.commands_of(sysex.Command.CREATE_SESSION_INDEX)   # nothing written
+    new = fake_with([render.KIT_PROTOCOL])
+    new.ping()
+    assert new.protocol == render.KIT_PROTOCOL
+    render._check_kit_firmware(new)          # passes

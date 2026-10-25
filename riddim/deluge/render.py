@@ -132,6 +132,9 @@ def send(
             f"{MAX_SECTIONS} colour groups; shorten the template or merge sections"
         )
 
+    if kits and any(p.output == "kit" and p.preset for p in song.parts):
+        _check_kit_firmware(deluge)
+
     report = RenderReport()
     next_index = start_index
     # Seeding this from the template makes every clip for that role take the
@@ -428,6 +431,25 @@ def _write_notes(
     return written
 
 
+# The AI protocol build that loads kits by exact path, with their samples
+# (firmware ai-kit-automation 96a21da+, which answers PING with its version).
+KIT_PROTOCOL = 2
+
+
+def _check_kit_firmware(deluge: Deluge) -> None:
+    """Refuse to send with kits to a firmware build that cannot load them
+    right - before anything is written. Unknown (no reply port, dry run)
+    passes."""
+    if getattr(deluge, "protocol", None) is None:
+        deluge.ping()
+    proto = getattr(deluge, "protocol", None)
+    if proto is not None and proto < KIT_PROTOCOL:
+        raise DelugeError(
+            f"the Deluge is running an older firmware build (AI protocol {proto}, kits need "
+            f"{KIT_PROTOCOL}): it cannot load the riddim kits. Flash the deluge.bin on the card "
+            f"- power on holding SHIFT - then send again.")
+
+
 def kit_failure(kit: str, reply, where: str = "") -> str:
     """Why a kit did not load, and what to do about it."""
     if reply is None:
@@ -435,8 +457,8 @@ def kit_failure(kit: str, reply, where: str = "") -> str:
                 f"is the Deluge still connected and on a main view?")
     status = reply.status
     why = {
-        sysex.Status.FILE_NOT_FOUND: f"KITS/{kit}.XML is not on the card - copy the kits on "
-                                     f"(riddim-cli deluge-kits /Volumes/<card>)",
+        sysex.Status.FILE_NOT_FOUND: f"the Deluge cannot find KITS/{kit}.XML - is its card in, "
+                                     f"with the kits on it (riddim-cli deluge-kits /Volumes/<card>)?",
         sysex.Status.BAD_LENGTH: "the firmware does not know LOAD_CURRENT_KIT_PRESET - flash the "
                                  "ai-kit-automation build",
         sysex.Status.BAD_PARAM: "that clip is not a kit clip - check the template rows "
