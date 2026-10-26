@@ -265,3 +265,37 @@ def test_kits_without_the_library_get_the_synth_siren(tmp_path):
     rows = kit.render_rows("dub")
     siren = next(r for r in rows if r.note == KIT_ROWS["siren"])
     assert len(siren.sample) > SR // 2 and float(np.max(np.abs(siren.sample))) > 0.05
+
+
+# ---------------------------------------------------------------- measuring the references
+
+def test_reference_families_and_sets():
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "ml"))
+    import library_stats as ls
+    assert ls.family_of({"tags": ["uk_garage", "speed_garage"]}) == "speed_garage"
+    assert ls.family_of({"tags": ["dubstep", "dmz"]}) == "dubstep"
+    assert ls.family_of({"tags": ["study_only"]}) is None
+    assert ls.kind_of({"tags": ["dubstep", "radio"]}) == "set"
+    assert ls.kind_of({"tags": ["dubstep"], "duration": 3600}) == "set"
+    assert ls.kind_of({"tags": ["dubstep"], "duration": 300}) == "record"
+
+
+def test_arrangement_finds_sections_and_pulls():
+    """64 bars at 140: drums and mids throughout, the sub in from bar 8, out
+    for bars 32-35 (a pull), back after; the measure hears all three."""
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "ml"))
+    import library_stats as ls
+    sr, bpm = 22050, 140.0
+    bar = int(4 * 60 / bpm * sr)
+    t = np.arange(64 * bar) / sr
+    mid = 0.1 * np.sin(2 * np.pi * 600 * t) * (0.6 + 0.4 * np.sin(2 * np.pi * bpm / 60 * t))
+    sub = 0.4 * np.sin(2 * np.pi * 45 * t)
+    bars = np.arange(len(t)) // bar
+    sub = sub * (((bars >= 8) & ~((bars >= 32) & (bars < 36)))).astype(float)
+    got = ls.arrangement((mid + sub).astype(np.float32), sr, bpm)
+    assert got["bars"] == 64
+    assert got["first_sub_bar"] == 8
+    assert got["pulls_per_32"] > 0
+    assert 8 in got["sections"] or got["sections"][0] == 8
