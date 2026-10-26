@@ -14,3 +14,6 @@ variations/
 show_build.log
 references/
 !riddim/render/samples/*/*.wav
+
+# The sample packs and their index (riddim/library.py): licensed for use, not redistribution.
+samples/

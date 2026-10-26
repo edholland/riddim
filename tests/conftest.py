@@ -6,7 +6,12 @@ bass take does not. Which seed tells that story changes whenever the
 engine's music improves, so the tests find one rather than pin it.
 """
 
+import os
 from functools import lru_cache
+
+# The tests hear the synths: a sample library on this machine (samples/packs)
+# must not change what they render. tests/test_library.py builds its own.
+os.environ["RIDDIM_LIBRARY"] = "off"
 
 
 @lru_cache(maxsize=None)

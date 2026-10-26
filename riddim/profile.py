@@ -96,6 +96,9 @@ class Profile:
     # the written tempo. Drives where the skank lands - see rhythm.is_offbeat.
     beat_steps: int = 4
     delay_throw_on: tuple[str, ...] = ("dub_out", "breakdown", "outro")
+    # How often the siren fires where one may (a dub-out, a later drop's
+    # downbeat): the sound-system dub's signature, rarer the further from it.
+    sirens: float = 0.0
     note: str = ""
 
     @property
@@ -121,6 +124,7 @@ ROOTS_DUB = Profile(
     stab_patterns=("skank", "double_chop", "half_skank", "three_four",
                    "late_skank"),
     bars_per_chord_choices=(1.0, 2.0, 2.0, 4.0),
+    sirens=0.6,
     family="dub",
     bars_per_chord=2.0,
     progression_tension=0.25,
@@ -142,6 +146,7 @@ STEPPERS_DUB = Profile(
                   "drop_and_climb"),
     stab_patterns=("skank", "double_chop", "half_skank"),
     bars_per_chord_choices=(2.0, 2.0, 4.0),
+    sirens=0.6,
     family="dub",
     bars_per_chord=2.0,
     progression_tension=0.3,
@@ -169,6 +174,7 @@ DUBSTEP_140 = Profile(
     stab_patterns=("offbeats", "push", "single", "answer", "tresillo",
                    "late_pair", "organ", "dotted"),
     bars_per_chord_choices=(2.0, 4.0, 4.0, 8.0),
+    sirens=0.3,
     family="dubstep",
     drop_chords=2,
     lead_styles=("hook", "hook", "hook", "riff", "call_response"),
@@ -196,6 +202,7 @@ DUBBY_HALFTIME = Profile(
                   "half_time_sub", "sparse_stab"),
     stab_patterns=("offbeats", "push", "answer", "late_pair"),
     bars_per_chord_choices=(2.0, 4.0),
+    sirens=0.4,
     family="dub",
     bars_per_chord=2.0,
     progression_tension=0.45,
@@ -219,6 +226,7 @@ UK_GARAGE = Profile(
     stab_patterns=("organ", "two_step", "stutter", "dotted", "answer_kick"),
     bars_per_chord_choices=(1.0, 2.0, 2.0),
     lead_styles=("hook", "hook", "riff", "riff", "call_response"),
+    sirens=0.1,
     family="garage",
     bars_per_chord=2.0,
     progression_tension=0.4,
@@ -247,6 +255,7 @@ DARK_GARAGE = Profile(
     stab_patterns=("organ", "stutter", "answer_kick", "half_skank", "dotted"),
     bars_per_chord_choices=(2.0, 4.0, 4.0),
     lead_styles=("hook", "riff", "riff", "call_response"),
+    sirens=0.2,
     family="dubstep",
     drop_chords=2,
     bars_per_chord=4.0,

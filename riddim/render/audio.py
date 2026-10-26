@@ -25,18 +25,28 @@ does not, and this renders:
     pad      a string machine: six detuned saws, chorused wide, slow
     lead     dub: a reed with breath and a scoop; 140: a filtered saw-square
     drums    kick (body, click, drive), snare (two modes and noise, into the
-             plate), 808-style metallic hats, rim, shaker, crash, riser
+             plate), 808-style metallic hats, rim, shaker, crash, riser, siren
+
+With the sample library on disk (`riddim/library.py`: the free packs in
+samples/packs/), recorded instruments take over where the records say they
+matter: a drawbar organ for the bubble and the stabs, a guitar's skank for
+dub's chords, a hardware synth's sub at 140, drum-machine hats and a shaker
+in garage, and a real siren. Each is levelled to the synth it replaces, so
+the mix the judge was tuned on keeps its balance; without the library every
+voice is the synth above.
 
 Needs numpy and scipy (`pip install numpy scipy`).
 """
 
 from __future__ import annotations
 
+import bisect
 import wave
 
 import numpy as np
 from scipy.signal import butter, lfilter, oaconvolve, sosfilt
 
+from .. import library as _library
 from ..song import Song
 from ..units import TICKS_PER_16TH, TICKS_PER_BAR
 
@@ -65,6 +75,7 @@ def _play(name, rate=1.0, gain=1.0):
 
 # Deluge kit rows (see compose.KIT_ROWS).
 KICK, SNARE, HAT, RIM, PERC, SHAKER, CRASH, RISER = 36, 37, 38, 39, 40, 41, 42, 43
+SIREN = 51
 # The hands (theory/percussion.py): row -> (sample, pan, gain).
 HANDS = {44: ("hands/conga_lo", -0.3, 1.0), 45: ("hands/conga_hi", 0.3, 0.9),
          46: ("hands/bongo", 0.5, 0.75), 47: ("hands/block", 0.6, 0.55),
@@ -106,6 +117,8 @@ DUB_SPRING_KIT = 0.25
 DUB_STICK = True
 # The Deluge's swing, applied as it applies it (profile.deluge_swing).
 SWING = True
+# Recorded instruments from the sample library where it is on disk.
+LIBRARY = True
 # Master: bus glue and soft clip. (A lighter master - nearer the records'
 # 13-15 dB crest - measured worse with the judge: kept as it was.)
 MASTER = {"thresh": -14.0, "ratio": 2.5, "makeup": 4.0, "clip": 1.3}
@@ -465,8 +478,52 @@ def _drum(row, dur, vel, rnd, garage=False, sampled=True):
     return np.zeros(1, dtype=np.float32)
 
 
+def _siren(dur, vel, rnd):
+    """The dub siren: a square wave whose pitch an LFO throws up and down,
+    a little faster as it goes, through a speaker's band."""
+    n = int((max(dur, 0.5) + 0.2) * SR)
+    t = np.arange(n) / SR
+    rate = 3.2 * (1 + 0.6 * t / t[-1]) + rnd.jitter(0.3)
+    lfo = 2.0 * np.abs(((np.cumsum(rate) / SR) % 1.0) - 0.5)        # triangle 0..1
+    f = 520.0 * 2 ** (1.1 * lfo)
+    x = 0.6 * _sq(_phase(f, n, rnd.jitter(0.5))) + 0.4 * np.sin(2 * np.pi * _phase(f, n))
+    x = _bp(x.astype(np.float32), 400, 3500)
+    return (_sat(x, 1.5) * _env(n, 0.02, 0.2) * _vel(vel) * 0.35).astype(np.float32)
+
+
+def _rms(x) -> float:
+    return float(np.sqrt(np.mean(np.square(x)))) if len(x) else 0.0
+
+
+def _level(ref, x) -> float:
+    """The gain that puts a recorded instrument at the level of the synth
+    it replaces (measured on one reference note)."""
+    a, b = _rms(ref), _rms(x)
+    return float(np.clip(a / b, 0.05, 20.0)) if a > 0 and b > 0 else 1.0
+
+
+_MINOR_SET = (0, 3, 7, 10, 2, 5)
+_MAJOR_SET = (0, 4, 7, 11, 2, 9)
+
+
+def chord_name(midis, bass_pc=None) -> tuple[int, str]:
+    """A stab's (root pitch class, "maj"/"min") - read with the bass, since
+    the stabs are voiced rootless over it: the sounding bass note is the
+    root if the stab agrees, else the triad the stab best spells."""
+    pcs = {m % 12 for m in midis}
+    best, key = None, None
+    for r in range(12):
+        for q, third, other, ext in (("min", 3, 4, _MINOR_SET), ("maj", 4, 3, _MAJOR_SET)):
+            triad = {r, (r + third) % 12, (r + 7) % 12}
+            score = (2 * len(triad & pcs) - len(pcs - {(r + e) % 12 for e in ext})
+                     - 3 * (((r + other) % 12) in pcs) + (2.5 if r == bass_pc else 0.0))
+            if best is None or score > best:
+                best, key = score, (r, q)
+    return key
+
+
 # Where each kit voice sits: hats and shaker off centre, the rest in the middle.
-DRUM_PAN = {HAT: 0.28, SHAKER: -0.4, PERC: 0.4, RIM: -0.18, CRASH: 0.0, RISER: 0.0}
+DRUM_PAN = {HAT: 0.28, SHAKER: -0.4, PERC: 0.4, RIM: -0.18, CRASH: 0.0, RISER: 0.0, SIREN: 0.1}
 
 
 # --------------------------------------------------------------------------
@@ -588,6 +645,68 @@ def _add(buf, start, x):
 # The mix
 # --------------------------------------------------------------------------
 
+def instruments(family: str, seed: int, bpm: float, is140: bool, garage: bool) -> dict:
+    """The recorded instruments this song plays from the sample library (an
+    empty dict without one), each with the gain that levels it to the synth
+    it replaces."""
+    lib = _library.get() if LIBRARY else None
+    if lib is None or not family:
+        return {}
+    r = _Rand(1)
+    out: dict = {}
+    org = lib.organ(family, seed)
+    if org is not None:
+        out["organ"] = org
+        out["organ_k"] = _level(_organ(60, 0.25, 100, r), org.play(60, 0.25, 100).mean(axis=1))
+    if family == "dub":
+        sk = lib.skank(family, seed, bpm)
+        if sk is not None:
+            ref = sum(_pluck(m, 0.15, 100, r)[: int(0.3 * SR)] for m in (69, 72, 76))
+            out["skank"] = sk
+            out["skank_k"] = _level(ref, sk.play(9, "min", 0.15, 100).mean(axis=1))
+    if is140:
+        sb = lib.sub(family, seed)
+        if sb is not None:
+            out["sub"] = sb
+            out["sub_k"] = _level(_sub(36, 1.0, 100, r),
+                                  sb.play(36, 1.0, 100, 0.035, loop=True).mean(axis=1))
+    if garage:
+        for voice, ref in (("hat", _drum(HAT, 0.1, 100, r, True)),
+                           ("hat_open", _drum(HAT, 0.4, 100, r, True)),
+                           ("shaker", _drum(SHAKER, 0.1, 100, r, True))):
+            sh = lib.shots(family, voice, seed)
+            if sh is not None:
+                take = sh.play(np.random.default_rng(0), 100, 0.4 if voice == "hat_open" else 0.12)
+                out[voice] = sh
+                out[voice + "_k"] = _level(ref, _hp(take.mean(axis=1), 300))
+    siren = lib.siren(family, seed)
+    if siren is not None:
+        out["siren"] = siren
+        out["siren_k"] = _level(_siren(2.0, 100, r), _library.load(siren).mean(axis=1)[: int(2.2 * SR)])
+    return out
+
+
+def kit_hit(inst: dict, row: int, dur: float, vel: int, rnd, garage: bool = False) -> np.ndarray:
+    """A kit voice, recorded where the library has it (garage's hats and
+    shaker, the siren), else as `_drum` makes it."""
+    if row == SIREN:
+        if inst.get("siren"):
+            x = _library.load(inst["siren"]).mean(axis=1)
+            x = x[: int((max(dur, 0.5) + 1.0) * SR)].copy()
+            r = min(len(x), int(0.8 * SR))
+            x[len(x) - r:] *= np.linspace(1.0, 0.0, r, dtype=np.float32)
+            return (x * inst["siren_k"] * _vel(vel)).astype(np.float32)
+        return _siren(dur, vel, rnd)
+    if row == HAT and inst.get("hat") is not None:
+        voice = "hat_open" if (dur > 0.2 and inst.get("hat_open") is not None) else "hat"
+        x = inst[voice].play(rnd.rng, vel, min(dur, 0.45) if voice == "hat_open" else 0.12)
+        return (_hp(x.mean(axis=1), 300) * inst[voice + "_k"]).astype(np.float32)
+    if row == SHAKER and inst.get("shaker") is not None:
+        x = inst["shaker"].play(rnd.rng, vel, 0.12)
+        return (_hp(x.mean(axis=1), 300) * inst["shaker_k"]).astype(np.float32)
+    return _drum(row, dur, vel, rnd, garage)
+
+
 def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     """The song as a stereo float array, shape (n, 2). `window` (start, end
     ticks) renders just that stretch - with what rings into it from the
@@ -621,6 +740,7 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
         bubble = _profile_mod.get(prof).pad_style == "bubble" if prof else False
     except Exception:      # noqa: BLE001
         bubble = False
+    inst = instruments(family, song.seed or 0, song.bpm, is140, garage)
 
     def kit(midi, dur, vel):
         """A kit hit as this genre plays it: in dub the one-drop's backbeat
@@ -638,11 +758,38 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
             return x
         if cross and midi == KICK and DUB_KICK:
             return _dub_kick(dur, vel, rnd)
-        return _drum(midi, dur, vel, rnd, garage)
+        return kit_hit(inst, midi, dur, vel, rnd, garage)
 
     def at(tick):
         """Sample index of a tick, swung as the Deluge would play it."""
         return int((_swing_ticks(tick, swing) - w0) * spt * SR)
+
+    def organ(midi, dur, vel):
+        if inst.get("organ") is not None:
+            return inst["organ"].play(midi, dur, vel, 0.06).mean(axis=1) * inst["organ_k"]
+        return _organ(midi, dur, vel, rnd)
+
+    # The stabs as chords, and the bass under them, for the guitar's skank.
+    stab_notes: dict[int, list[int]] = {}
+    skanked: set[int] = set()
+    if song.part("chords") is not None:
+        for nt in song.notes_with_coda(song.part("chords")):
+            stab_notes.setdefault(nt.start, []).append(nt.midi)
+    _bass = sorted((nt.start, nt.midi, nt.length) for nt in song.notes_with_coda(song.part("sub"))) \
+        if song.part("sub") is not None else []
+
+    def bass_pc(tick):
+        """The bar's bass root: the pitch the bass holds longest in the bar
+        (a reply or an approach note mid-bar is not the chord), else the
+        last one before it."""
+        a = tick - tick % TICKS_PER_BAR
+        i, j = bisect.bisect_left(_bass, (a,)), bisect.bisect_left(_bass, (a + TICKS_PER_BAR,))
+        held: dict[int, int] = {}
+        for st, m, ln in _bass[i:j]:
+            held[m % 12] = held.get(m % 12, 0) + ln
+        if held:
+            return max(held, key=held.get)
+        return _bass[i - 1][1] % 12 if i > 0 else None
 
     stems = {r: np.zeros((n, 2), dtype=np.float32) for r in PAN}
     kick_env = np.zeros(n, dtype=np.float32)
@@ -674,7 +821,12 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                     _add(kick_env, start, np.exp(-np.arange(k) / (0.1 * SR)).astype(np.float32))
                 continue
             if role == "sub":
-                _add(buf, start, _pan(_sub(note.midi, dur, note.velocity, rnd), 0.0))
+                if inst.get("sub") is not None:
+                    x = inst["sub"].play(note.midi, dur, note.velocity, 0.035, loop=True)
+                    x = x.mean(axis=1) * inst["sub_k"]
+                else:
+                    x = _sub(note.midi, dur, note.velocity, rnd)
+                _add(buf, start, _pan(x, 0.0))
                 # The bass's mid: a growl at 140, a pluck in dub.
                 if is140:
                     rate = 2.0 / beat if note.length * spt > beat else 1.0 / beat
@@ -684,14 +836,24 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                 _add(stems["bass"], start, _pan(mb, 0.0))
                 continue
             if role == "chords":
-                x = _organ(note.midi, dur, note.velocity, rnd) if (garage or is140) \
-                    else _pluck(note.midi, dur, note.velocity, rnd)
+                if (garage or is140):
+                    x = organ(note.midi, dur, note.velocity)
+                elif inst.get("skank") is not None:
+                    # The guitar plays the whole stab at once: one chop per
+                    # chord, the stab's other notes are in it.
+                    if note.start in skanked:
+                        continue
+                    skanked.add(note.start)
+                    root, q = chord_name(stab_notes[note.start], bass_pc(note.start))
+                    x = inst["skank"].play(root, q, dur, note.velocity).mean(axis=1) * inst["skank_k"]
+                else:
+                    x = _pluck(note.midi, dur, note.velocity, rnd)
                 _add(buf, start, _pan(x, PAN["chords"] + rnd.jitter(0.05)))
                 continue
             if role == "pad":
                 if bubble:
                     # The organ bubble: drawbars, opposite the skank.
-                    x = _organ(note.midi, dur, note.velocity, rnd)
+                    x = organ(note.midi, dur, note.velocity)
                     _add(buf, start, _pan(x, BUBBLE_PAN + rnd.jitter(0.04)))
                 else:
                     _add(buf, start, _strings(note.midi, dur, note.velocity, rnd))
@@ -756,8 +918,9 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
             if note.midi in (SNARE, RIM):
                 _add(sn, at_, kit(note.midi, note.length * spt, note.velocity)
                      * (1.0 if note.midi == SNARE else 0.4))
-            elif note.midi in (RISER, CRASH):
-                _add(fx, at_, _drum(note.midi, note.length * spt, note.velocity, rnd))
+            elif note.midi in (RISER, CRASH, SIREN):
+                _add(fx, at_, kit_hit(inst, note.midi, note.length * spt, note.velocity, rnd)
+                     * (1.6 if note.midi == SIREN else 1.0))
         for perc_part in [p for p in song.parts if p.role == "perc"]:
             for note in song.notes_with_coda(perc_part):
                 if note.midi in (49, 50) and (window is None or w0 <= note.start < window[1]):

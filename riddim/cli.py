@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 from . import profile as profile_mod
@@ -206,9 +207,9 @@ def cmd_send(args) -> int:
     if args.fix:
         song = _model_lead(args, _apply_fix(song))
     if args.no_fx_rows:
-        # A kit without crash and riser rows: leave those notes behind.
+        # A kit without crash, riser and siren rows: leave those notes behind.
         from .compose import KIT_ROWS
-        fx = {KIT_ROWS["crash"], KIT_ROWS["riser"]}
+        fx = {KIT_ROWS["crash"], KIT_ROWS["riser"], KIT_ROWS["siren"]}
         for part in song.parts:
             if part.output == "kit":
                 part.notes = [n for n in part.notes if n.midi not in fx]
@@ -478,6 +479,29 @@ def cmd_deluge_kits(args) -> int:
     return 0
 
 
+def cmd_samples(args) -> int:
+    """The sample library: index the packs, or show what each family plays."""
+    from . import library
+
+    root = args.root or os.environ.get("RIDDIM_LIBRARY") or library.DEFAULT_ROOT
+    if not os.path.isdir(root):
+        print(f"no sample packs at {root} (fetch them with ml/fetch_samples.py)", file=sys.stderr)
+        return 1
+    if args.action == "index":
+        entries = library.scan(root, analyse=args.analyse, progress=print)
+        out = args.out or os.path.join(os.path.dirname(os.path.abspath(root)), "index.jsonl")
+        library.write_index(entries, out)
+        counts: dict[str, int] = {}
+        for e in entries:
+            counts[e.role] = counts.get(e.role, 0) + 1
+        print(f"{len(entries)} files -> {out}")
+        print("  " + ", ".join(f"{r} {n}" for r, n in sorted(counts.items(), key=lambda kv: -kv[1])))
+        return 0
+    lib = library.get(root)
+    print(library.picks_report(lib, args.seed))
+    return 0
+
+
 def cmd_render(args) -> int:
     """Render a song (or a saved params file) to a WAV for auditioning."""
     from .render import audio
@@ -596,8 +620,8 @@ def build_parser() -> argparse.ArgumentParser:
              "none: leave section repeats alone.",
     )
     p.add_argument("--no-fx-rows", action="store_true",
-                   help="drop the crash (row 42) and riser (row 43) notes, for "
-                        "a drum kit that has no sounds on those rows")
+                   help="drop the crash (row 42), riser (row 43) and siren (row 51) "
+                        "notes, for a drum kit that has no sounds on those rows")
     p.add_argument("--no-kits", dest="kits", action="store_false",
                    help="keep the template's kits: by default the family's riddim kit "
                         "(KITS/RIDDIM DUB.XML etc., from `deluge-kits`) is loaded on the "
@@ -709,6 +733,17 @@ def build_parser() -> argparse.ArgumentParser:
                    help="only this family's kit (repeatable; default all three)")
     p.add_argument("--seed", type=int, default=1)
     p.set_defaults(func=cmd_deluge_kits)
+
+    p = subs.add_parser(
+        "samples", help="the sample library (samples/packs): index it, or show the picks")
+    p.add_argument("action", choices=("index", "picks"))
+    p.add_argument("--root", default=None, help="the packs folder (default samples/packs, "
+                                                "or $RIDDIM_LIBRARY)")
+    p.add_argument("--out", default=None, help="index file (default samples/index.jsonl)")
+    p.add_argument("--analyse", action="store_true",
+                   help="also read every file for its length and level (slow)")
+    p.add_argument("--seed", type=int, default=0)
+    p.set_defaults(func=cmd_samples)
 
     p = subs.add_parser(
         "corpus", help="compose a show: many songs, ranked, ordered as a set")

@@ -48,7 +48,9 @@ KIT_ROWS = {"kick": 36, "snare": 37, "hat": 38, "rim": 39, "perc": 40, "shaker":
             "crash": 42, "riser": 43,
             # The hands, on the perc kit: see theory/percussion.py.
             "conga_lo": 44, "conga_hi": 45, "bongo": 46, "block": 47, "tamb": 48,
-            "tom_lo": 49, "tom_hi": 50}
+            "tom_lo": 49, "tom_hi": 50,
+            # The sound system's siren, on the drum kit (Profile.sirens).
+            "siren": 51}
 HAND_ROWS = tuple(KIT_ROWS[v] for v in ("conga_lo", "conga_hi", "bongo", "block", "tamb",
                                         "tom_lo", "tom_hi"))
 
@@ -1235,6 +1237,16 @@ def _build_drums(part, section, prof, m: Material, rng):
             _emit(part, [(KIT_ROWS["crash"], 0, 8, 72 + 20 * dyn.impact)], bar_tick)
         elif bar_tick in switch_ends:
             _emit(part, [(KIT_ROWS["crash"], 0, 8, 90)], bar_tick)
+
+    # The siren: the sound system's own voice, fired into a dub-out (a bar
+    # after the band drops away) and on the downbeat of a later drop - never
+    # the first, which the band alone has to land. Its own stream, so a song
+    # without one is note for note what it was.
+    if prof.sirens > 0:
+        srng = random.Random(f"{voice_seed}:siren")
+        if (section.dub_throw or (is_drop and peaks_before)) and srng.random() < prof.sirens:
+            at = section.start_tick + (TICKS_PER_BAR if section.dub_throw and section.bars > 2 else 0)
+            part.add(Note(KIT_ROWS["siren"], at, 2 * TICKS_PER_BAR, 100))
 
     if into_drop:
         span = dynamics.riser_span(section, dyn, gap)

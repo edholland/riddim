@@ -14,6 +14,12 @@ at the bottom, KIT_ROWS), so any kit clip plays any riddim part:
 
     36 kick   37 snare  38 hat    39 rim    40 perc   41 shaker 42 crash
     43 riser  44 conga lo 45 conga hi 46 bongo 47 block 48 tamb 49 tom lo 50 tom hi
+    51 siren
+
+With the sample library on disk (riddim/library.py) the kits carry what
+the preview plays from it: a recorded siren on 51, and in the garage kit a
+drum machine's hats and shaker. Without it those rows are the preview's
+synths, as before.
 
     riddim-cli deluge-kits /Volumes/DELUGE      # the card, or any folder
 
@@ -131,6 +137,8 @@ def render_rows(family: str, seed: int = 1) -> list[Row]:
     rnd = A._Rand(seed)
     garage = family == "garage"
     dub = family == "dub"
+    inst = A.instruments(family, seed, 140.0 if family != "dub" else 72.0,
+                         family == "dubstep", garage)
     vel = 112
     room_ir = A._norm_ir(A._sample("ir/nice_drum_room"))
 
@@ -147,11 +155,16 @@ def render_rows(family: str, seed: int = 1) -> list[Row]:
             return A._play("hands/stick_h", 1.0, 2.2 * A._vel(vel))
         if note == A.HAT:
             # The open hat, whole: CUT mode lets the note length close it.
+            if inst.get("hat_open") is not None:
+                x = inst["hat_open"].play(rnd.rng, vel).mean(axis=1)
+                return (A._hp(x, 300) * inst["hat_open_k"]).astype(np.float32)
             x = A._hp(A._play("pearl/hihat-open", 1.0), 2500)
             return (x * 1.5 * A._vel(vel)).astype(np.float32)
         if note == A.RISER:
             return A._drum(A.RISER, 4.0, vel, rnd, garage)
-        return A._drum(note, 0.3, vel, rnd, garage)
+        if note == A.SIREN:
+            return A.kit_hit(inst, A.SIREN, 3.0, vel, rnd, garage)
+        return A.kit_hit(inst, note, 0.3, vel, rnd, garage)
 
     def hand(note: int) -> np.ndarray:
         name, _pan, g = A.HANDS[note]
@@ -179,6 +192,11 @@ def render_rows(family: str, seed: int = 1) -> list[Row]:
         if note in A.HANDS:
             x = hand(note) * (gain_perc / gain_drums)
             pan = A.HANDS[note][1]
+        elif note == A.SIREN:
+            # The siren as the preview throws it: into the hall and the echo,
+            # not the drum room - those stay live on the Deluge (`_sends`).
+            x = kit_voice(note) * 1.6
+            pan = A.DRUM_PAN[A.SIREN]
         else:
             x = room(kit_voice(note))
             if dub and A.DUB_KIT_TONE:
@@ -190,7 +208,7 @@ def render_rows(family: str, seed: int = 1) -> list[Row]:
         rows.append(Row(note=note, name=name, sample=_trim(np.asarray(x, dtype=np.float32)),
                         loop_mode=mode, pan=pan,
                         release=4.0 if mode == CUT else 0.0,
-                        random_pitch=0.0 if note == A.RISER else 5.0,
+                        random_pitch=0.0 if note in (A.RISER, A.SIREN) else 5.0,
                         sidechain=note == A.KICK))
 
     peak = max(float(np.max(np.abs(r.sample))) for r in rows) or 1.0
@@ -220,6 +238,8 @@ def _sends(family: str, rows: list[Row]) -> None:
         rim.reverb = 6.0
     for name in ("crash", "riser", "tom_lo", "tom_hi"):
         by[KIT_ROWS[name]].reverb = max(by[KIT_ROWS[name]].reverb, 12.0)
+    siren = by[KIT_ROWS["siren"]]
+    siren.reverb, siren.delay = 16.0, (8.0 if family == "dub" else 5.0)
 
 
 def build(family: str, seed: int = 1) -> Kit:

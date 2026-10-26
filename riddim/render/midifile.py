@@ -34,6 +34,7 @@ GM_DRUMS = {
     KIT_ROWS["tamb"]: 54,      # Tambourine
     KIT_ROWS["tom_lo"]: 45,    # Low Tom
     KIT_ROWS["tom_hi"]: 50,    # High Tom
+    KIT_ROWS["siren"]: 72,     # Long Whistle - GM has no siren; the WAV render does
 }
 
 # Our tick grid is 24 per 16th, so 96 per quarter note.
