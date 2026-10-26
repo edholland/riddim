@@ -130,6 +130,45 @@ def archive_item(url, tags, audio, seen, write):
         time.sleep(1)
 
 
+def fma_album(url, tags, audio, seen, write):
+    """A Free Music Archive album page: its tracks' files are listed in the
+    page (fileUrl), with the album's Creative Commons licence."""
+    import re
+    page = _get(url).decode("utf-8", "replace")
+    files = []
+    for u in re.findall(r'fileUrl":"(https:[^"]+?\.mp3)"', page):
+        u = u.replace("\\/", "/")
+        if u not in files:
+            files.append(u)
+    lic = re.search(r'https?://creativecommons\.org/(?:licenses|publicdomain)/[a-z0-9.\-/]+', page)
+    if not files:
+        print(f"skip (no tracks on page): {url}", flush=True)
+        return
+    for u in files:
+        rid = "fma_" + hashlib.sha1(u.encode()).hexdigest()[:12]
+        with MANIFEST_LOCK:
+            if rid in seen:
+                continue
+            seen.add(rid)
+        dest = os.path.join(audio, rid + ".mp3")
+        try:
+            _get(u, dest)
+        except Exception as e:      # noqa: BLE001
+            print(f"failed {u}: {e} (re-run to retry)", flush=True)
+            with MANIFEST_LOCK:
+                seen.discard(rid)
+            continue
+        name = urllib.parse.unquote(u.rsplit("/", 1)[-1])
+        write({"id": rid, "url": url, "source": "freemusicarchive", "file_url": u,
+               "title": os.path.splitext(name)[0],
+               "license": lic.group(0) if lic else "see page",
+               "tags": tags, "file": os.path.join("audio", rid + ".mp3"),
+               "fetched": time.strftime("%Y-%m-%dT%H:%M:%S"),
+               "silent": audible(dest) is False})
+        print(f"got {rid}  {name}", flush=True)
+        time.sleep(1)
+
+
 YTDLP = None
 MANIFEST_LOCK = threading.Lock()
 BOT_CHECK = ("confirm you", "not a bot", "sign in to confirm")
@@ -270,6 +309,8 @@ def main():
         try:
             if "archive.org/details/" in url:
                 archive_item(url, tags, audio, seen, write)
+            elif "freemusicarchive.org/music/" in url:
+                fma_album(url, tags, audio, seen, write)
             else:
                 stream_source(url, tags, audio, seen, write, ffmpeg)
         except Exception as e:  # noqa: BLE001

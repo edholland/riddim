@@ -1,0 +1,1325 @@
+# refs_streams.txt - OFFICIAL streaming sources for riddim reference listening (personal, non-commercial study).
+# Built 2026-10-25. Every URL below was checked live: Mixcloud via api.mixcloud.com (user/playlist exists + upload
+# count), SoundCloud via profile/set page + yt-dlp flat listing, YouTube via yt-dlp search/playlist listing
+# (channel name confirmed as the official uploader), NTS via the nts.live v2 API (episode exists + has audio).
+# Only official artist / label / station / promoter / festival accounts. No re-upload or fan-rip channels.
+#
+# Format:  URL   family source type study_only [extra tags]   # what it is [size]
+# Families: roots_dub steppers_dub dubstep uk_garage speed_garage dark_garage grime soundclash
+# Types:    mix radio live soundsystem tracks lecture
+#
+# !! COLLECTOR CAVEAT: ml/collect_refs.py treats each line as ONE recording (`yt-dlp --no-playlist --print id`).
+# !! For a playlist / user / set URL that prints many ids, the rid has newlines, so yt-dlp downloads the whole
+# !! feed but no manifest rows get written (reported as 'failed'). Either expand these with
+# !!   yt-dlp --flat-playlist --print url <URL>
+# !! into one line per item first, or teach the collector to iterate playlist entries. Single-video /
+# !! single-episode lines (YouTube watch?v=, NTS episodes) work as-is.
+# !! Mixcloud from yt-dlp currently needs impersonation (pip install 'yt-dlp[default,curl-cffi]'), else HTTP 403.
+# !! NTS show pages (nts.live/shows/<x>) are NOT supported by yt-dlp; episodes are - so NTS is listed per episode.
+# Lines starting '#~ ' are HUGE feeds (>500 items) kept for reference but commented out on purpose.
+
+# ================================================================ MIXCLOUD
+
+# Mixcloud / dubstep
+https://www.mixcloud.com/DJHatcha/   dubstep uk_garage radio mix mixcloud study_only   # DJ Hatcha official: Flex FM practise hours, Kiss dubstep, Boiler Room mix, old-skool UKG [51 uploads]
+https://www.mixcloud.com/JoeNiceDJ/   dubstep radio mix mixcloud study_only   # Joe Nice official: GourmetBeats monthly on Sub FM (Baltimore 140 tastemaker) [74 uploads]
+https://www.mixcloud.com/djchefal/   dubstep radio mix mixcloud study_only   # DJ Chefal official: Rinse w/ N-Type, Kiss dubstep show, Flex FM shows [48 uploads]
+https://www.mixcloud.com/djntype/   dubstep uk_garage radio mix mixcloud study_only   # N-Type official: Rinse w/ Youngsta / Sgt Pokes, old-skool garage vinyl mix [5 uploads]
+https://www.mixcloud.com/loefah/   dubstep radio mix mixcloud study_only   # Loefah (Loe Fah) official: Swamp81 radio shows, DMZ vs Loefah @ Roskilde 2007, DMZ Outlook 2011 [15 uploads]
+https://www.mixcloud.com/Distance/   dubstep radio mix mixcloud study_only   # Distance official: Chestcast series, Distance & Crazy D on Kiss 2013 [12 uploads]
+https://www.mixcloud.com/jkenzo/   dubstep radio mix mixcloud study_only   # J:Kenzo official: Rinse/Sub FM, 1Xtra Daily Dose, live sets [10 uploads]
+https://www.mixcloud.com/BunZer0/   dubstep radio mix mixcloud study_only   # BunZer0 (Japan) official: SUB FM monthly 2012-2026 w/ Ago, Mr Jo etc - large but strictly 140 [436 uploads]
+https://www.mixcloud.com/Innamind_Recordings/   dubstep mix mixcloud study_only   # Innamind Recordings label: promo mixes + Innamind Radio (Ago, Kursk, Karma, Gantz) [19 uploads]
+https://www.mixcloud.com/TectonicRecordings/   dubstep mix radio mixcloud study_only   # Tectonic label: Rinse takeover (Pinch, Mumdance, Logos, Riko), Pinch Intro to Tectonic [4 uploads]
+https://www.mixcloud.com/KEYSOUND/   dubstep dark_garage mix mixcloud study_only   # Keysound (Blackdown) podcast series [20 uploads]
+https://www.mixcloud.com/140ninja/   dubstep mix mixcloud study_only   # 140 Ninja podcast/mix series - modern deep 140 [84 uploads]
+https://www.mixcloud.com/wonderuk/   dubstep grime uk_garage radio mixcloud study_only   # Wonder official: Rinse FM shows (garage hour, old-skool grime/garage, dubstep) [60 uploads]
+https://www.mixcloud.com/Outlook_Festival/   dubstep steppers_dub mix live mixcloud study_only   # Outlook Festival official: mix series + live recordings (DMZ, Deep Medi, Gorgon Sound, Iration) [243 uploads]
+https://www.mixcloud.com/djmbunker/   dubstep uk_garage grime live mixcloud study_only   # DJ Mag Bunker official: Youngsta, Hatcha, Keysound, Durkle Disco garage sessions [123 uploads]
+#~ https://www.mixcloud.com/getdarker/   dubstep uk_garage grime radio mix mixcloud study_only   # GetDarker (promoter/brand) archive: DMZ/FWD/Rinse/Kiss/Garage Nation recordings - promoter-hosted rips [1263 uploads] HUGE FEED - commented out, uncomment deliberately
+https://www.mixcloud.com/RadarRadioLDN/playlists/tectonic-takeover/   dubstep radio mixcloud study_only   # Radar Radio Tectonic Takeover 11 Feb 2018 (Loefah classic set, Pinch w/ Riko) [15 shows]
+https://www.mixcloud.com/RadarRadioLDN/playlists/deep-medi-takeover-12th-march-2017/   dubstep radio mixcloud study_only   # Radar Radio Deep Medi Takeover (Commodo, Compa, Bukez Finezt) [4 shows]
+https://www.mixcloud.com/modelondon/playlists/dubstep-marathon-2019/   dubstep radio mixcloud study_only   # Mode FM Dubstep Marathon 2019 [12 shows]
+#~ https://www.mixcloud.com/NTSRadio/   dubstep grime uk_garage roots_dub radio mixcloud study_only   # NTS Radio whole station archive - use the NTS episode lines below instead [90571 uploads] HUGE FEED - commented out, uncomment deliberately
+#~ https://www.mixcloud.com/subfm/   dubstep grime uk_garage radio mixcloud study_only   # Sub FM whole station (bass music station, all shows) [16812 uploads] HUGE FEED - commented out, uncomment deliberately
+
+# Mixcloud / grime
+https://www.mixcloud.com/plastician/   grime dubstep radio mix mixcloud study_only   # Plastician official: Rinse FM shows + podcasts [95 uploads]
+https://www.mixcloud.com/spookybizzle/   grime uk_garage radio mix mixcloud study_only   # Spooky Bizzle official: Mode FM NightShift, Deja Vu old-skool grime vinyl, Butterz [184 uploads]
+https://www.mixcloud.com/butterz/   grime radio mix mixcloud study_only   # Elijah & Skilliam (Butterz) official: Rinse FM shows, tour mixes [41 uploads]
+https://www.mixcloud.com/elijahandskilliam/   grime mix mixcloud study_only   # Elijah & Skilliam second account (newer mixes) [4 uploads]
+https://www.mixcloud.com/djslimzee/   grime dark_garage radio mixcloud study_only   # Slimzee official: Slimzos Sessions (NTS) w/ Kahn & Neek, Logan Sama, Riko [45 uploads]
+https://www.mixcloud.com/djlogansama/   grime mix mixcloud study_only   # Logan Sama official: Tuned In To 99 (garage->grime), Maniac mixes, AfterHours [7 uploads]
+https://www.mixcloud.com/sirspyro/   grime radio mix mixcloud study_only   # Sir Spyro: Rinse FM 2010, instrumental grime mixes [5 uploads]
+https://www.mixcloud.com/mumdance/   grime dubstep radio mix mixcloud study_only   # Mumdance official: Rinse/NTS/RBMA shows w/ Pinch, Logos, Youngsta [199 uploads]
+https://www.mixcloud.com/ONEMAN/   grime uk_garage dubstep radio mixcloud study_only   # Oneman official: Rinse FM shows, Kiss dubstep w/ Hatcha [43 uploads]
+https://www.mixcloud.com/DJWhitecoat/   grime radio mixcloud study_only   # DJ Whitecoat: Bass & Grime Show / Subtle Radio show [67 uploads]
+https://www.mixcloud.com/modelondon/playlists/grime-marathon/   grime radio mixcloud study_only   # Mode FM Grime Marathon (Apr 2018) [16 shows]
+https://www.mixcloud.com/modelondon/playlists/grime-marathon-2-2018/   grime radio mixcloud study_only   # Mode FM Grime Marathon 2 (Dec 2018) [16 shows]
+https://www.mixcloud.com/modelondon/playlists/grime-marathon-2023/   grime radio mixcloud study_only   # Mode FM Grime Marathon 2023 [10 shows]
+
+# Mixcloud / uk_garage & speed_garage
+https://www.mixcloud.com/djez/   uk_garage speed_garage radio mix mixcloud study_only   # DJ EZ official: NUVOLVE radio 001-200 (UKG mix show) [423 uploads]
+https://www.mixcloud.com/ZedBias/   uk_garage mix mixcloud study_only   # Zed Bias official: classic UKG mixes, 60 Minute Mix series, Public Demand mix [18 uploads]
+https://www.mixcloud.com/mjcole/   uk_garage mix mixcloud study_only   # MJ Cole official (3 mixes incl. Byron Bay 2001 w/ Fallacy) [3 uploads]
+https://www.mixcloud.com/Jammin_todd_Edwards/   uk_garage radio mixcloud study_only   # Todd Edwards official: Rhythm And Groove Radio weekly (garage-house) [252 uploads]
+https://www.mixcloud.com/norrisdabosswindross/   uk_garage speed_garage mix mixcloud study_only   # Norris 'Da Boss' Windross official: 2-step/speed garage mixes [6 uploads]
+https://www.mixcloud.com/mikeebdreemteem/   uk_garage speed_garage mix mixcloud study_only   # Mikee B (Dreem Teem) official: UKG 97/99, funky house vinyl mixes [13 uploads]
+https://www.mixcloud.com/JohnathanJoseph/   uk_garage mix mixcloud study_only   # DJ Spoony (Dreem Teem) official: Spoony's House garage/house sessions [11 uploads]
+
+# Mixcloud / dub, steppers, sound system
+https://www.mixcloud.com/channelonesoundsystem/   steppers_dub roots_dub soundsystem live mixcloud study_only   # Channel One Sound System official: Notting Hill 2025, Cervantino, Auckland, Brighton [8 uploads]
+https://www.mixcloud.com/reggaeroast/   roots_dub steppers_dub mix mixcloud study_only   # Reggae Roast official mixes/podcasts [11 uploads]
+https://www.mixcloud.com/scotchbonnetrecords/   steppers_dub roots_dub mix mixcloud study_only   # Scotch Bonnet (Mungo's Hi Fi label): Under The Influences series, Mungo's mixes [54 uploads]
+https://www.mixcloud.com/unit137/   steppers_dub roots_dub mix mixcloud study_only   # Unit 137 official (Hylu & Jago): mixes + All Fruits Ripe podcast [26 uploads]
+https://www.mixcloud.com/steppas/   steppers_dub mix mixcloud study_only   # Steppas Records (Alpha Steppa): Steppas Select series, Alpha Steppa meets V.I.V.E.K on Rinse [14 uploads]
+https://www.mixcloud.com/OnURoast/   roots_dub steppers_dub radio mixcloud study_only   # On-U Sound Sunday Roast (Adrian Sherwood / On-U official radio series) [106 uploads]
+https://www.mixcloud.com/DubSmugglersSoundSystem/   steppers_dub soundsystem mix mixcloud study_only   # Dub Smugglers sound system (Bristol): Isolation Series, production mixes [48 uploads]
+https://www.mixcloud.com/blackboardjungle/   steppers_dub soundsystem radio mixcloud study_only   # Blackboard Jungle (French sound system) monthly shows 2014-2015 [16 uploads]
+https://www.mixcloud.com/NeverlutionSound/   steppers_dub dubstep soundsystem live mixcloud study_only   # Neverlution Soundsystem (Bristol Dub Club promoters) live recordings [47 uploads]
+https://www.mixcloud.com/dubapest/   roots_dub steppers_dub radio mixcloud study_only   # Dubapest HiFi (Budapest Dub Club): RootStation on Tilos Radio [57 uploads]
+https://www.mixcloud.com/DubLivitySoundSystem/   steppers_dub soundsystem live mixcloud study_only   # Dub Livity Sound System: Dub Camp / Dub Order / Bordeaux Dub School sessions [33 uploads]
+https://www.mixcloud.com/ONEDUBOfficial/   roots_dub soundsystem live mixcloud study_only   # ONEDUB official: Jah Shaka Sound System dances 2016-2021 + UK roots sessions [39 uploads]
+https://www.mixcloud.com/flipfgordon/   roots_dub soundclash soundsystem radio mixcloud study_only   # Fatman Sound System (DJ Flip) official: radio shows, Four Aces reunion [10 uploads]
+https://www.mixcloud.com/dandadarecordsradio/   steppers_dub radio mixcloud study_only   # Bandulu Dub (Ibiza) monthly radio [51 uploads]
+https://www.mixcloud.com/DubRunnings/   steppers_dub soundsystem live mixcloud study_only   # Dub Runnings (French session recorder, sound-sanctioned): Aba Shanti / Channel One / Chalice @ Dub Camp, Toulouse Dub Club [215 uploads]
+
+# ================================================================ SOUNDCLOUD
+
+# SoundCloud / dubstep - labels
+https://soundcloud.com/deep-medi-musik/tracks   dubstep tracks soundcloud study_only   # DEEP MEDi MUSIK label (Mala): releases + clips [346 tracks, 61584 followers]
+https://soundcloud.com/deep-medi-musik/sets   dubstep tracks soundcloud study_only   # DEEP MEDi MUSIK release sets (EPs/LPs) [64 sets, 61584 followers]
+https://soundcloud.com/tectonic-recordings/tracks   dubstep tracks soundcloud study_only   # Tectonic (Pinch, Bristol) - many are clips [113 tracks, 11995 followers]
+https://soundcloud.com/tectonic-recordings/sets   dubstep tracks soundcloud study_only   # Tectonic release sets [27 sets, 11995 followers]
+https://soundcloud.com/hyperdub/tracks   dubstep uk_garage tracks soundcloud study_only   # Hyperdub Records (Kode9) official [87 tracks, 52156 followers]
+https://soundcloud.com/swamp81/tracks   dubstep tracks soundcloud study_only   # Swamp81 (Loefah) label [27 tracks, 29054 followers]
+https://soundcloud.com/sentryrecords/tracks   dubstep tracks soundcloud study_only   # Sentry Records (Youngsta / SP:MC / Distance) [116 tracks, 4069 followers]
+https://soundcloud.com/systemmusic/tracks   dubstep tracks soundcloud study_only   # System Music (V.I.V.E.K) [29 tracks, 14531 followers]
+https://soundcloud.com/innamindrecordings/tracks   dubstep tracks soundcloud study_only   # Innamind Recordings (Ago, Kursk, Karma) [86 tracks, 24094 followers]
+#~ https://soundcloud.com/duploc/tracks   dubstep tracks soundcloud study_only   # DUPLOC 140 label - modern deep/riddim, broad [848 tracks, 35767 followers] HUGE FEED - commented out, uncomment deliberately
+https://soundcloud.com/hench-recordings/tracks   dubstep tracks soundcloud study_only   # Hench Recordings (Hatcha-adjacent deep dubstep) [66 tracks, 10942 followers]
+https://soundcloud.com/encryptedaudio/tracks   dubstep tracks soundcloud study_only   # Encrypted Audio (deep dubstep label) [93 tracks, 11246 followers]
+https://soundcloud.com/punchdrunkrecords/tracks   dubstep tracks soundcloud study_only   # Punch Drunk (Peverelist, Bristol) [51 tracks, 9036 followers]
+#~ https://soundcloud.com/hotflush/tracks   dubstep tracks soundcloud study_only   # Hotflush (Scuba) - early dubstep then techno; filter by date [504 tracks, 196998 followers] HUGE FEED - commented out, uncomment deliberately
+https://soundcloud.com/keysound-recordings/tracks   dubstep dark_garage tracks soundcloud study_only   # Keysound Recordings (Dusk + Blackdown) [8 tracks, 1742 followers]
+#~ https://soundcloud.com/crucast/tracks   dubstep tracks soundcloud study_only   # CRUCAST - riddim/bro-step heavy, mostly off-target [1415 tracks, 111481 followers] HUGE FEED - commented out, uncomment deliberately
+#~ https://soundcloud.com/getdarker/tracks   dubstep radio mix soundcloud study_only   # GetDarker promoter archive (FWD/DMZ recordings) [1587 tracks, 37092 followers] HUGE FEED - commented out, uncomment deliberately
+https://soundcloud.com/outlookfestival/tracks   dubstep steppers_dub live mix soundcloud study_only   # Outlook Festival official mixes/recordings [354 tracks, 34783 followers]
+https://soundcloud.com/hvywghtldn/tracks   dubstep live soundcloud study_only   # HVYWGHT LDN promoter recordings (Coki & Pokes 03-08 set, Skeptical b2b J:Kenzo) [32 tracks, 4282 followers]
+
+# SoundCloud / dubstep - artists
+https://soundcloud.com/maladmz/tracks   dubstep tracks mix soundcloud study_only   # Mala (DMZ) official: Essential Mix, remasters [21 tracks, 27638 followers]
+https://soundcloud.com/kodenine/tracks   dubstep uk_garage mix soundcloud study_only   # Kode9 official: mixes (Hyperdub drive-by, w/ Burial for MAH) [127 tracks, 20455 followers]
+https://soundcloud.com/y-u-8/tracks   dubstep tracks soundcloud study_only   # Coki (Digital Mystikz) official [111 tracks, 26159 followers]
+https://soundcloud.com/dj-pinch/tracks   dubstep tracks soundcloud study_only   # Pinch official [24 tracks, 19124 followers]
+https://soundcloud.com/loefah/tracks   dubstep tracks soundcloud study_only   # Loefah official [7 tracks, 27631 followers]
+https://soundcloud.com/n-type/tracks   dubstep uk_garage mix soundcloud study_only   # N-Type official: Rinse/Kromestar specials, dubplate specials [224 tracks, 21400 followers]
+https://soundcloud.com/djhatcha/tracks   dubstep uk_garage mix soundcloud study_only   # DJ Hatcha official [105 tracks, 4967 followers]
+https://soundcloud.com/truthdubstep/tracks   dubstep tracks soundcloud study_only   # Truth (NZ, Deep Medi) official [352 tracks, 134890 followers]
+https://soundcloud.com/compauk/tracks   dubstep tracks soundcloud study_only   # Compa (Deep Medi) official [40 tracks, 17505 followers]
+https://soundcloud.com/commodo/tracks   dubstep tracks soundcloud study_only   # Commodo (Deep Medi) official [115 tracks, 34046 followers]
+https://soundcloud.com/silkieofficial/tracks   dubstep tracks soundcloud study_only   # Silkie (Deep Medi) - account name matches, low followers, verify [77 tracks, 223 followers]
+https://soundcloud.com/jkenzo/tracks   dubstep tracks mix soundcloud study_only   # J:Kenzo official [108 tracks, 39341 followers]
+https://soundcloud.com/kromestar/tracks   dubstep tracks soundcloud study_only   # Kromestar official (Nebula Music Group) [28 tracks, 23278 followers]
+https://soundcloud.com/kahn/tracks   dubstep grime tracks soundcloud study_only   # Kahn (Bandulu / Gorgon Sound) official [83 tracks, 62689 followers]
+https://soundcloud.com/skreamizm/tracks   dubstep tracks mix soundcloud study_only   # Skream official - post-2012 output is house/techno; filter by date [309 tracks, 401360 followers]
+https://soundcloud.com/goth-trad/tracks   dubstep tracks soundcloud study_only   # Goth-Trad (Deep Medi, Tokyo) official [14 tracks, 24603 followers]
+https://soundcloud.com/distance/tracks   dubstep tracks soundcloud study_only   # Distance official [134 tracks, 26542 followers]
+https://soundcloud.com/vond/tracks   dubstep tracks soundcloud study_only   # Von D official [41 tracks, 15273 followers]
+https://soundcloud.com/j-sparrow/tracks   dubstep tracks soundcloud study_only   # J.Sparrow / Jack Sparrow (Deep Medi) official [45 tracks, 38845 followers]
+https://soundcloud.com/gantz/tracks   dubstep tracks soundcloud study_only   # Gantz (Istanbul, Deep Medi) official [69 tracks, 25118 followers]
+https://soundcloud.com/egoless-sc/tracks   dubstep steppers_dub tracks soundcloud study_only   # Egoless (Deep Medi dub-step) official [25 tracks, 667 followers]
+https://soundcloud.com/khanumdubs/tracks   dubstep tracks soundcloud study_only   # Khanum official [42 tracks, 3184 followers]
+https://soundcloud.com/nomine_aka_outrage/tracks   dubstep tracks soundcloud study_only   # Nomine (Sentry) official [204 tracks, 10488 followers]
+https://soundcloud.com/boofy/tracks   dubstep grime tracks soundcloud study_only   # Boofy (Tectonic) official [48 tracks, 9263 followers]
+https://soundcloud.com/hi5ghost/tracks   dubstep grime tracks soundcloud study_only   # Hi5Ghost / Yuseemi (Bristol) official [30 tracks, 9285 followers]
+https://soundcloud.com/seven-dubstep/tracks   dubstep tracks soundcloud study_only   # Seven / Eddy Seven (Sentry, Uprise Audio) official [26 tracks, 8914 followers]
+https://soundcloud.com/peverelist/tracks   dubstep tracks soundcloud study_only   # Peverelist (Bristol) official [51 tracks, 21044 followers]
+https://soundcloud.com/appleblim/tracks   dubstep tracks soundcloud study_only   # Appleblim (Skull Disco / Apple Pips) official [65 tracks, 7961 followers]
+https://soundcloud.com/geiom/tracks   dubstep tracks soundcloud study_only   # Geiom (Berkane Sol) official [17 tracks, 1928 followers]
+https://soundcloud.com/cluekid/tracks   dubstep tracks soundcloud study_only   # Cluekid official [26 tracks, 8168 followers]
+https://soundcloud.com/dubphizix/tracks   dubstep tracks soundcloud study_only   # Dub Phizix (Manchester) official - mostly 170bpm dub-influenced [147 tracks, 59226 followers]
+https://soundcloud.com/mumdance/tracks   grime dubstep tracks soundcloud study_only   # Mumdance official (w/ Logos) [174 tracks, 25542 followers]
+https://soundcloud.com/duskblackdown/tracks   dark_garage dubstep tracks soundcloud study_only   # Dusk + Blackdown official [61 tracks, 31 followers]
+
+# SoundCloud / grime
+https://soundcloud.com/plastician/tracks   grime dubstep tracks mix soundcloud study_only   # Plastician official [167 tracks, 54207 followers]
+#~ https://soundcloud.com/spookybizzle/tracks   grime uk_garage tracks mix soundcloud study_only   # Spooky Bizzle official - refixes, Mode FM shows [655 tracks, 21282 followers] HUGE FEED - commented out, uncomment deliberately
+https://soundcloud.com/slackk/tracks   grime tracks soundcloud study_only   # Slackk official [74 tracks, 6978 followers]
+https://soundcloud.com/boxedldn/tracks   grime mix soundcloud study_only   # Boxed (Slackk/Mumdance club) official [127 tracks, 7571 followers]
+https://soundcloud.com/localactionrec/tracks   grime uk_garage tracks soundcloud study_only   # Local Action label (Slackk/T. Williams) [246 tracks, 14032 followers]
+https://soundcloud.com/differentcircles/tracks   grime tracks soundcloud study_only   # Different Circles (Mumdance & Logos label) [28 tracks, 6644 followers]
+https://soundcloud.com/terrordanjah/tracks   grime tracks soundcloud study_only   # Terror Danjah official (Aftershock) [170 tracks, 8912 followers]
+https://soundcloud.com/dexplicit/tracks   grime uk_garage tracks soundcloud study_only   # Dexplicit official [46 tracks, 6109 followers]
+https://soundcloud.com/ruffsqwadofficial/tracks   grime tracks soundcloud study_only   # Ruff Sqwad official [66 tracks, 174 followers]
+https://soundcloud.com/jammer-sc/tracks   grime tracks soundcloud study_only   # Jammer official [128 tracks, 198 followers]
+https://soundcloud.com/wileyofficial/tracks   grime tracks soundcloud study_only   # Wiley official [373 tracks, 23587 followers]
+https://soundcloud.com/bigflowdan/tracks   grime tracks soundcloud study_only   # Flowdan official [103 tracks, 24774 followers]
+https://soundcloud.com/d-double-e-official/tracks   grime tracks soundcloud study_only   # D Double E official [94 tracks, 4897 followers]
+https://soundcloud.com/roll-deep-official/tracks   grime tracks soundcloud study_only   # Roll Deep official [84 tracks, 756 followers]
+https://soundcloud.com/jmebbk/tracks   grime tracks soundcloud study_only   # JME official [153 tracks, 79477 followers]
+https://soundcloud.com/skepta/tracks   grime tracks soundcloud study_only   # Skepta official - later output is rap [188 tracks, 317735 followers]
+https://soundcloud.com/dizzee-rascal/tracks   grime tracks soundcloud study_only   # Dizzee Rascal official - early catalogue is the grime study target [315 tracks, 53004 followers]
+https://soundcloud.com/novelist/tracks   grime tracks soundcloud study_only   # Novelist official [49 tracks, 32864 followers]
+https://soundcloud.com/scratchadva/tracks   grime tracks soundcloud study_only   # Scratcha DVA official (Hyperdub) [29 tracks, 14469 followers]
+https://soundcloud.com/ikonika/tracks   grime dubstep tracks soundcloud study_only   # Ikonika official (Hyperdub) [173 tracks, 20847 followers]
+https://soundcloud.com/oil-gang/tracks   grime tracks soundcloud study_only   # Oil Gang label (grime instrumentals) [93 tracks, 8449 followers]
+https://soundcloud.com/djsirspyro/tracks   grime tracks soundcloud study_only   # Sir Spyro official [9 tracks, 21434 followers]
+https://soundcloud.com/sirspyro/tracks   grime tracks soundcloud study_only   # Sir Spyro releases account (Topper Top remixes) [22 tracks, 574 followers]
+
+# SoundCloud / uk_garage & speed_garage
+https://soundcloud.com/mj-cole/tracks   uk_garage tracks soundcloud study_only   # MJ Cole official [142 tracks, 80087 followers]
+https://soundcloud.com/zedbiasakamaddslinky/tracks   uk_garage tracks soundcloud study_only   # Zed Bias / Maddslinky official [198 tracks, 26183 followers]
+https://soundcloud.com/djez/tracks   uk_garage mix soundcloud study_only   # DJ EZ official: BBC Radio 1 residency shows [17 tracks, 157642 followers]
+https://soundcloud.com/artful-dodger-official/tracks   uk_garage tracks soundcloud study_only   # Artful Dodger official [61 tracks, 2247 followers]
+https://soundcloud.com/sunship/tracks   uk_garage tracks soundcloud study_only   # Sunship (Ceri Evans) official [51 tracks, 5434 followers]
+https://soundcloud.com/zinc/tracks   uk_garage grime tracks soundcloud study_only   # DJ Zinc official (bassline/2-step/breakbeat garage) [405 tracks, 111647 followers]
+
+# SoundCloud / dub, steppers, sound system
+#~ https://soundcloud.com/alphasteppa/tracks   steppers_dub tracks soundcloud study_only   # Alpha Steppa / Steppas Records official [700 tracks, 24402 followers] HUGE FEED - commented out, uncomment deliberately
+https://soundcloud.com/reggaeroast/tracks   roots_dub steppers_dub tracks mix soundcloud study_only   # Reggae Roast official [400 tracks, 41508 followers]
+https://soundcloud.com/unit137/tracks   steppers_dub tracks soundcloud study_only   # Unit 137 (Hylu & Jago) official [94 tracks, 39612 followers]
+https://soundcloud.com/hyluandjago/tracks   steppers_dub tracks soundcloud study_only   # Hylu & Jago [10 tracks, 1651 followers]
+https://soundcloud.com/channel-one-sound-system/tracks   steppers_dub roots_dub soundsystem live soundcloud study_only   # Channel One Sound System official (Mikey Dread): live sessions, Channel One Academy [46 tracks, 19999 followers]
+https://soundcloud.com/jah-shaka/tracks   roots_dub steppers_dub tracks soundcloud study_only   # Jah Shaka - distributor artist profile (Jah Shaka Music catalogue) [232 tracks, 5010 followers]
+#~ https://soundcloud.com/madprofessorofficial/tracks   roots_dub steppers_dub tracks soundcloud study_only   # Mad Professor - distributor artist profile (Ariwa catalogue) [766 tracks, 2546 followers] HUGE FEED - commented out, uncomment deliberately
+https://soundcloud.com/ariwasounds/tracks   roots_dub tracks soundcloud study_only   # Ariwa Sounds label [19 tracks, 1258 followers]
+https://soundcloud.com/on-u-sound-records/tracks   roots_dub steppers_dub tracks soundcloud study_only   # On-U Sound Records official [67 tracks, 7532 followers]
+#~ https://soundcloud.com/vibronics/tracks   steppers_dub tracks soundcloud study_only   # Vibronics official (Scoops Records) [527 tracks, 18010 followers] HUGE FEED - commented out, uncomment deliberately
+https://soundcloud.com/dubkasm/tracks   steppers_dub tracks soundcloud study_only   # Dubkasm official [86 tracks, 14039 followers]
+https://soundcloud.com/dubkasmofficial/tracks   steppers_dub tracks soundcloud study_only   # Dubkasm label/releases account [131 tracks, 252 followers]
+https://soundcloud.com/mungoshifi/tracks   steppers_dub tracks soundcloud study_only   # Mungo's Hi Fi official [307 tracks, 10897 followers]
+https://soundcloud.com/scotchbonnetrecords/tracks   steppers_dub roots_dub tracks mix soundcloud study_only   # Scotch Bonnet Records (Mungo's Hi Fi label) [466 tracks, 86441 followers]
+https://soundcloud.com/irationsteppas/tracks   steppers_dub tracks soundcloud study_only   # Iration Steppas - small account, few public tracks [48 tracks, 1884 followers]
+https://soundcloud.com/obfsoundsystem/tracks   steppers_dub tracks soundcloud study_only   # O.B.F Sound System official (Dubquake) [164 tracks, 28682 followers]
+https://soundcloud.com/musical-echoes/tracks   steppers_dub roots_dub mix soundcloud study_only   # Musical Echoes (French dub label): roots/dub selection mixes by sound systems [464 tracks, 10345 followers]
+https://soundcloud.com/dubdynastyofficial/tracks   steppers_dub tracks soundcloud study_only   # Dub Dynasty official (w/ Alpha Steppa) [95 tracks, 1282 followers]
+#~ https://soundcloud.com/zion-train/tracks   steppers_dub tracks soundcloud study_only   # Zion Train / Universal Egg official [673 tracks, 25594 followers] HUGE FEED - commented out, uncomment deliberately
+https://soundcloud.com/pengsound/tracks   steppers_dub dubstep tracks soundcloud study_only   # Peng Sound (Bristol) - Ishan Sound, Gorgon Sound remixes [18 tracks, 5648 followers]
+https://soundcloud.com/gorgonsound/tracks   steppers_dub dubstep tracks soundcloud study_only   # Gorgon Sound (Kahn & Neek) official [4 tracks, 13049 followers]
+https://soundcloud.com/ishan-sound/tracks   steppers_dub dubstep tracks soundcloud study_only   # Ishan Sound official [9 tracks, 9640 followers]
+https://soundcloud.com/twinkle-brothers/tracks   roots_dub tracks soundcloud study_only   # Twinkle Brothers - distributor artist profile (Jah Shaka collabs) [24 tracks, 499 followers]
+https://soundcloud.com/boomonesoundsystem/tracks   roots_dub steppers_dub tracks soundcloud study_only   # Boom One Sound System official (w/ Scientist dub mixes) [43 tracks, 2679 followers]
+#~ https://soundcloud.com/thescientistdubb/tracks   roots_dub tracks soundcloud study_only   # Scientist (Hopeton Brown) - artist profile [527 tracks, 1627 followers] HUGE FEED - commented out, uncomment deliberately
+#~ https://soundcloud.com/augustus-pablo-official/tracks   roots_dub tracks soundcloud study_only   # Augustus Pablo - distributor artist profile (Rockers catalogue) [690 tracks, 2995 followers] HUGE FEED - commented out, uncomment deliberately
+#~ https://soundcloud.com/kingtubby-official/tracks   roots_dub tracks soundcloud study_only   # King Tubby - distributor artist profile (reissue catalogue) [2011 tracks, 2663 followers] HUGE FEED - commented out, uncomment deliberately
+
+# SoundCloud / station shows (Rinse FM official sets = specific shows, not the whole feed)
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-youngsta   dubstep radio soundcloud study_only   # Rinse FM: Youngsta show podcast [100 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-ntype   dubstep uk_garage radio soundcloud study_only   # Rinse FM: N-Type show podcast [51 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-swamp81   dubstep radio soundcloud study_only   # Rinse FM: Swamp81 (Loefah) show [195 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-j-kenzo   dubstep radio soundcloud study_only   # Rinse FM: J:Kenzo show podcast (vol 1) [22 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-jkenzo   dubstep radio soundcloud study_only   # Rinse FM: J:Kenzo show podcast (vol 2) [20 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-hyperdub   dubstep uk_garage radio soundcloud study_only   # Rinse FM: Hyperdub show [15 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcasts-keysound   dubstep dark_garage radio soundcloud study_only   # Rinse FM: Keysound (Dusk + Blackdown) show [41 items]
+https://soundcloud.com/rinsefm/sets/deep-medi-take-over   dubstep radio soundcloud study_only   # Rinse FM: DEEP MEDi takeover 2020 [7 items]
+https://soundcloud.com/rinsefm/sets/i-love-dubstep   dubstep radio soundcloud study_only   # Rinse FM: I LOVE DUBSTEP [13 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-dubstep-takeover   dubstep radio soundcloud study_only   # Rinse FM: Dubstep Takeover [7 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-dubstep-takeover-21st   dubstep radio soundcloud study_only   # Rinse FM: Dubstep Takeover 21 May 2016 [6 items]
+https://soundcloud.com/rinsefm/sets/dubstep-riddim-special   dubstep radio soundcloud study_only   # Rinse FM: Dubstep Riddim Special [1 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-loefah   dubstep radio soundcloud study_only   # Rinse FM: Loefah [1 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-distance   dubstep radio soundcloud study_only   # Rinse FM: Distance [1 items]
+https://soundcloud.com/rinsefm/sets/crucast   dubstep radio soundcloud study_only   # Rinse FM: Crucast [5 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-mumdance   grime dubstep radio soundcloud study_only   # Rinse FM: Mumdance show [63 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-plastician   grime dubstep radio soundcloud study_only   # Rinse FM: Plastician show [116 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-thegrimeshow   grime radio soundcloud study_only   # Rinse FM: The Grime Show [208 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-slimzee   grime dark_garage radio soundcloud study_only   # Rinse FM: Slimzee show [85 items]
+https://soundcloud.com/rinsefm/sets/slimzee-on-rinse-fm   grime radio soundcloud study_only   # Rinse FM: Slimzee on Rinse (recent) [4 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-spyro   grime radio soundcloud study_only   # Rinse FM: Sir Spyro show [15 items]
+https://soundcloud.com/rinsefm/sets/logan-sama   grime radio soundcloud study_only   # Rinse FM: Logan Sama [3 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-butterz   grime radio soundcloud study_only   # Rinse FM: Butterz (Elijah & Skilliam) [21 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-grandmixxer   grime radio soundcloud study_only   # Rinse FM: Grandmixxer [29 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-makten   grime radio soundcloud study_only   # Rinse FM: Mak Ten [4 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-scratchadva   grime radio soundcloud study_only   # Rinse FM: Scratcha DVA [8 items]
+https://soundcloud.com/rinsefm/sets/slackk   grime radio soundcloud study_only   # Rinse FM: Slackk [2 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-spooky   grime radio soundcloud study_only   # Rinse FM: Spooky [2 items]
+https://soundcloud.com/rinsefm/sets/tubby   grime radio soundcloud study_only   # Rinse FM: DJ Tubby [38 items]
+https://soundcloud.com/rinsefm/sets/footsie   grime radio soundcloud study_only   # Rinse FM: Footsie [1 items]
+https://soundcloud.com/rinsefm/sets/grime-originals   grime tracks soundcloud study_only   # Grime Originals (Rinse label releases) [54 items]
+https://soundcloud.com/rinsefm/sets/grime-takeover   grime radio soundcloud study_only   # Rinse FM: Grime Takeover [13 items]
+https://soundcloud.com/rinsefm/sets/i-am-grime   grime radio soundcloud study_only   # Rinse FM: I Am Grime [8 items]
+https://soundcloud.com/rinsefm/sets/international-grime-day-2020   grime radio soundcloud study_only   # Rinse FM: International Grime Day 2020 [10 items]
+https://soundcloud.com/rinsefm/sets/girlsofgrime   grime radio soundcloud study_only   # Rinse FM: Girls of Grime [2 items]
+https://soundcloud.com/rinsefm/sets/garage-grime-takeover   grime uk_garage radio soundcloud study_only   # Rinse FM: Garage & Grime Takeover [10 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-zinc   uk_garage grime radio soundcloud study_only   # Rinse FM: DJ Zinc [12 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-oneman   uk_garage grime dubstep radio soundcloud study_only   # Rinse FM: Oneman [64 items]
+https://soundcloud.com/rinsefm/sets/oneman400   uk_garage grime dubstep radio soundcloud study_only   # Rinse FM: Oneman 400th show [14 items]
+https://soundcloud.com/rinsefm/sets/garagehour2019-2020   uk_garage radio soundcloud study_only   # Rinse FM: Garage Hour 2019-2021 [106 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-garagehourspecial   uk_garage radio soundcloud study_only   # Rinse FM: Garage Hour Special [13 items]
+https://soundcloud.com/rinsefm/sets/ilovegarage   uk_garage radio soundcloud study_only   # Rinse FM: I Love Garage [7 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-garage-takeover   uk_garage radio soundcloud study_only   # Rinse FM: Garage Takeover [8 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-godfathers-of   uk_garage speed_garage radio soundcloud study_only   # Rinse FM: Godfathers of Garage [13 items]
+https://soundcloud.com/rinsefm/sets/garage-nation-takeover   uk_garage speed_garage radio soundcloud study_only   # Rinse FM: Garage Nation takeover [11 items]
+https://soundcloud.com/rinsefm/sets/todd-edwards   uk_garage radio soundcloud study_only   # Rinse FM: Todd Edwards [6 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-mj-cole   uk_garage radio soundcloud study_only   # Rinse FM: MJ Cole [2 items]
+https://soundcloud.com/rinsefm/sets/matt-jam-lamont   uk_garage speed_garage radio soundcloud study_only   # Rinse FM: Matt Jam Lamont [23 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-playlist-norris-da   uk_garage speed_garage radio soundcloud study_only   # Rinse FM: Norris 'Da Boss' Windross [14 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-mike-ruff-cut   uk_garage speed_garage radio soundcloud study_only   # Rinse FM: Mike 'Ruff Cut' Lloyd [2 items]
+https://soundcloud.com/rinsefm/sets/ramsey-fen   uk_garage speed_garage radio soundcloud study_only   # Rinse FM: Ramsey & Fen [1 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-dread-d   uk_garage radio soundcloud study_only   # Rinse FM: Dread D [1 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-champion   uk_garage grime radio soundcloud study_only   # Rinse FM: Champion (bassline/funky) [2 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-ruff-sound   uk_garage radio soundcloud study_only   # Rinse FM: Ruff Sound [5 items]
+https://soundcloud.com/rinsefm/sets/flava-d   uk_garage grime radio soundcloud study_only   # Rinse FM: Flava D [1 items]
+https://soundcloud.com/rinsefm/sets/rinse-fm-podcast-conducta   uk_garage radio soundcloud study_only   # Rinse FM: Conducta (Kiwi Rekords, new UKG) [41 items]
+https://soundcloud.com/rinsefm/sets/rinsefmpodcast-marcusnasty   uk_garage radio soundcloud study_only   # Rinse FM: Marcus Nasty show (UK funky/garage) [250 items]
+https://soundcloud.com/rinsefm/sets/low-steppa   speed_garage radio soundcloud study_only   # Rinse FM: Low Steppa (bass house/speed garage) [30 items]
+https://soundcloud.com/rinsefm/sets/east-end-dubs   uk_garage radio soundcloud study_only   # Rinse FM: East End Dubs [3 items]
+https://soundcloud.com/rinsefm/sets/fearless-dread   roots_dub radio soundcloud study_only   # Rinse FM: Fearless Dread (reggae) [1 items]
+https://soundcloud.com/rinsefm/sets/global-roots-on-rinse   roots_dub radio soundcloud study_only   # Rinse FM: Global Roots [25 items]
+https://soundcloud.com/keep-hush/sets/keep-hush-live-archive   dubstep grime uk_garage live soundcloud study_only   # Keep Hush Live archive 2017-2022 [26 items]
+https://soundcloud.com/keep-hush/sets/keep-hush-live-outlook-1   dubstep live soundcloud study_only   # Keep Hush Live: Outlook Festival 2023 [6 items]
+https://soundcloud.com/keep-hush/sets/keep-hush-live-outlook   dubstep live soundcloud study_only   # Keep Hush Live: Outlook Festival UK 2022 [7 items]
+https://soundcloud.com/subtleradio/sets/subtle-radio-presents-youngsta   dubstep live soundcloud study_only   # Subtle Radio presents: Youngsta b2b J:Kenzo, Riz La Teef, Soltura, Niamh [4 items]
+https://soundcloud.com/subtleradio/sets/subtle-radio-presents-roll-deep   grime live soundcloud study_only   # Subtle Radio presents: Roll Deep [4 items]
+https://soundcloud.com/platform/sets/boiler-room-system-bristol   dubstep grime live soundcloud study_only   # Boiler Room SYSTEM: Bristol (Hamdi, Oppidan, bullet tooth) [3 items]
+
+# SoundCloud / whole station feeds (HUGE - commented out)
+#~ https://soundcloud.com/rinsefm/tracks   dubstep grime uk_garage radio soundcloud study_only   # Rinse FM entire SoundCloud - use the show sets above instead [36132 tracks, 323694 followers] HUGE FEED - commented out, uncomment deliberately
+#~ https://soundcloud.com/platform/tracks   dubstep grime uk_garage live soundcloud study_only   # Boiler Room entire SoundCloud - use YouTube playlists below instead [8715 tracks, 1320083 followers] HUGE FEED - commented out, uncomment deliberately
+#~ https://soundcloud.com/swufm/tracks   dubstep grime radio soundcloud study_only   # SWU.FM (Bristol) entire feed [10187 tracks, 26117 followers] HUGE FEED - commented out, uncomment deliberately
+#~ https://soundcloud.com/subtleradio/tracks   dubstep grime radio soundcloud study_only   # Subtle Radio entire feed [18507 tracks, 21823 followers] HUGE FEED - commented out, uncomment deliberately
+https://soundcloud.com/keep-hush/tracks   dubstep grime uk_garage live soundcloud study_only   # Keep Hush entire SoundCloud [177 tracks, 15139 followers]
+
+# ================================================================ YOUTUBE
+
+# YouTube / Boiler Room official playlists
+https://www.youtube.com/playlist?list=PLx3QyNMosJdyz7DYuxdoV6dKNdOPx7_Jp   dubstep grime soundsystem live yt study_only   # Boiler Room Festival London Day 3: Bass (Aba Shanti 4h50, Youngsta, Plastician 2h, Commodo, Sir Spyro) [25 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdxWgZxO4PCxXADMDtzhhG6n   dubstep steppers_dub live yt study_only   # Boiler Room London: DEEP MEDi (Mala, Gorgon Sound, Dubkasm, Gantz) [4 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdyl3yJPvRe9yTp8N147uX-W   grime uk_garage dubstep live yt study_only   # Boiler Room Channel 1 - grime, garage, dubstep [17 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdy0PDh-SgSIrxgMt-RnCWRR   grime live yt study_only   # Boiler Room: Best of Grime [23 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdy1JP31ApWHZYkKqRoGggzt   grime live yt study_only   # Classic Grime: Best of Risky Roadz (BR-hosted official Risky Roadz archive) [16 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdwjtIcli3psgnRzJ91BAERt   uk_garage dubstep live yt study_only   # Boiler Room: Bass & Garage [19 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdyFC-mpyoGBw7CzJSH2oaLm   uk_garage live yt study_only   # Inside: 20 Years of UK Garage (UKG20 sets: Norris Windross, Ruff Cut Lloyd, etc) [10 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdxxx22Pagzm4EQsWLXK3bo7   uk_garage live yt study_only   # Boiler Room UKG20 [3 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdwG22usLpASChubxwmJlAy-   uk_garage live yt study_only   # DJ EZ 24-hour non-stop set (3 parts, ~22h total) [3 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdxEFLHWV2WUJb0LJrr3vb1w   dubstep uk_garage live yt study_only   # Boiler Room: Best of Hyperdub [20 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdzZsHubLsauXyqrVsrJOTaw   roots_dub steppers_dub soundsystem live yt study_only   # Boiler Room: Sound System Meditations [8 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdyoldkGq99Rkk1xav14BrMH   roots_dub steppers_dub soundsystem live yt study_only   # SYSTEM: Sounds Series @ Somerset House (Aba Shanti-I 2h16, etc) [13 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdzDhNUZ0oULP1e8vMTHzEjS   roots_dub soundsystem yt study_only   # Notting Hill Carnival Sound System Guides (short docs) [7 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdxu2ZMIIZpKRA0YRJLrO7JT   roots_dub steppers_dub soundsystem live yt study_only   # Boiler Room x Notting Hill Carnival 2017 (Channel One, Aba Shanti, King Tubby's, Rough But Sweet) [8 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdzuUZ0qU0Fx_G2aYAAgdTMK   roots_dub steppers_dub soundsystem live yt study_only   # Boiler Room x Guinness Notting Hill Carnival 2016 [16 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdybyVYuJmUFADd3N_7HJOTH   grime soundsystem live yt study_only   # Boiler Room x Deviation Notting Hill Carnival 2016 [9 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdy5o72ktM8AnkPRRBnIAR0s   soundsystem live yt study_only   # Boiler Room London: Carnival Warm Up [4 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdydT4Vz0EuFJeFiy_Y2xtUI   roots_dub soundsystem live yt study_only   # Boiler Room: Southall (Vedic Roots Sound System) [6 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdzpZPQrH142T26UfxOidn15   roots_dub soundsystem live yt study_only   # Boiler Room Johannesburg: Kebra Ethiopia Sound System [3 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdy_ApY7ljuTQ5bnu9C5_U5L   dubstep grime live yt study_only   # Boiler Room SYSTEM: Bristol [3 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdy-FxVHAR9WymtRd1UI7wA4   dubstep live yt study_only   # Boiler Room: Bristol [4 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdw1TbiIqVWd5K3SUF52jlyb   dubstep live yt study_only   # Boiler Room Budweiser Lima (Kahn, Loefah b2b Madam X) [3 videos]
+https://www.youtube.com/playlist?list=PLx3QyNMosJdyHLRaBfGQO-ALLFMZlhgqp   dubstep live yt study_only   # Boiler Room x Bass Coast 2022 (V.I.V.E.K 1h31, Kahn dancehall set) [10 videos]
+
+# YouTube / Boiler Room official single sets - dubstep
+https://www.youtube.com/watch?v=Hkgik4edDpY   dubstep live yt study_only   # Mala | Boiler Room London: DEEP MEDi (1:04:20)
+https://www.youtube.com/watch?v=fSPEAHfbUIo   dubstep live yt study_only   # Mala | BR x Dommune x Technics SL-1200 50 years (1:01:20)
+https://www.youtube.com/watch?v=lVMsguwPvU4   dubstep live yt study_only   # Skream b2b Mala | Boiler Room Denver (2:01:27)
+https://www.youtube.com/watch?v=b6W8SekFekU   dubstep steppers_dub live yt study_only   # Gorgon Sound | BR London: DEEP MEDi (50:54)
+https://www.youtube.com/watch?v=SqzxWu9RYww   steppers_dub dubstep live yt study_only   # Dubkasm | BR London: DEEP MEDi (59:30)
+https://www.youtube.com/watch?v=_0gUm-JGTeI   dubstep live yt study_only   # Gantz | BR London: DEEP MEDi (52:08)
+https://www.youtube.com/watch?v=gi8Nfxis6ic   dubstep live yt study_only   # Youngsta | Boiler Room London (59:11)
+https://www.youtube.com/watch?v=tDBgFrEm5Dw   dubstep live yt study_only   # Youngsta | BR Festival London Day 3: Bass (1:18:41)
+https://www.youtube.com/watch?v=Gy2KlQ7QXX4   dubstep live yt study_only   # Loefah | Boiler Room London (57:20)
+https://www.youtube.com/watch?v=UNMVswM07cY   dubstep live yt study_only   # Loefah 50 min Boiler Room set
+https://www.youtube.com/watch?v=jUS4GHEXsG0   dubstep uk_garage live yt study_only   # Zed Bias b2b Loefah | Boiler Room London (1:28:22)
+https://www.youtube.com/watch?v=QcoMPaHFy58   dubstep live yt study_only   # Loefah b2b Madam X | BR x Budweiser Lima (1:03:37)
+https://www.youtube.com/watch?v=ecaHSYKYxzI   dubstep live yt study_only   # Pinch 55 min Boiler Room set
+https://www.youtube.com/watch?v=j6CyIa7vyhs   dubstep live yt study_only   # Pinch | Boiler Room Bristol (48:08)
+https://www.youtube.com/watch?v=Pr6d2KQEcy8   dubstep live yt study_only   # Kode9 | Boiler Room Tokyo (56:55)
+https://www.youtube.com/watch?v=BnTaMMtLQUo   dubstep live yt study_only   # Kode9 | Boiler Room: Low Heat (1:00:07)
+https://www.youtube.com/watch?v=Eq5Vm4YEld0   dubstep live yt study_only   # Commodo | BR Festival Day 3: Bass (1:01:23)
+https://www.youtube.com/watch?v=8s60ib0eYcQ   dubstep live yt study_only   # Kahn | BR x Budweiser Lima (59:53)
+https://www.youtube.com/watch?v=lHVsX18XLRY   dubstep soundclash live yt study_only   # Kahn (dancehall set) | BR x Bass Coast (1:02:41)
+https://www.youtube.com/watch?v=ZLgVunkfkow   dubstep live yt study_only   # V.I.V.E.K | BR x Bass Coast 2022 (1:31:55)
+https://www.youtube.com/watch?v=RnG4FiGLnqk   dubstep live yt study_only   # J:Kenzo | Boiler Room London (1:01:24)
+https://www.youtube.com/watch?v=A59i7lby9KY   dubstep live yt study_only   # Skream & Benga | Boiler Room Melbourne (1:03:16)
+https://www.youtube.com/watch?v=b4hp75IwhV8   dubstep live yt study_only   # Skream | Boiler Room London (47:24)
+https://www.youtube.com/watch?v=FKy6tS-itZU   dubstep grime live yt study_only   # Skream ft. Flowdan | Boiler Room Liverpool (1:00:26)
+https://www.youtube.com/watch?v=Wg1JxmeonFA   dubstep dark_garage live yt study_only   # Skream b2b Artwork | Boiler Room London (1:02:23)
+https://www.youtube.com/watch?v=ocKE06IGiSI   dubstep grime live yt study_only   # Neffa-T & Flowdan | Boiler Room Leeds (57:07)
+https://www.youtube.com/watch?v=0xvnJ2Hsqoo   dubstep grime live yt study_only   # Jubei & Flowdan 45 min Boiler Room
+https://www.youtube.com/watch?v=TXFggcNJzMs   dubstep live yt study_only   # Hamdi | Boiler Room SYSTEM Bristol (1:02:17)
+
+# YouTube / Boiler Room official single sets - grime
+https://www.youtube.com/watch?v=sSn2z36jEA8   grime dubstep live yt study_only   # Plastician | BR Festival Day 3: Bass (2:00:14)
+https://www.youtube.com/watch?v=9qgvkvLOMHE   grime dubstep live yt study_only   # Plastician | Boiler Room London (44:46)
+https://www.youtube.com/watch?v=8y92IBYtMPQ   grime live yt study_only   # Plastician + Skinny Macho - BR Channel 1 Round-Up 002 (1:41:32)
+https://www.youtube.com/watch?v=Zs3-0hYL134   grime live yt study_only   # Logan Sama | Boiler Room London (44:52)
+https://www.youtube.com/watch?v=X1DJZpekFVc   grime live yt study_only   # Logan Sama ft. D Double E, Newham Generals, Flowdan & Riko Dan | BR London (1:03:34)
+https://www.youtube.com/watch?v=DAe-DZVJFJg   grime live yt study_only   # Logan Sama, Skepta, Stormzy & The Square | BR London (1:12:29)
+https://www.youtube.com/watch?v=cBm-inaMG3k   grime live yt study_only   # Logan Sama & Originators (P Money, OGz, Flirta D) | BR London
+https://www.youtube.com/watch?v=840JZYXolag   grime live yt study_only   # Boy Better Know | Boiler Room London (49:06)
+https://www.youtube.com/watch?v=VOOaVSKB1SQ   grime live yt study_only   # Lord of the Mics | Boiler Room London (1:20:43)
+https://www.youtube.com/watch?v=TI7LOwebsMM   grime live yt study_only   # Sir Spyro | BR Festival Day 3: Bass (50:56)
+https://www.youtube.com/watch?v=fwQ-4oOXPe0   grime live yt study_only   # Spyro ft. Teddy Bruckshot, Lady Chann, Killa P | Boiler Room (48:00)
+https://www.youtube.com/watch?v=3boybrIDInE   grime live yt study_only   # Newham Generals (D Double E & Footsie) | Boiler Room live (17:58)
+https://www.youtube.com/watch?v=WUf3ZA3hsnY   grime dark_garage live yt study_only   # Slimzee | Boiler Room London (1:37:34)
+https://www.youtube.com/watch?v=s9EqKlHmZp0   grime live yt study_only   # Slimzee ft Riko Dan | Boiler Room (28:51)
+https://www.youtube.com/watch?v=zstZi-rzYZo   grime live yt study_only   # Slimzee & Co. | BR Air Max Day (57:26)
+https://www.youtube.com/watch?v=dOQptYJ43uw   grime live yt study_only   # DJ Slimzee | Boiler Room NYC (42:08)
+https://www.youtube.com/watch?v=I96FPMoNOT8   grime live yt study_only   # Spooky | Boiler Room London (28:03)
+https://www.youtube.com/watch?v=X0JYShDyUU4   grime live yt study_only   # Spooky - Boiler Room Collections London (58:46)
+https://www.youtube.com/watch?v=7BqFs2MZJ50   grime live yt study_only   # DJ Maximum & Skepta | BR x SYSTEM Somerset House (39:15)
+https://www.youtube.com/watch?v=jpoKjTeZlhI   grime live yt study_only   # DJ Maximum ft Skepta, Frisco, Shorty, Jammin, AJ Tracey | BR London
+https://www.youtube.com/watch?v=mg8uSV0ekGE   grime live yt study_only   # Jammz, Capo Lee, Nico Lindsay, Row D... | Boiler Room London (1:00:22)
+https://www.youtube.com/watch?v=MDFJAKaQUcw   grime uk_garage live yt study_only   # Oneman ft. Newham Generals | Boiler Room London (1:06:30)
+https://www.youtube.com/watch?v=ugqRJ22JSdE   grime live yt study_only   # DJ Target | BR x Deviation Notting Hill Carnival 2016 (30:13)
+https://www.youtube.com/watch?v=KmRqOaS_6FI   grime uk_garage live yt study_only   # Flava D | Boiler Room Sheffield (58:09)
+
+# YouTube / Boiler Room official single sets - uk_garage
+https://www.youtube.com/watch?v=OraL6lKoyXE   uk_garage live yt study_only   # DJ EZ | Boiler Room London (3:25:09)
+https://www.youtube.com/watch?v=qQaEWVYuyXU   uk_garage live yt study_only   # DJ EZ | Boiler Room x RBMA London (45:18)
+https://www.youtube.com/watch?v=W5dB-cV6F10   uk_garage live yt study_only   # Todd Edwards | Boiler Room London (47:05)
+https://www.youtube.com/watch?v=NYMCgC6o72k   uk_garage live yt study_only   # Todd Edwards | Boiler Room LA (1:11:19)
+https://www.youtube.com/watch?v=gdxNcxW0R40   uk_garage live yt study_only   # Zed Bias | Boiler Room Manchester Art Gallery (41:29)
+https://www.youtube.com/watch?v=-cS8hgM-o7g   uk_garage live yt study_only   # Zed Bias | Boiler Room Berlin (41:50)
+https://www.youtube.com/watch?v=6t3NZ2hFHFs   uk_garage speed_garage live yt study_only   # Sticky | Boiler Room 30 min
+https://www.youtube.com/watch?v=Y0pF1Q2Tgz4   uk_garage live yt study_only   # Foundation (Sticky & Scott Garcia) | BR Air Max Day (45:47)
+https://www.youtube.com/watch?v=U46NZ8W478U   uk_garage speed_garage live yt study_only   # Mike 'Ruff Cut' Lloyd & PSG | BR UKG20 London (49:12)
+https://www.youtube.com/watch?v=8e56GdZBspQ   uk_garage speed_garage live yt study_only   # Norris 'Da Boss' Windross & MC Creed | BR UKG20 London (55:25)
+
+# YouTube / Boiler Room official single sets - dub & sound system
+https://www.youtube.com/watch?v=rfvRWx6eXuw   steppers_dub soundsystem live yt study_only   # Aba Shanti-I | BR x SYSTEM Somerset House (2:16:41)
+https://www.youtube.com/watch?v=wFiDI9rROX0   steppers_dub soundsystem live yt study_only   # Aba Shanti-I | BR Festival London Day 3 (4:50:20)
+https://www.youtube.com/watch?v=qtTxHRKCCsE   steppers_dub soundsystem live yt study_only   # Aba Shanti-I | BR x Notting Hill Carnival 2017 (1:28:33)
+https://www.youtube.com/watch?v=aMKmbmCkJis   steppers_dub soundsystem live yt study_only   # Aba Shanti-I | BR x Guinness Notting Hill Carnival 2016 (44:04)
+https://www.youtube.com/watch?v=mLnvl7rXLEY   steppers_dub soundsystem live yt study_only   # Aba Shanti 45 min | BR x Red Stripe
+https://www.youtube.com/watch?v=kJMH-tpjmO8   steppers_dub roots_dub soundsystem live yt study_only   # Channel One | BR x Notting Hill Carnival 2017 (1:10:32)
+https://www.youtube.com/watch?v=W-qAdBPm_vk   steppers_dub roots_dub soundsystem live yt study_only   # Channel One | BR x Guinness Notting Hill Carnival 2016 (1:26:26)
+https://www.youtube.com/watch?v=ASB48HeQCxc   roots_dub soundsystem live yt study_only   # King Tubby's (sound) | BR x Notting Hill Carnival 2017 (1:50:03)
+https://www.youtube.com/watch?v=UKNQvSdjdYM   roots_dub soundsystem live yt study_only   # Rough But Sweet | BR x Notting Hill Carnival 2017 (2:03:05)
+https://www.youtube.com/watch?v=vsU6HzoT1gU   roots_dub soundclash soundsystem live yt study_only   # Gladdy Wax | BR x Guinness Notting Hill Carnival 2016 (1:57:38)
+https://www.youtube.com/watch?v=Jo4pEdzYBdw   steppers_dub soundsystem live yt study_only   # Iration Steppas | BR x Primavera Sound (1:01:34)
+https://www.youtube.com/watch?v=TvaqEUzIpbQ   steppers_dub soundsystem live yt study_only   # Vedic Roots Sound System | BR Southall (1:00:24)
+https://www.youtube.com/watch?v=OX5HS4cLvmA   roots_dub soundsystem live yt study_only   # Kebra Ethiopia Sound System | BR Johannesburg (2:29:40)
+https://www.youtube.com/watch?v=pGrYfRYw3Xk   roots_dub steppers_dub soundsystem live yt study_only   # Dub-Stuy Sound | Boiler Room New York (44:59)
+https://www.youtube.com/watch?v=621_mg7ffHk   roots_dub live yt study_only   # Don Letts | Boiler Room London (1:03:31)
+
+# YouTube / Keep Hush official
+https://www.youtube.com/playlist?list=PLhON8BygM1nIeHq9_waU-gXHEs0MIJSR1   dubstep steppers_dub live yt study_only   # Keep Hush: Dub, Dubstep [7 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nJZwHFUL_z1YFHnFIx-ab3s   dubstep live yt study_only   # Keep Hush: Best of Dubstep/140 [31 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nLzLKxGNTh7nIZtcBEs2WTK   dubstep live yt study_only   # Keep Hush: Dubstep 2018 [16 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nIkW_d-mgoh-ZVnZZM-AsDI   dubstep live yt study_only   # Keep Hush: Sentry Records takeover (Youngsta, Distance, Nomine, Seven, Cimm) [5 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nKqgqs-BQty0K-Xl7554GPS   dubstep steppers_dub live yt study_only   # Keep Hush: Innamind x Green King Sound System (Ago, Kursk, Karma, Detu, Bengal Sound) [5 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nKtnbItO73y9r_wbaR7arXP   dubstep steppers_dub live yt study_only   # Keep Hush Bristol: Dr Dubplate's Birthday Bash [8 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nLRtbhDeEYQBE5EZysu4cYG   dubstep grime live yt study_only   # Keep Hush: Mean Streets Takeover [6 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nJvDLHKB1l46Px76G7VYhH5   grime live yt study_only   # Keep Hush: Grime 2018 [19 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nLKjJ5nv3sf_7soRlHAn5Zu   grime live yt study_only   # Keep Hush: Grime [34 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nIzIeUqdEGNRARHCMRAiCfY   grime live yt study_only   # Keep Hush: Best of Grime, Rap & Hip Hop [18 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nLutaI7n8DgAUu0Hm40czZR   grime dark_garage live yt study_only   # Keep Hush: Slimzee presents Slimzos Recordings [4 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nL4BiLWA9mcbVrScz2-uMSk   grime live yt study_only   # Keep Hush: Indecent takeover w/ Slimzee, Jammz [4 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nJMhDL5J7orayIRnaftoYaK   grime dubstep live yt study_only   # Keep Hush: Plastician's Birthday [3 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nIzHEvMCyxhjyXEzrCWxF-1   grime uk_garage live yt study_only   # Keep Hush Live: Local Action [4 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nKj0Qvygicc5iBAXMck5wNF   uk_garage live yt study_only   # Keep Hush: Best of UKG/Breaks [25 videos]
+https://www.youtube.com/playlist?list=PLhON8BygM1nIFrinhUHx3Yi9I8eOFxWng   uk_garage live yt study_only   # Keep Hush: UK Funky and Garage [8 videos]
+https://www.youtube.com/watch?v=p0kT7DAtD5Q   dubstep live yt study_only   # Youngsta w/ SP:MC & Ben Verse | Keep Hush Sentry takeover (56:19)
+https://www.youtube.com/watch?v=dCPDf-R79hs   dubstep live yt study_only   # Distance w/ SP:MC & Ben Verse | Keep Hush Sentry takeover (44:12)
+https://www.youtube.com/watch?v=gXm_8lDHoGk   dubstep live yt study_only   # Truth w/ MC Crazy D | Keep Hush live (2:04:52)
+https://www.youtube.com/watch?v=levCfY8u9_U   dubstep live yt study_only   # N-Type b2b Silkie w/ Toast | Keep Hush (1:15:12)
+https://www.youtube.com/watch?v=0LyHS7UhTKo   dubstep live yt study_only   # N-Type b2b Lost | Keep Hush: Sicaria Sound (51:20)
+https://www.youtube.com/watch?v=P0TzQ4UK2o4   dubstep live yt study_only   # Ago | Keep Hush: Innamind x Green King Sound System (51:16)
+https://www.youtube.com/watch?v=_q_3yuSB7Vs   dubstep grime live yt study_only   # Kahn & Neek w/ Scratchy, Bruza, Fudz | Keep Hush x Spentshell (47:01)
+https://www.youtube.com/watch?v=ITSQKBZLoA4   dubstep grime live yt study_only   # Kahn b2b Neek | Keep Hush Wavegang takeover (1:15:11)
+https://www.youtube.com/watch?v=7qjOYGzSudo   dubstep grime live yt study_only   # Boofy b2b Hi5Ghost w/ Jammz | Keep Hush Mean Streets (39:42)
+https://www.youtube.com/watch?v=5V9zn-iE1kU   dubstep live yt study_only   # Riz La Teef | Keep Hush Indecent takeover (54:47)
+https://www.youtube.com/watch?v=dquWNlnXDAc   grime live yt study_only   # Slimzee w/ guest MCs | Keep Hush (53:27)
+https://www.youtube.com/watch?v=ZbZe55mxO4Y   grime live yt study_only   # Flowdan & DJ Karnage w/ Riko Dan, Scratchy, Discarda | Keep Hush x Spentshell
+https://www.youtube.com/watch?v=2aK2y-dJ3DE   grime live yt study_only   # Logan Sama b2b Terror Danjah w/ Flowdan, Riko, PK, Irah, Discarda | Keep Hush (50:09)
+https://www.youtube.com/watch?v=qHo_2-KTWUs   grime live yt study_only   # Sir Spyro w/ Lady Ice | Keep Hush x Boxfresh (52:46)
+https://www.youtube.com/watch?v=vT4XmNFEBCM   grime live yt study_only   # Sir Spyro b2b Neffa-T w/ Manga Saint Hilare, Duppy | Keep Hush (1:00:47)
+https://www.youtube.com/watch?v=GZwfxy-PsDI   uk_garage speed_garage live yt study_only   # Scott Garcia w/ Jammz | Keep Hush (1:01:43)
+
+# YouTube / Rinse FM official
+https://www.youtube.com/playlist?list=PLbfj8jFy98lT8Fjw-jluc_SyRJ-eLudJp   grime radio yt study_only   # Rinse FM: The Grime Show (video) [224 videos]
+https://www.youtube.com/playlist?list=PLbfj8jFy98lSH3YQXeYg3MvHzcFhv6eHM   grime radio yt study_only   # Rinse FM: The Grime Show x E&J [13 videos]
+https://www.youtube.com/playlist?list=PLbfj8jFy98lQg7JulljWBRXTTEqbv_sRz   grime radio yt study_only   # Rinse FM: The Grime Show Top 10 [10 videos]
+https://www.youtube.com/playlist?list=PLbfj8jFy98lSW15B82losIFWAfoq71deG   grime radio yt study_only   # Rinse FM: International Grime Day 2020 [7 videos]
+https://www.youtube.com/playlist?list=PLbfj8jFy98lSBX4TnkzeaS6bbyxWCeeCl   grime lecture yt study_only   # Rinse FM: Grime History Lesson [5 videos]
+https://www.youtube.com/playlist?list=PLbfj8jFy98lQQdjm9N-y6OxqqmvZBPF6q   grime soundclash live yt study_only   # Lord of the Mics x Rinse [5 videos]
+https://www.youtube.com/playlist?list=PLbfj8jFy98lSYMEDFOFB66GO0Fe6-i1ZM   dubstep tracks yt study_only   # Tempa Allstars Volume 7 (official Rinse upload) [6 videos]
+https://www.youtube.com/playlist?list=PLbfj8jFy98lTLQNnbt3J32l2gSrciQL0d   uk_garage radio yt study_only   # Rinse Requests: UK Garage [32 videos]
+https://www.youtube.com/playlist?list=PLbfj8jFy98lQF72E6OEDotioS_ZIC7mak   soundsystem live yt study_only   # Rinse Live From Notting Hill Carnival 2025 [9 videos]
+https://www.youtube.com/playlist?list=PLbfj8jFy98lTcMOwvusi3HgewEgi5A_SA   soundsystem live yt study_only   # Rinse at Notting Hill Carnival 2014 [8 videos]
+https://www.youtube.com/watch?v=bK845NBs8Gc   dubstep radio yt study_only   # Youngsta with SP:MC | Rinse FM (48:53)
+https://www.youtube.com/watch?v=b5mcjD4xNhU   grime radio yt study_only   # Grime Show: Sir Spyro b2b DJ Maximum w/ D Double E, Footsie, Mez, Capo Lee, Flowdan (1:12:43)
+https://www.youtube.com/watch?v=C8p8XpOBoN4   grime radio yt study_only   # The Grime Show: Logan Sama's Xmas Party w/ JME, Scumfam, Manga, Discarda (1:41:39)
+https://www.youtube.com/watch?v=FEKT_HNh08U   grime radio yt study_only   # Logan Sama feat. Merky ACE | Rinse FM (1:04:53)
+
+# YouTube / BBC Radio 1Xtra official
+https://www.youtube.com/playlist?list=PLIcDL_mog4nXesZB8Go1UoGA-_5k49jZK   grime radio yt study_only   # 1Xtra: Sir Spyro (sets, MC sessions) [93 videos]
+https://www.youtube.com/playlist?list=PLIcDL_mog4nWd9kj9ZOWI0UurwlSbIwps   uk_garage live yt study_only   # 1Xtra: The UKG Allstars [8 videos]
+
+# YouTube / Mala & DEEP MEDi official
+https://www.youtube.com/playlist?list=PL7aUn2GOWR3Rcuj3mBKFquexDaarUPySI   dubstep live yt study_only   # maladmz: Mala DJ Sets [6 videos]
+https://www.youtube.com/playlist?list=PL7aUn2GOWR3RYvPV7A5l5TnMxGt7v1k6Z   dubstep tracks yt study_only   # maladmz: DMZ re-issues 2021 [15 videos]
+https://www.youtube.com/playlist?list=PL7aUn2GOWR3RciaatfYf37DlquTAhXTi5   dubstep tracks yt study_only   # maladmz: DEEP MEDi MUSIK [22 videos]
+https://www.youtube.com/playlist?list=PL7851A8B80DD45DE5   dubstep tracks yt study_only   # maladmz: Mala - Return II Space (2010) [6 videos]
+https://www.youtube.com/playlist?list=PL7aUn2GOWR3TCLkq0O09lfaYD6uRW3_w4   dubstep tracks yt study_only   # maladmz: Mala Remixes [10 videos]
+https://www.youtube.com/playlist?list=PL7aUn2GOWR3SRlhV-e9bC4DbC8ZsMF0A1   dubstep tracks yt study_only   # maladmz: Mala in Cuba [14 videos]
+https://www.youtube.com/playlist?list=PL7aUn2GOWR3RAEmpMHN8QvDXKu6yzNIWI   dubstep tracks yt study_only   # maladmz: Mala - Mirrors [14 videos]
+https://www.youtube.com/playlist?list=PL38C990424720FEA0   dubstep tracks yt study_only   # DEEP MEDi channel: Releases Vol. 1 [10 videos]
+https://www.youtube.com/playlist?list=PL001660AC8D33A1CA   dubstep tracks yt study_only   # DEEP MEDi channel: Releases Vol. 3 [12 videos]
+https://www.youtube.com/playlist?list=PL58DE0E77A7FF48F3   dubstep tracks yt study_only   # DEEP MEDi channel: Silkie - City Limits Vol. 2 (2011) [12 videos]
+https://www.youtube.com/playlist?list=PLE71ED07F14244C11   dubstep tracks yt study_only   # DEEP MEDi channel: Commodo EP (2012) [4 videos]
+https://www.youtube.com/playlist?list=PLFBC42B88679B27BF   dubstep tracks yt study_only   # DEEP MEDi channel: Goth-Trad - New Epoch (2012) [11 videos]
+https://www.youtube.com/playlist?list=PL0NUgSu60eZ0mh1E7atVBwcrzfYa3T-fq   dubstep tracks yt study_only   # DEEP MEDi channel: Kaiju - Seven Sins [7 videos]
+https://www.youtube.com/playlist?list=PL0NUgSu60eZ02lOT2vjzpWIVG6go1hER2   dubstep steppers_dub tracks yt study_only   # DEEP MEDi channel: Chad Dubz - Universal Vibrations [10 videos]
+https://www.youtube.com/playlist?list=PL0NUgSu60eZ0tHVguK8ejZNhhP1a8X8tt   steppers_dub dubstep tracks yt study_only   # DEEP MEDi channel: Egoless - Dubternal [8 videos]
+https://www.youtube.com/playlist?list=PL0NUgSu60eZ3xjsdbDCq5c8YMSYDV-Z6O   dubstep live yt study_only   # DEEP MEDi channel: Boiler Room Sessions [5 videos]
+https://www.youtube.com/playlist?list=PL6EF9FEB14B2DDC76   dubstep mix yt study_only   # DEEP MEDi channel: Mixes [4 videos]
+
+# YouTube / Red Bull Music Academy official (lectures = speech + clips; tag lecture)
+https://www.youtube.com/playlist?list=PLDdx2qJK6BygsDLhqlDEDgZPnAreKsqY7   roots_dub lecture yt study_only   # RBMA: Reggae and Dub Lectures (Jah Shaka, Sly & Robbie, Clive Chin, Steely & Clevie, Dennis Bovell...) [21 videos]
+https://www.youtube.com/playlist?list=PLDdx2qJK6Byh1OuabDzf8LcRN6sn5mEba   soundsystem lecture yt study_only   # RBMA: Soundsystems Lectures (Mala, Kode9, Skream, Benga, Artwork, Jah Shaka, Jazzie B) [32 videos]
+https://www.youtube.com/playlist?list=PLDdx2qJK6ByjiHrbjHpRUvfCArjq3O2k7   dubstep grime uk_garage lecture yt study_only   # RBMA: UK Bass Lectures (52 - incl. some dnb/broken beat) [52 videos]
+https://www.youtube.com/watch?v=Bmp0k0M8vzY   dubstep lecture yt study_only   # Mala talks Digital Mystikz, defining dubstep and Deep Medi (1:07:38)
+https://www.youtube.com/watch?v=3QNWpnwWgc4   roots_dub soundsystem lecture yt study_only   # Jah Shaka on UK Soundsystem History (1:53:19)
+https://www.youtube.com/watch?v=NmhIY5IWkL0   dubstep lecture yt study_only   # Kode9 talks Burial, Hyperdub and the roots of dubstep (1:03:51)
+https://www.youtube.com/watch?v=EvcFZccqWJU   dubstep lecture yt study_only   # Kode9 on Frequencies, Burial and Dance Music Exploration (1:01:11)
+https://www.youtube.com/watch?v=wqchdQQV_QY   dubstep lecture yt study_only   # Skream talks Dubstep Warz, Hatcha and FWD (1:03:01)
+https://www.youtube.com/watch?v=EFbeZ4QGzgA   dubstep lecture yt study_only   # Benga talks Dubplates, Michael Jackson and Skream (1:06:07)
+https://www.youtube.com/watch?v=3g3dizeohSM   dark_garage dubstep lecture yt study_only   # Artwork talks Dark Garage Music, DJing and Magnetic Man (1:59:36)
+https://www.youtube.com/watch?v=-vmgzhL4kQI   dubstep lecture yt study_only   # Pearson Sound on FWD, Soundsystems and Hessle Audio (1:33:25)
+https://www.youtube.com/watch?v=jJD2JEJB0oc   dubstep lecture yt study_only   # Appleblim on Dubstep, Skull Disco and Apple Pips (1:15:16)
+https://www.youtube.com/watch?v=ixoJ0IXIY1E   grime lecture yt study_only   # Plastician talks Grime, Pirate radio and Boy Better Know (51:51)
+https://www.youtube.com/watch?v=k_45NF8uJvo   grime lecture yt study_only   # Skepta talks Boy Better Know, Contemporary Grime, and DJing (1:24:20)
+https://www.youtube.com/watch?v=VLTXd9KYIq4   grime lecture yt study_only   # Dizzee Rascal on Making Boy In Da Corner and Jungle Music (48:09)
+https://www.youtube.com/watch?v=sUYARfDH3Dc   uk_garage grime lecture yt study_only   # DJ Zinc on Drum & bass, Pirate radio and Grime (1:23:18)
+https://www.youtube.com/watch?v=vIWCrKr8_gU   uk_garage lecture yt study_only   # J Da Flex on London record shops, Pirate radio and Garage (23:58)
+https://www.youtube.com/watch?v=vvfNpwO2SOE   uk_garage lecture yt study_only   # Roska talks Building drum patterns, Funky and Rinse FM (46:25)
+https://www.youtube.com/watch?v=kYumST4_58A   roots_dub soundsystem lecture yt study_only   # Jazzie B on Soul II Soul, Dubplates and UK Soundsystem History (2:17:07)
+https://www.youtube.com/watch?v=Rec02c80S-Y   roots_dub lecture yt study_only   # Clive Chin on Randy's Records, Dub Music and Soundsystems (52:21)
+https://www.youtube.com/watch?v=M8VIb6nPaJA   roots_dub lecture yt study_only   # Steely & Clevie talk Lee Perry, King Jammy and Versioning (1:24:48)
+https://www.youtube.com/watch?v=xxswmIjqhLU   roots_dub lecture yt study_only   # Sly & Robbie on Taxi Records, Black Uhuru (1:25:55)
+https://www.youtube.com/watch?v=ie6uS4BzQmk   roots_dub lecture yt study_only   # Dennis Bovell on Lovers Rock, LKJ and Songwriting (1:56:26)
+https://www.youtube.com/watch?v=Jhvc8RvVGWo   soundclash lecture yt study_only   # David Rodigan on Jamaican Radio and Soundclash (1:13:59)
+https://www.youtube.com/watch?v=C7cEb-fbHOE   roots_dub lecture yt study_only   # Moritz von Oswald talks Dub and Remixing (1:23:03)
+https://www.youtube.com/watch?v=h5WUmstfmKg   dubstep soundsystem lecture yt study_only   # The Bug on Soundsystems and the Creative Process (38:26)
+https://www.youtube.com/watch?v=-GvhMHJKJvM   roots_dub lecture yt study_only   # Scientist On Dub (5:01 short)
+https://www.youtube.com/watch?v=8y3JABwztok   roots_dub lecture yt study_only   # Lee 'Scratch' Perry: An intimate Interview (5:33 short)
+https://www.youtube.com/watch?v=ieHJs1gYA0k   soundclash dubstep live yt study_only   # RBMA Culture Clash London 2010 (Metalheadz, Soul II Soul, Trojan, DMZ) - 7:20 highlights
+
+# YouTube / Reggae Roast official
+https://www.youtube.com/playlist?list=PL3iMP7AWbIypVoZifBAcKOjiFQB8Tp30o   roots_dub steppers_dub mix yt study_only   # Reggae Roast Live Dub Mixes [16 videos]
+https://www.youtube.com/playlist?list=PL3iMP7AWbIyrSMVhtuNmwvd7Qot4MYzCk   roots_dub steppers_dub soundsystem live yt study_only   # Reggae Roast Soundsystem Sessions [7 videos]
+https://www.youtube.com/playlist?list=PL3iMP7AWbIyqKClor0S3cj7vLoBdalH6r   roots_dub soundsystem live yt study_only   # Reggae Roast Live! [65 videos]
+https://www.youtube.com/playlist?list=PL3iMP7AWbIyrPwHqh3Z-iws1aBRKGMX5Q   roots_dub mix yt study_only   # Reggae Roast Mixes [10 videos]
+https://www.youtube.com/playlist?list=PL3iMP7AWbIyrBNg-0DHBmTonXR2CyfWqQ   steppers_dub tracks yt study_only   # Reggae Roast Dubs [26 videos]
+https://www.youtube.com/playlist?list=PL3iMP7AWbIyrKddwD3IEGLzXsTuw-dGBV   roots_dub steppers_dub tracks yt study_only   # Reggae Roast: Roots Uprising (album) [11 videos]
+
+# YouTube / Mungo's Hi Fi + Scotch Bonnet official
+https://www.youtube.com/playlist?list=PLdBbd5x_2J6crlRlNFEPOinMiLzunjHkJ   steppers_dub tracks yt study_only   # Scotch Bonnet: Mungo's Hi Fi - Sound System Champions [16 videos]
+https://www.youtube.com/playlist?list=PLdBbd5x_2J6ej6V-2NbC6ciVPeDNWk_Tn   steppers_dub tracks yt study_only   # Scotch Bonnet: Mungo's Hi Fi - Serious Dubs [8 videos]
+https://www.youtube.com/playlist?list=PLdBbd5x_2J6cgDxiqRHIf781ccQRAnMYl   steppers_dub roots_dub tracks yt study_only   # Scotch Bonnet: Serious Decade Of Dub [36 videos]
+https://www.youtube.com/playlist?list=PLdBbd5x_2J6dkLOyGc3aBxG2Ghm6T2iYv   steppers_dub tracks yt study_only   # Scotch Bonnet: Mungo's Hi Fi - Serious Time [15 videos]
+https://www.youtube.com/playlist?list=PLdBbd5x_2J6eQCCpQLqr555cz9z_jVatW   steppers_dub tracks yt study_only   # Scotch Bonnet: Mungo's Hi Fi - Forward Ever [15 videos]
+https://www.youtube.com/playlist?list=PLdBbd5x_2J6dOU1SoNpLhu8ycA1RbA9Gd   steppers_dub tracks yt study_only   # Scotch Bonnet: Mungo's Hi Fi meets Brother Culture [13 videos]
+https://www.youtube.com/playlist?list=PLdBbd5x_2J6eKPcUJSt0NG6I20LHlfAtP   steppers_dub soundclash tracks yt study_only   # Scotch Bonnet: Mungo's Hi Fi ft Kenny Knots - Brand New Bangarang [9 videos]
+https://www.youtube.com/playlist?list=PLdBbd5x_2J6fF9azXO3fYqm41RUAJgcsR   roots_dub soundclash tracks yt study_only   # Scotch Bonnet: The People's Rub a Dub Playlist [22 videos]
+https://www.youtube.com/playlist?list=PLbkmJbWpT-SOQdEQzJcvApHe-B_m5say_   steppers_dub tracks yt study_only   # Mungo's Hi Fi: Soundsystem Champions 2 [12 videos]
+https://www.youtube.com/playlist?list=PLbkmJbWpT-SMmCJpL_rVj_mYmFobgvDrk   steppers_dub tracks yt study_only   # Mungo's Hi Fi: Past and Present [10 videos]
+https://www.youtube.com/playlist?list=PLbkmJbWpT-SNn8Ume0cGBoRSobFWwe4kn   steppers_dub mix yt study_only   # Mungo's Hi Fi: Under The Influences Mixes [6 videos]
+https://www.youtube.com/playlist?list=PLbkmJbWpT-SPYIcyuIQFrbAQktDL_50y-   steppers_dub soundsystem live yt study_only   # Mungo's Hi Fi: live in Rototom [2 videos]
+https://www.youtube.com/playlist?list=PLbkmJbWpT-SOHihkex8MrpS-wyhjGvNSx   steppers_dub soundsystem live yt study_only   # Mungo's Hi Fi: Live Footage [35 videos]
+https://www.youtube.com/watch?v=8G7hZXceT2E   steppers_dub soundsystem live yt study_only   # Mungo's Hi Fi x Eva Lazarus x Solo Banton - USA tour fundraiser stream (2:54:02, Mungo's own channel)
+
+# YouTube / Dubquake Records official (O.B.F label; official Iration Steppas reissues)
+https://www.youtube.com/playlist?list=PLiVRZ8glDnNheY9KZLFrN8e7-r5t_HRNW   steppers_dub tracks yt study_only   # Iration Steppas - Dubz From De Higher Regionz LP [15 videos]
+https://www.youtube.com/playlist?list=PLiVRZ8glDnNingPxrKWUvF-aFAGACAHv3   steppers_dub tracks yt study_only   # Iration Steppas - Original Dub D.A.T. LP (1996) [15 videos]
+https://www.youtube.com/playlist?list=PLiVRZ8glDnNio1ySv_dsIKo7bCB8WSN9H   steppers_dub soundsystem lecture yt study_only   # 'Ina Vanguard Style' - documentary on Iration Steppas [2 videos]
+https://www.youtube.com/playlist?list=PLiVRZ8glDnNjHk7Y8cAPgl7C4HH1aATEx   steppers_dub tracks yt study_only   # O.B.F - Signz LP [6 videos]
+https://www.youtube.com/playlist?list=PLiVRZ8glDnNhqid30KDIgU7S9T9TDNrrP   steppers_dub soundsystem live yt study_only   # O.B.F Lockdown Session [8 videos]
+
+# YouTube / official sound-system, station & festival uploads
+https://www.youtube.com/watch?v=MywweYSUsgA   steppers_dub roots_dub soundsystem radio yt study_only   # Channel One - Black Rhino Radio residency 27.09.2025 (1:55:14, joint Black Rhino x Channel One channel)
+https://www.youtube.com/watch?v=j41aimPph6A   steppers_dub soundsystem radio yt study_only   # Iration Steppas - Black Rhino Radio residency 14.03.2026 (3:00:09)
+https://www.youtube.com/watch?v=XLW0-1kXNgk   steppers_dub roots_dub soundsystem live yt study_only   # Channel One | We Out Here: Online & On Air (59:58, festival channel)
+https://www.youtube.com/watch?v=Y5COPMIz390   steppers_dub roots_dub soundsystem live yt study_only   # Channel One Sound System | Goa Sunsplash 2025 full show (2:27:41, festival channel)
+https://www.youtube.com/watch?v=QgzRnjtuRJo   steppers_dub soundsystem live yt study_only   # Iration Steppas - Dubplate Medley | Goa Sunsplash 2024 (15:09)
+https://www.youtube.com/watch?v=nuMILNA3v6k   steppers_dub soundsystem live yt study_only   # Mungo's Hi Fi x Solo Banton | Goa Sunsplash Holi Dub 2025 (2:01:28)
+https://www.youtube.com/watch?v=Ao5QNP8lBv0   steppers_dub soundsystem live yt study_only   # Mungo's Hi Fi ft YT & Charlie P - Boomtown 2015 full set (1:01:02, festival channel)
+https://www.youtube.com/watch?v=ZlHuvwH9jQI   roots_dub soundsystem radio yt study_only   # King Shiloh Soundsystem - Healing of the Nations @ Echobox (1:59:28, own channel)
+https://www.youtube.com/watch?v=m53kbdamUdE   roots_dub soundsystem radio yt study_only   # King Shiloh - Healing of the Nations 217 (1:52:41)
+https://www.youtube.com/watch?v=jwkIu4YKncE   roots_dub soundsystem radio yt study_only   # King Shiloh - Healing of the Nations #52 (1:51:43)
+https://www.youtube.com/watch?v=-fRJM8uTyyU   roots_dub steppers_dub soundsystem live yt study_only   # King Shiloh Soundsystem NYE 2020 23:00-03:00 (3:54:32)
+https://www.youtube.com/watch?v=yE4CzNXIhws   steppers_dub live yt study_only   # Unit 137 (Live) Lion Stream #1 set 1 (28:48, 137tv official)
+https://www.youtube.com/watch?v=CSz6k1evtHo   steppers_dub live yt study_only   # Unit 137 (Live) Lion Stream #1 set 2 (36:17)
+https://www.youtube.com/watch?v=q2E90QbSjBs   dubstep live yt study_only   # Youngsta & J:Kenzo ft. Crazy D - Outlook Origins 2025 (56:18, Outlook official)
+https://www.youtube.com/watch?v=wydjzwM-L_Q   dubstep live yt study_only   # Youngsta | Subtle Radio x Bass Coast 2024 (1:13:15, Subtle official)
+https://www.youtube.com/watch?v=Ni0fynJzA3g   steppers_dub soundsystem live yt study_only   # Aba Shanti-I live at Dour Festival 2026 (2:15:33, Party Time Reggae Radio broadcast)
+https://www.youtube.com/watch?v=nKalwsdK3n4   steppers_dub soundsystem live yt study_only   # Blackboard Jungle at Dour Festival 2024 (56:36, Party Time broadcast)
+https://www.youtube.com/watch?v=W8uOQ50zdjE   steppers_dub soundsystem live yt study_only   # Blackboard Jungle meets Cultural Warriors (3:21:06, Party Time broadcast)
+
+# ================================================================ NTS (one line per episode; show pages are not yt-dlp-readable)
+
+# NTS show: DEEP MEDi monthly (Mala label residency) - https://www.nts.live/shows/deep-medi [22 playable episodes]
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-23rd-october-2026   dubstep radio nts study_only   # DEEP MEDi w/ Chad Dubz (2026-10-23)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-25th-september-2026   dubstep radio nts study_only   # DEEP MEDi w/ Coki (2026-09-25)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-28th-august-2026   dubstep radio nts study_only   # DEEP MEDi w/ Jaz Imsky b2b Skalah (2026-08-28)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-31st-july-2026   dubstep radio nts study_only   # DEEP MEDi w/ Kaiju (2026-07-31)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-3rd-july-2026   dubstep radio nts study_only   # DEEP MEDi w/ Ema (2026-07-03)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-5th-june-2026   dubstep radio nts study_only   # DEEP MEDi w/ Swindle (2026-06-05)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-8th-may-2026   dubstep radio nts study_only   # DEEP MEDi - Berlin W/ender w/ Orson (2026-05-08)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-10th-april-2026   dubstep radio nts study_only   # DEEP MEDi: Kahn   (2026-04-10)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-13th-march-2026   dubstep radio nts study_only   # DEEP MEDi w/ Goth-Trad (2026-03-13)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-13th-february-2026   dubstep radio nts study_only   # DEEP MEDi w/ Felixculpah (2026-02-13)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-19th-december-2025   dubstep radio nts study_only   # DEEP MEDi w/ Loefah  (2025-12-19)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-21st-november-2025   dubstep radio nts study_only   # DEEP MEDi : Open Ground w/ Mad Professor (2025-11-21)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-24th-october-2025   dubstep radio nts study_only   # DEEP MEDi: Open Ground w/ Benny Ill & Tailor Jae (2025-10-24)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-26th-september-2025   dubstep radio nts study_only   # DEEP MEDi w/ SILKIE (2025-09-26)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-29th-august-2025   dubstep radio nts study_only   # DEEP MEDi w/ Youngsta & Distinct Motive  (2025-08-29)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-1st-august-2025   dubstep radio nts study_only   # DEEP MEDi w / Commodo, Gantz, Kahn (2025-08-01)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-4th-july-2025   dubstep radio nts study_only   # DEEP MEDi w/ Criso (2025-07-04)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-20th-december-2024   dubstep radio nts study_only   # DEEP MEDi (2024-12-20)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-22nd-november-2024   dubstep radio nts study_only   # DEEP MEDi w/ Youngsta & Mucky Update (2024-11-22)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-25th-october-2024   dubstep radio nts study_only   # DEEP MEDi w/ SILKIE + GOTH-TRAD (2024-10-25)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-27th-september-2024   dubstep radio nts study_only   # DEEP MEDi w/ TRUTH (2024-09-27)
+https://www.nts.live/shows/deep-medi/episodes/deep-medi-20th-july-2024   dubstep radio nts study_only   # DEEP MEDi w/ Bukez Finezt, Darkai, Felixculpah + Von D (2024-07-20)
+
+# NTS show: Slimzos Sessions w/ Slimzee (Sidewinder dark garage + classic grime) - https://www.nts.live/shows/slimzee [37 playable episodes]
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-29th-october-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, DJ Argue & MC Syer (2015-10-29)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-15th-october-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Jammz & Mic TY (2015-10-15)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-1st-october-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Capo Lee, Nico Lindsay & Ragnarocks XIII (2015-10-01)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-elf-kid-micty-aj-tracey-17th-september-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Elf Kid, Mic Ty & AJ Tracey (2015-09-17)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-3rd-september-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee (2015-09-03)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-p-money-20th-august-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee & P Money (2015-08-20)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-b2b-trends-novelist-elf-kid-pk-a-j-tracey-6th-august-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Trends, Novelist, Elf Kid, PK & A J Tracey (2015-08-06)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-sirpixalot-23rd-july-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee & Sir Pixalot (2015-07-23)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-9th-july-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee (2015-07-09)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-mumdance-trim-25th-june-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Mumdance & Trim (2015-06-25)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-riko-dan-trends-april-16th-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Riko Dan & Trends (2015-06-11)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-j-cush-pk-saint-lyrical-strally-11th-june-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, J Crush, PK Saint, Lyrically Strally (2015-06-11)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-28th-may-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Trends & Jammz (2015-05-28)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-randall-14th-may-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee & Randall  (2015-05-14)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-30th-april-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee (2015-04-30)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-faultsz-elf-kid-2nd-april-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Faultz & Elf Kid (2015-04-02)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-19th-march-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee (2015-03-19)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-slimzee-b2b-kahn-neek-5th-march-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Kahn & Neek  (2015-03-05)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-19th-february-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee (2015-02-19)
+https://www.nts.live/shows/slimzee/episodes/slimzee-5th-february-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Sirpixalot & H1NDZY.D (2015-02-05)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-22nd-january-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Spooky, Jammz, Mez & Izzie Gibbs (2015-01-22)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-j-sweet-dullah-beats-8th-january-2015   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, J-Sweet & Dullah Beats (2015-01-08)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-best-of-2014-round-up-18th-december-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee - Best Of 2014 Roundup (2014-12-18)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-slimzee-b2b-j-cush-w-riko-dan-20th-november-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, J-Cush & Riko Dan  (2014-11-20)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-slimzee-vs-newham-generals-23rd-october-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee & Newham Generals  (2014-10-23)
+https://www.nts.live/shows/slimzee/episodes/slimzos-session-w-slimzee-trends-spooky-9th-october-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Trends & Spooky (2014-10-09)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-noodles-groove-chronicles-b2b-slimzee-11th-september-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee & Noodles (2014-09-11)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-1995-2014-garage-and-grime-special-28th-august-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee - Garage & Grime Special (2014-08-28)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-the-square-14th-august-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee & The Square (2014-08-14)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-eastwood-trim-scratchy-31st-july-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Eastwood, Trim & Scratchy (2014-07-31)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-slimzee-b2b-mumdance-w-riko-dan-and-novelist-17th-july-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Mumdance, Riko Dan & Novelist (2014-07-17)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-006-w-slimzee-3rd-july-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee (2014-07-03)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-slackk-murlo-spooky-logos-oil-gang-trends-19th-june-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Murlo, Spooky, Logos, Oil Gang & Trends (2014-06-19)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-slimzee-b2b-j-cush-w-skepta-jammer-novelist-5th-june-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, J-Cush, Skepta & Novelist (2014-06-05)
+https://www.nts.live/shows/slimzee/episodes/slimzos-sessions-w-slimzee-youngstar-ddjs-productions-22nd-may-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Youngstar  (2014-05-22)
+https://www.nts.live/shows/slimzee/episodes/slimzee-w-spooky-novelist-and-faultsz-8th-march-2014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Spooky, Novelist & Faultsz (2014-05-08)
+https://www.nts.live/shows/slimzee/episodes/slimzee24042014   grime dark_garage radio nts study_only   # Slimzos Sessions w/ Slimzee, Logan Sama, Riko Dan & Flowdan  (2014-04-24)
+
+# NTS show: Grandmixxer (veteran grime DJ, guest MCs) - https://www.nts.live/shows/grandmixxer [105 playable episodes]
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-22nd-october-2026   grime radio nts study_only   # Grandmixxer (2026-10-22)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-27th-august-2026   grime radio nts study_only   # Grandmixxer (2026-08-27)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-15th-january-2026   grime radio nts study_only   # Grandmixxer (2026-01-15)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-23rd-october-2025   grime radio nts study_only   # Grandmixxer (2025-10-23)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-25th-september-2025   grime radio nts study_only   # Grandmixxer (2025-09-25)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-28th-august-2025   grime radio nts study_only   # Grandmixxer (2025-08-28)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-31st-july-2025   grime radio nts study_only   # Grandmixxer (2025-07-31)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-2nd-july-2025   grime radio nts study_only   # Grandmixxer (2025-07-03)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-5th-june-2025   grime radio nts study_only   # Grandmixxer (2025-06-05)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-10th-april-2025   grime radio nts study_only   # Grandmixxer (2025-04-10)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-13th-march-2025   grime radio nts study_only   # Grandmixxer (2025-03-13)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-13th-february-2025   grime radio nts study_only   # Grandmixxer (2025-02-13)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-16th-january-2025   grime radio nts study_only   # Grandmixxer (2025-01-16)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-19th-december-2024   grime radio nts study_only   # Grandmixxer (2024-12-19)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-24th-october-2024   grime radio nts study_only   # Grandmixxer (2024-10-24)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-26th-september-2024   grime radio nts study_only   # Grandmixxer (2024-09-26)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-4th-july-2024   grime radio nts study_only   # Grandmixxer (2024-07-04)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-6th-june-2024   grime radio nts study_only   # Grandmixxer (2024-06-06)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-11th-april-2024   grime radio nts study_only   # Grandmixxer (2024-04-11)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-14th-march-2024   grime radio nts study_only   # Grandmixxer (2024-03-14)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-15th-february-2024   grime radio nts study_only   # Grandmixxer (2024-02-15)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-18th-january-2024   grime radio nts study_only   # Grandmixxer (2024-01-18)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-23rd-november-2023   grime radio nts study_only   # Grandmixxer (2023-11-23)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-26th-october-2023   grime radio nts study_only   # Grandmixxer (2023-10-26)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-28th-september-2023   grime radio nts study_only   # Grandmixxer (2023-09-28)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-31st-august-2023   grime radio nts study_only   # Grandmixxer w/ Mez, Natty & SP The Boss - Escape From Babylon Special (2023-08-31)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-3rd-august-2023   grime radio nts study_only   # Grandmixxer (2023-08-03)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-6th-july-2023   grime radio nts study_only   # Grandmixxer (2023-07-06)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-11th-may-2023   grime radio nts study_only   # Grandmixxer (2023-05-11)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-13th-april-2023   grime radio nts study_only   # Grandmixxer (2023-04-13)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-16th-march-2023   grime radio nts study_only   # Grandmixxer (2023-03-16)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-16th-february-2023   grime radio nts study_only   # Grandmixxer (2023-02-16)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-22nd-december-2022   grime radio nts study_only   # Grandmixxer (2022-12-22)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-24th-november-2022   grime radio nts study_only   # Grandmixxer (2022-11-24)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-27th-october-2022   grime radio nts study_only   # Grandmixxer (2022-10-27)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-29th-september-2022   grime radio nts study_only   # Grandmixxer (2022-09-29)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-1st-september-2022   grime radio nts study_only   # Grandmixxer (2022-09-01)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-4th-august-2022   grime radio nts study_only   # Grandmixxer (2022-08-04)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-9th-june-2022   grime radio nts study_only   # Grandmixxer (2022-06-09)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-12th-may-2022   grime radio nts study_only   # Grandmixxer (2022-05-12)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-14th-april-2022   grime radio nts study_only   # Grandmixxer (2022-04-14)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-17th-march-2022   grime radio nts study_only   # Grandmixxer (2022-03-17)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-17th-february-2022   grime radio nts study_only   # GRANDMIXXER B2B DJ IYAYI  (2022-02-17)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-20th-january-2022   grime radio nts study_only   # Grandmixxer (2022-01-20)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-25th-november-2021   grime radio nts study_only   # Grandmixxer (2021-11-25)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-28th-october-2021   grime radio nts study_only   # Grandmixxer (2021-10-28)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-5th-august-2021   grime radio nts study_only   # Grandmixxer (2021-08-05)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-13th-may-2021   grime radio nts study_only   # Grandmixxer (2021-05-13)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-18th-february-2021   grime radio nts study_only   # Grandmixxer (2021-02-18)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-21st-january-2021   grime radio nts study_only   # Grandmixxer (2021-01-21)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-26th-november-2020   grime radio nts study_only   # Grandmixxer (2020-11-26)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-29th-october-2020   grime radio nts study_only   # Grandmixxer (2020-10-29)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-3rd-september-2020   grime radio nts study_only   # Grandmixxer (2020-09-03)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-9th-july-2020   grime radio nts study_only   # Grandmixxer (2020-07-09)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-11th-june-2020   grime radio nts study_only   # Grandmixxer (2020-06-20)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-16th-march-2020   grime radio nts study_only   # Grandmixxer (2020-04-16)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-19th-march-2020   grime radio nts study_only   # Grandmixxer w/ East Man (2020-03-19)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-20th-february-2020   grime radio nts study_only   # Grandmixxer (2020-02-20)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-23rd-january-2020   grime radio nts study_only   # Grandmixxer (2020-01-23)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-31st-october-2019   grime radio nts study_only   # Grandmixxer (2019-11-28)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-3rd-ocotber-2019   grime radio nts study_only   # Grandmixxer (2019-10-03)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-5th-september-2019   grime radio nts study_only   # Grandmixxer (2019-09-05)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-w-guest-name-8th-august-2019   grime radio nts study_only   # Grandmixxer (2019-08-08)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-11th-july-2019   grime radio nts study_only   # Grandmixxer (2019-07-11)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-13th-june-2019   grime radio nts study_only   # Grandmixxer (2019-06-13)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-16th-may-2019   grime radio nts study_only   # Grandmixxer (2019-05-16)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-18th-april-2019   grime radio nts study_only   # Grandmixxer & Mez (2019-04-18)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-21st-march-2019   grime radio nts study_only   # Grandmixxer (2019-03-21)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-21st-february-2019   grime radio nts study_only   # Grandmixxer (2019-02-21)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-24th-january-2019   grime radio nts study_only   # Grandmixxer (2019-01-24)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-29th-november-2018   grime radio nts study_only   # Grandmixxer (2018-11-29)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-1st-november-2018   grime radio nts study_only   # Grandmixxer (2018-11-01)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-5th-october-2018   grime radio nts study_only   # Grandmixxer (2018-10-06)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-6th-september-2018   grime radio nts study_only   # Grandmixxer & Mez (2018-09-06)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-09th-august-2018   grime radio nts study_only   # Grandmixxer (2018-08-09)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-12th-july-2018   grime radio nts study_only   # Grandmixxer (2018-07-12)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-14th-june-2018   grime radio nts study_only   # Grandmixxer (2018-06-14)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-17th-may-2018   grime radio nts study_only   # Grandmixxer (2018-05-17)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-19th-april-2018   grime radio nts study_only   # Grandmixxer (2018-04-19)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-22nd-march-2018   grime radio nts study_only   # Grandmixxer  (2018-03-22)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-22nd-february-2018   grime radio nts study_only   # Grandmixxer (2018-02-22)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-25th-january-2018   grime radio nts study_only   # Grandmixxer & Tyrone (2018-01-25)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-30th-november-2017   grime radio nts study_only   # Grandmixxer (2017-11-30)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-2nd-november-2017   grime radio nts study_only   # Grandmixxer (2017-11-01)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-5th-october-2017   grime radio nts study_only   # Grandmixxer (2017-10-05)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-7th-september-2017   grime radio nts study_only   # Grandmixxer (2017-09-07)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-13th-july-2017   grime radio nts study_only   # Grandmixxer (2017-07-13)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-15th-june-2017   grime radio nts study_only   # Grandmixxer (2017-06-15)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-18th-may-2017   grime radio nts study_only   # Grandmixxer & Mez (2017-05-18)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-20th-april   grime radio nts study_only   # Grandmixxer (2017-04-20)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-sp-da-boss-23rd-march-2017   grime radio nts study_only   # Grandmixxer & S.P. Da Boss (2017-03-23)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-23rd-february-2017   grime radio nts study_only   # Grandmixxer & Kwam (2017-02-23)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-26th-january-2017   grime radio nts study_only   # Grandmixxer (2017-01-28)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-1st-december-2016   grime radio nts study_only   # Grandmixxer (2016-12-01)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-3rd-november-2016   grime radio nts study_only   # Grandmixxer (2016-11-03)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-8th-september-2016   grime radio nts study_only   # Grandmixxer (2016-09-08)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-vision-crew-23rd-august-2016   grime radio nts study_only   # Grandmixxer & Vision Crew (2016-08-23)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-11th-august-2016   grime radio nts study_only   # Grandmixxer (2016-08-11)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-16th-june-2016   grime radio nts study_only   # Grandmixxer (2016-06-16)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-21st-april-2016   grime radio nts study_only   # Grandmixxer (2016-04-21)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-24th-march   grime radio nts study_only   # Grandmixxer (2016-03-24)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-28th-january-2016   grime radio nts study_only   # Grandmixxer (2016-01-28)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-3rd-december-2015   grime radio nts study_only   # Grandmixxer (2015-12-03)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-5th-november-2015   grime radio nts study_only   # Grandmixxer & Big Zuu (2015-11-05)
+https://www.nts.live/shows/grandmixxer/episodes/grandmixxer-8th-october-2015   grime radio nts study_only   # Grandmixxer (2015-10-08)
+
+# NTS show: Slackk (grime archivist, Boxed) - https://www.nts.live/shows/slackk [22 playable episodes]
+https://www.nts.live/shows/slackk/episodes/slackk-19th-march-2015   grime radio nts study_only   # Slackk, Grandmixxer & Spooky (Boxed Second Birthday Warm Up)  (2015-03-19)
+https://www.nts.live/shows/slackk/episodes/slackk-19th-february-2015   grime radio nts study_only   # Slackk, Edgem, Elf Kid, YGG (2015-02-19)
+https://www.nts.live/shows/slackk/episodes/slackk-22nd-january-2015   grime radio nts study_only   # Slackk (2015-01-22)
+https://www.nts.live/shows/slackk/episodes/slackk-w-local-action-6th-november-2014   grime radio nts study_only   # Slackk, Tom Lea (Local Action) (2014-11-06)
+https://www.nts.live/shows/slackk/episodes/slackk-30th-october-2014   grime radio nts study_only   # Crazylegs & Local Action: Slackk, Deadboy, Gage & Finn  (2014-10-30)
+https://www.nts.live/shows/slackk/episodes/slackk-w-grandmixxer-novelist-9th-october-2014   grime radio nts study_only   # Slackk, Grandmixxer & Novelist (2014-10-09)
+https://www.nts.live/shows/slackk/episodes/slackk-11th-september-2014   grime radio nts study_only   # Slackk (2014-09-11)
+https://www.nts.live/shows/slackk/episodes/slackk-w-spooky-14th-august-2014   grime radio nts study_only   # Slackk, Spooky (2014-08-14)
+https://www.nts.live/shows/slackk/episodes/slackk-17th-july-2014   grime radio nts study_only   # Slackk (2014-07-17)
+https://www.nts.live/shows/slackk/episodes/slackk-22nd-may-2014   grime radio nts study_only   # Slackk (2014-05-22)
+https://www.nts.live/shows/slackk/episodes/slackk24042014   grime radio nts study_only   # Slackk (2014-04-24)
+https://www.nts.live/shows/slackk/episodes/slackk270314   grime radio nts study_only   # Slackk (2014-03-27)
+https://www.nts.live/shows/slackk/episodes/slackk27022014   grime radio nts study_only   # Slackk (2014-02-27)
+https://www.nts.live/shows/slackk/episodes/slackk300114   grime radio nts study_only   # Slackk (2014-01-30)
+https://www.nts.live/shows/slackk/episodes/slackk02012014   grime radio nts study_only   # Slackk (2014-01-02)
+https://www.nts.live/shows/slackk/episodes/slackk121213   grime radio nts study_only   # Slackk (2013-12-12)
+https://www.nts.live/shows/slackk/episodes/200000-slackk-192kbps-1   grime radio nts study_only   # Slackk (2013-11-14)
+https://www.nts.live/shows/slackk/episodes/200000-slackk-192kbps   grime radio nts study_only   # Slackk, Novelist (2013-10-17)
+https://www.nts.live/shows/slackk/episodes/slackk-w-logos-and-mumdance-september-19th   grime radio nts study_only   # Slackk, Logos, Mumdance (2013-09-19)
+https://www.nts.live/shows/slackk/episodes/slackk   grime radio nts study_only   # Slackk (2013-08-16)
+https://www.nts.live/shows/slackk/episodes/slackk-18-july-2013   grime radio nts study_only   # Slackk (2013-07-18)
+https://www.nts.live/shows/slackk/episodes/slackk-21-june-2013   grime radio nts study_only   # Slackk (2013-06-21)
+
+# NTS show: Mumdance monthly - https://www.nts.live/shows/mumdance [10 playable episodes]
+https://www.nts.live/shows/mumdance/episodes/mumdance-20th-february-2019   grime dubstep radio nts study_only   # Logos (2019-02-20)
+https://www.nts.live/shows/mumdance/episodes/mumdance-and-tash-lc-14th-december-2018   grime dubstep radio nts study_only   # Mumdance & Tash LC (2018-12-14)
+https://www.nts.live/shows/mumdance/episodes/mumdance-31st-october-2018   grime dubstep radio nts study_only   # Mumdance & Zola Jesus (2018-10-31)
+https://www.nts.live/shows/mumdance/episodes/3rd-october-2018   grime dubstep radio nts study_only   # Mumdance w/ DJ Die (2018-10-03)
+https://www.nts.live/shows/mumdance/episodes/mumdance-5th-september-2018   grime dubstep radio nts study_only   # Mumdance & Prequel Tapes (2018-09-05)
+https://www.nts.live/shows/mumdance/episodes/mumdance-08th-august-2018   grime dubstep radio nts study_only   # Mumdance w/ Riko Dan - Hardcore Special (2018-08-08)
+https://www.nts.live/shows/mumdance/episodes/mumdance-11th-july-2018   grime dubstep radio nts study_only   # Mumdance & Speedy J (2018-07-11)
+https://www.nts.live/shows/mumdance/episodes/mumdance-13th-june-2018   grime dubstep radio nts study_only   # Mumdance (2018-06-13)
+https://www.nts.live/shows/mumdance/episodes/mumdance-18th-may-2018   grime dubstep radio nts study_only   # Mumdance & Visible Cloaks (2018-05-18)
+https://www.nts.live/shows/mumdance/episodes/mumdance-4th-may-2018   grime dubstep radio nts study_only   # Mumdance & James Ruskin (2018-05-04)
+
+# NTS show: Oneman - https://www.nts.live/shows/oneman [12 playable episodes]
+https://www.nts.live/shows/oneman/episodes/oneman-4th-december-2020   uk_garage grime dubstep radio nts study_only   # Oneman (2020-12-08)
+https://www.nts.live/shows/oneman/episodes/oneman-9th-october-2020   uk_garage grime dubstep radio nts study_only   # Oneman w/ Coco Bryce (2020-10-09)
+https://www.nts.live/shows/oneman/episodes/oneman-11th-september-2020   uk_garage grime dubstep radio nts study_only   # Oneman (2020-09-11)
+https://www.nts.live/shows/oneman/episodes/oneman-17th-july-2020   uk_garage grime dubstep radio nts study_only   # Oneman (2020-07-17)
+https://www.nts.live/shows/oneman/episodes/oneman-friday-22nd-may   uk_garage grime dubstep radio nts study_only   # Oneman (2020-05-22)
+https://www.nts.live/shows/oneman/episodes/oneman-27th-march-2020   uk_garage grime dubstep radio nts study_only   # Oneman (2020-03-27)
+https://www.nts.live/shows/oneman/episodes/oneman-28th-february-2020   uk_garage grime dubstep radio nts study_only   # Oneman (2020-02-28)
+https://www.nts.live/shows/oneman/episodes/oneman-31st-january-2020   uk_garage grime dubstep radio nts study_only   # Oneman w/ Scuba  (2020-01-31)
+https://www.nts.live/shows/oneman/episodes/oneman-3rd-january-2020   uk_garage grime dubstep radio nts study_only   # Oneman (2020-01-03)
+https://www.nts.live/shows/oneman/episodes/oneman-6th-december-2019   uk_garage grime dubstep radio nts study_only   # Oneman & Jonny Rock (2019-12-06)
+https://www.nts.live/shows/oneman/episodes/oneman-8th-november-2019   uk_garage grime dubstep radio nts study_only   # Oneman w Black Loops (2019-11-08)
+https://www.nts.live/shows/oneman/episodes/oneman-11th-october-2019   uk_garage grime dubstep radio nts study_only   # Oneman (2019-10-11)
+
+# NTS show: The M'n'M Show w/ A.G (grime, guests Spooky, Logan Sama) - https://www.nts.live/shows/ag [49 playable episodes]
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-15th-march-2018   grime radio nts study_only   # The M'n'M Show w/ A.G & Maxsta (2018-03-15)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-1st-march-2018   grime radio nts study_only   # The M'n'M Show w/ A.G & Roxxxvn (2018-03-01)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-15th-february-2018   grime radio nts study_only   # The M'n'M Show w/ A.G & Jammer (2018-02-15)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-1st-february-2018   grime radio nts study_only   # The M'n'M Show w/ A.G & Kamakaze  (2018-02-01)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-18th-january-2018   grime radio nts study_only   # The M'n'M Show w/ A.G & Novelist (2018-01-18)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-21st-december-2017   grime radio nts study_only   # The M'n'M Show w/ A.G & Darkos Strife (2017-12-21)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-7th-december-2017   grime radio nts study_only   # The M'n'M Show w/ A.G & Blay Vision (2017-12-07)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-23rd-november-2017   grime radio nts study_only   # The M'n'M Show w/ A.G, Reece West & Yizzy (2017-11-23)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-w-a-g-9th-november-2017   grime radio nts study_only   # The M'n'M Show w/ A.G, Fusion & Friends (2017-11-09)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-w-a-g-26th-october-2017   grime radio nts study_only   # The M'N'M Show w/ A.G. & Sharky Major (2017-10-26)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-12th-october-2017   grime radio nts study_only   # The M'n'M Show w/ A.G (2017-10-12)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-14th-september-2017   grime radio nts study_only   # The M'n'M Show w/ A.G (2017-09-14)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-31-08-17   grime radio nts study_only   # The M'n'M Show w/ Amz & Bok Bok (2017-08-31)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-17-08-17   grime radio nts study_only   # The M'n'M Show w/ A.G, Manga, GHSTLYXXVII, Jammz, Armzout, Traxx, Discarda & Deadly (2017-08-17)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-3rd-august-2017   grime radio nts study_only   # The M'n'M Show w/ AG, P Money, Blacks & Slickman (2017-08-03)
+https://www.nts.live/shows/ag/episodes/20-07-2017   grime radio nts study_only   # The M'n'M Show w/ AG, P Money, Blacks & Little Dee (2017-07-19)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-6th-july-2017   grime radio nts study_only   # The M'n'M Show w/ AG & Shy One (2017-07-06)
+https://www.nts.live/shows/ag/episodes/logansama   grime radio nts study_only   # The MnM Show w/ A.G & Logan Sama (2017-06-21)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-8th-june-2017   grime radio nts study_only   # The M'n'M Show w/ AG & Brotherhood (2017-06-08)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-w-ag-25th-may-2017   grime radio nts study_only   # The M'n'M Show w/ AG & Grimsickers (2017-05-25)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-with-ag-11th-may-2017   grime radio nts study_only   # The M'n'M Show w/ AG, Spooky & J Beatz (2017-05-11)
+https://www.nts.live/shows/ag/episodes/the-m-n-m-show-with-ag-27th-april-2017   grime radio nts study_only   # The M'n'M Show w/ AG & C. Cane (2017-04-27)
+https://www.nts.live/shows/ag/episodes/the-mm-show-w-ag-13th-april-2017   grime radio nts study_only   # The M'n'M Show w/ AG, Rawza & Jack the Vibe  (2017-04-13)
+https://www.nts.live/shows/ag/episodes/the-mm-show-w-ag-maniac-villain-30th-march-2017   grime radio nts study_only   # The M'n'M Show w/ AG, Maniac & Villain (2017-03-30)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-w-ag-manga-saint-hilare-16th-march-2017   grime radio nts study_only   # The M'N'M Show w/ AG & Manga Saint Hilare (2017-03-16)
+https://www.nts.live/shows/ag/episodes/the-mm-show-w-ag-16th-february-2017   grime radio nts study_only   # The M'n'M Show w/ AG & Prez T (2017-02-16)
+https://www.nts.live/shows/ag/episodes/the-mm-show-w-ag-slowthai-2nd-february-2017   grime radio nts study_only   # The M'n'M Show w/ AG & Slowthai (2017-02-02)
+https://www.nts.live/shows/ag/episodes/the-mm-show-w-ag-tuckz-5th-january-2017   grime radio nts study_only   # The M'n'M Show w/ AG, SH?M, Tuckz, Novelist, Vision Crew, PK, Blakie & DC (2017-01-20)
+https://www.nts.live/shows/ag/episodes/the-mm-show-w-ag-5th-january-2017   grime radio nts study_only   # The M'n'M Show w/ A.G (2017-01-06)
+https://www.nts.live/shows/ag/episodes/the-mm-show-w-ag-snoochie-shy-22nd-december-2016   grime radio nts study_only   # The M'n'M Show w/ AG & Snoochie Shy (2016-12-22)
+https://www.nts.live/shows/ag/episodes/the-mm-show-w-ag-kid-d-8th-december-2016   grime radio nts study_only   # The M'n'M Show w/ AG & Kid D (2016-12-08)
+https://www.nts.live/shows/ag/episodes/the-mm-show-w-ag-10th-november-2016   grime radio nts study_only   # The M'N'M Show w/ AG & Flow Dan (2016-11-10)
+https://www.nts.live/shows/ag/episodes/the-mm-show-27th-october-2016   grime radio nts study_only   # The M'n'M Show w/ AG & Ego (2016-10-27)
+https://www.nts.live/shows/ag/episodes/the-mm-show-13th-october-2016   grime radio nts study_only   # The M'n'M Show w/ A.G (2016-10-13)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-w-ag-jammz-29th-september-2016   grime radio nts study_only   # The M'N'M Show w/ AG & Jammz (2016-09-29)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-w-ag-spooky-sir-pixalot-p-jam-jj-vectra-15th-september-2016   grime radio nts study_only   # The M'N'M Show w/ AG, Spooky, Sir Pixalot, P Jam, JJ & Vectra  (2016-09-15)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-w-spooky-bizzle-1st-september-2016   grime radio nts study_only   # The M'N'M Show w/ Spooky Bizzle (2016-09-01)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-w-ag-vision-crew-18th-august-2016   grime radio nts study_only   # The M'N'M Show w/ AG & Vision Crew (2016-08-18)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-w-ms-banks-jelacee-4th-august-2016   grime radio nts study_only   # The M'N'M Show w/ AG, Ms Banks & Jelacee (2016-08-04)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-7th-july-2016   grime radio nts study_only   # The M'n'M Show w/ A.G (2016-07-07)
+https://www.nts.live/shows/ag/episodes/the-mm-show-w-mez-friends-23rd-june-2016   grime radio nts study_only   # The M'n'M Show w/ AG, Mez Friends (2016-06-23)
+https://www.nts.live/shows/ag/episodes/mnm-show-w-ag-9th-june-2016   grime radio nts study_only   # The M'n'M Show w/ AG & P Money (2016-06-09)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-w-ag-nico-lindsey-p-money-26th-may-2016   grime radio nts study_only   # The M'N'M Show w/ AG, Nico Lindsey Capo Lee, Snowey Danger & P Money (2016-05-26)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-w-ag-discarda-12th-may-2015   grime radio nts study_only   # The M'n'M Show w/ AG & Discarda (2016-05-12)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-w-ag-trim-nico-lindsay-28th-april-2016   grime radio nts study_only   # The M'n'M Show w/ AG, Trim & Nico Lindsay (2016-04-28)
+https://www.nts.live/shows/ag/episodes/mnm-show-w-ag-14th-april-2016   grime radio nts study_only   # M'n'M Show w/ AG & Rocks FOE (2016-04-14)
+https://www.nts.live/shows/ag/episodes/the-mnm-show-w-ag-31st-march-2016   grime radio nts study_only   # M'n'M Show w/ AG, MIC TY & DJ JJ (2016-03-31)
+https://www.nts.live/shows/ag/episodes/mnm-w-ag-17th-march-2016   grime radio nts study_only   # M'n'M w/ AG & My Team Paid (2016-03-17)
+https://www.nts.live/shows/ag/episodes/ag-3rd-march-2016   grime radio nts study_only   # M'n'M Show w/ AG & 140Aks (2016-03-03)
+
+# NTS show: LZ - The MCR Grime Show - https://www.nts.live/shows/lz-k1 [40 playable episodes]
+https://www.nts.live/shows/lz-k1/episodes/lz-14th-march-2021   grime radio nts study_only   # LZ presents UK Funky: Ayia Napa Classics [2007-2011] (2021-03-14)
+https://www.nts.live/shows/lz-k1/episodes/lz-27th-september-2020   grime radio nts study_only   # LZ  (2020-09-27)
+https://www.nts.live/shows/lz-k1/episodes/lz-30th-august-2020   grime radio nts study_only   # LZ  (2020-08-30)
+https://www.nts.live/shows/lz-k1/episodes/lz-rip-niche-bassline-classics-16th-may-2020   grime radio nts study_only   # LZ: R.I.P Niche: 2005-2010 Bassline Classics (2020-05-16)
+https://www.nts.live/shows/lz-k1/episodes/lz-w-atilly-16th-february-2020   grime radio nts study_only   # LZ w/ A Tilly  (2020-02-16)
+https://www.nts.live/shows/lz-k1/episodes/lz-w-nasty-bros-27th-october-2019   grime radio nts study_only   # The MCR Grime Show w/ LZ ft. Nasty Bros guest mix (2019-10-27)
+https://www.nts.live/shows/lz-k1/episodes/lz-w-chef-dee-1st-september-2019   grime radio nts study_only   # The MCR Grime Show w/ LZ & Chef Dee (2019-09-01)
+https://www.nts.live/shows/lz-k1/episodes/lz-13th-july-2019   grime radio nts study_only   # LZ  (2019-07-13)
+https://www.nts.live/shows/lz-k1/episodes/lz-15th-june-2019   grime radio nts study_only   # LZ  (2019-06-15)
+https://www.nts.live/shows/lz-k1/episodes/lz-18th-may-2019   grime radio nts study_only   # LZ  (2019-05-18)
+https://www.nts.live/shows/lz-k1/episodes/lz-20th-april-2019   grime radio nts study_only   # LZ  (2019-04-20)
+https://www.nts.live/shows/lz-k1/episodes/lz-23rd-march-2019   grime radio nts study_only   # LZ  (2019-03-23)
+https://www.nts.live/shows/lz-k1/episodes/lz-w-scumfam-23rd-february-2019   grime radio nts study_only   # The MCR Grime Show w/ LZ & Scumfam (2019-02-23)
+https://www.nts.live/shows/lz-k1/episodes/lz-w-mak-10-26th-january-2019   grime radio nts study_only   # The MCR Grime Show w/ LZ (2019-01-26)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-1st-december-2018   grime radio nts study_only   # The Manchester Grim Show w/ LZ & Kiel (2018-12-01)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-3rd-november-2018   grime radio nts study_only   # The MCR Grime Show w/ Kiel  (2018-11-03)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-6th-october-2018   grime radio nts study_only   # The MCR Grime Show w/ LZ & Kiel (2018-10-06)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-8th-september-2018   grime radio nts study_only   # LZ  (2018-09-08)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-14th-july-2018   grime radio nts study_only   # LZ  (2018-07-14)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-16th-june-2018   grime radio nts study_only   # LZ  (2018-06-16)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-19th-may-2018   grime radio nts study_only   # LZ  (2018-05-19)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-21st-april-2018   grime radio nts study_only   # The MCR Grime Show w/ LZ & Kiel featuring DORRIS (2018-04-21)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-24th-march-2018   grime radio nts study_only   # LZ  (2018-03-24)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-24th-february-2018   grime radio nts study_only   # LZ  (2018-02-24)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-27th-january-2018   grime radio nts study_only   # LZ  (2018-01-27)
+https://www.nts.live/shows/lz-k1/episodes/lz-kiel-25th-november-2017   grime radio nts study_only   # LZ  (2017-11-25)
+https://www.nts.live/shows/lz-k1/episodes/lz-k1-28th-october-2017   grime radio nts study_only   # LZ  (2017-10-28)
+https://www.nts.live/shows/lz-k1/episodes/lz-k1-23rd-september-2017   grime radio nts study_only   # LZ  (2017-09-23)
+https://www.nts.live/shows/lz-k1/episodes/lz-k1-26th-august-2017   grime radio nts study_only   # LZ  (2017-08-26)
+https://www.nts.live/shows/lz-k1/episodes/lz-k1-22nd-july-2017   grime radio nts study_only   # LZ  (2017-07-22)
+https://www.nts.live/shows/lz-k1/episodes/mcr-grime-show-w-lz-k1-27th-may-2017   grime radio nts study_only   # MCR Grime Show w/ LZ & K1 (2017-05-27)
+https://www.nts.live/shows/lz-k1/episodes/the-mcr-grime-show-w-lz-k1-29th-april-2017   grime radio nts study_only   # LZ  (2017-04-29)
+https://www.nts.live/shows/lz-k1/episodes/lz-k1-young-guns-producers-special-w-pk-brako-jfo-tijani-harry-rodger-25th-march-2017   grime radio nts study_only   # LZ  (2017-03-25)
+https://www.nts.live/shows/lz-k1/episodes/the-mcr-grime-show-w-lz-k1-25th-february-2017   grime radio nts study_only   # LZ  (2017-02-25)
+https://www.nts.live/shows/lz-k1/episodes/the-mcr-grime-show-w-lz-k1-28th-january-2017   grime radio nts study_only   # LZ  (2017-01-29)
+https://www.nts.live/shows/lz-k1/episodes/lzk1-nts-manchester-3rd-december-2016   grime radio nts study_only   # LZ  (2016-12-03)
+https://www.nts.live/shows/lz-k1/episodes/lz-k1-nts-manchester-30th-october-2016   grime radio nts study_only   # LZ  (2016-10-30)
+https://www.nts.live/shows/lz-k1/episodes/lz-k1-w-chimpo-tijani-nts-manchester-25th-september-2016   grime radio nts study_only   # LZ & K1 w/ Chimpo & Tijani (2016-09-25)
+https://www.nts.live/shows/lz-k1/episodes/lz-k1-nts-manchester-28th-august-2016   grime radio nts study_only   # LZ & K1 w/ Sangy & Friends  (2016-08-28)
+https://www.nts.live/shows/lz-k1/episodes/the-mcr-grime-show-w-lz-k1-whyjay-nts-manchester-31st-july-2016   grime radio nts study_only   # The MCR Grime Show w/ LZ, K1 & whYJay  (2016-07-31)
+
+# NTS show: YGG (You Get Grime: Saint P, PK, Lyrical Strally) - https://www.nts.live/shows/ygg [52 playable episodes]
+https://www.nts.live/shows/ygg/episodes/ygg-5th-march-2020   grime radio nts study_only   # YGG (2020-03-05)
+https://www.nts.live/shows/ygg/episodes/ygg-6th-february-2020   grime radio nts study_only   # YGG (2020-02-06)
+https://www.nts.live/shows/ygg/episodes/ygg-9th-january-2020   grime radio nts study_only   # YGG (2020-01-09)
+https://www.nts.live/shows/ygg/episodes/ygg-12th-december-2019   grime radio nts study_only   # YGG (2019-12-12)
+https://www.nts.live/shows/ygg/episodes/ygg-14th-november-2019   grime radio nts study_only   # YGG (2019-11-14)
+https://www.nts.live/shows/ygg/episodes/ygg-17th-october-2019   grime radio nts study_only   # YGG (2019-10-16)
+https://www.nts.live/shows/ygg/episodes/ygg-19th-september-2019   grime radio nts study_only   # YGG (2019-09-19)
+https://www.nts.live/shows/ygg/episodes/ygg-22nd-august-2019   grime radio nts study_only   # YGG w/ Tuckz  (2019-08-22)
+https://www.nts.live/shows/ygg/episodes/ygg-25th-july-2019   grime radio nts study_only   # YGG (2019-07-25)
+https://www.nts.live/shows/ygg/episodes/ygg-27th-june-2019   grime radio nts study_only   # YGG (2019-06-27)
+https://www.nts.live/shows/ygg/episodes/ygg-30th-may-2019   grime radio nts study_only   # YGG (2019-05-30)
+https://www.nts.live/shows/ygg/episodes/ygg-2nd-may-2019   grime radio nts study_only   # YGG (2019-05-02)
+https://www.nts.live/shows/ygg/episodes/ygg-4th-april-2019   grime radio nts study_only   # YGG (2019-04-04)
+https://www.nts.live/shows/ygg/episodes/ygg-w-guest-name-7h-march-2019   grime radio nts study_only   # YGG (2019-03-07)
+https://www.nts.live/shows/ygg/episodes/ygg-7th-february-2019   grime radio nts study_only   # YGG (2019-02-07)
+https://www.nts.live/shows/ygg/episodes/ygg-10th-january-2019   grime radio nts study_only   # YGG (2019-01-10)
+https://www.nts.live/shows/ygg/episodes/host-name-w-ygg-13th-december-2018   grime radio nts study_only   # YGG (2018-12-13)
+https://www.nts.live/shows/ygg/episodes/ygg-15th-november-2018   grime radio nts study_only   # YGG w/ Karnage (2018-11-15)
+https://www.nts.live/shows/ygg/episodes/ygg-18th-october-2018   grime radio nts study_only   # YGG - PK Birthday Special  (2018-10-18)
+https://www.nts.live/shows/ygg/episodes/ygg-20th-september-2018   grime radio nts study_only   # YGG w/ Grandmixxer (2018-09-20)
+https://www.nts.live/shows/ygg/episodes/ygg-23rd-august-2018   grime radio nts study_only   # YGG (2018-08-23)
+https://www.nts.live/shows/ygg/episodes/ygg-26th-july-2018   grime radio nts study_only   # YGG (2018-07-26)
+https://www.nts.live/shows/ygg/episodes/ygg-28th-june-2018   grime radio nts study_only   # YGG w/ DJ Travis T (2018-06-28)
+https://www.nts.live/shows/ygg/episodes/ygg-31st-may-2018   grime radio nts study_only   # YGG w/ DJ Travis & General Courts (2018-05-31)
+https://www.nts.live/shows/ygg/episodes/ygg-3th-may-2018   grime radio nts study_only   # YGG (2018-05-03)
+https://www.nts.live/shows/ygg/episodes/ygg-5th-april-2018   grime radio nts study_only   # YGG (2018-04-05)
+https://www.nts.live/shows/ygg/episodes/ygg-8th-march-2018   grime radio nts study_only   # YGG w/ DJ Travis T (2018-03-08)
+https://www.nts.live/shows/ygg/episodes/ygg-8th-february-2018   grime radio nts study_only   # YGG (2018-02-08)
+https://www.nts.live/shows/ygg/episodes/ygg-11th-january-2018   grime radio nts study_only   # YGG (2018-01-11)
+https://www.nts.live/shows/ygg/episodes/ygg-14th-december-2017   grime radio nts study_only   # YGG w/ DJ Travis T (2017-12-14)
+https://www.nts.live/shows/ygg/episodes/ygg-16th-november-2017   grime radio nts study_only   # YGG World Domination special DJ Travis-T (2017-11-16)
+https://www.nts.live/shows/ygg/episodes/ygg-19th-october-2017   grime radio nts study_only   # YGG (2017-10-19)
+https://www.nts.live/shows/ygg/episodes/ygg-24-08-17   grime radio nts study_only   # YGG (2017-08-24)
+https://www.nts.live/shows/ygg/episodes/ygg-27thjuly2017   grime radio nts study_only   # YGG w/ DJ Travis T (2017-07-27)
+https://www.nts.live/shows/ygg/episodes/ygg-29th-june-2017   grime radio nts study_only   # YGG (2017-06-29)
+https://www.nts.live/shows/ygg/episodes/ygg-1st-june-2017   grime radio nts study_only   # YGG (2017-06-01)
+https://www.nts.live/shows/ygg/episodes/ygg-4th-may-2017   grime radio nts study_only   # YGG w/ Mez & Discarda (2017-05-04)
+https://www.nts.live/shows/ygg/episodes/ygg-6th-april-2017   grime radio nts study_only   # YGG w/ P Money & DJ Travis-T (2017-04-06)
+https://www.nts.live/shows/ygg/episodes/ygg-9th-march-2017   grime radio nts study_only   # YGG (2017-03-09)
+https://www.nts.live/shows/ygg/episodes/ygg-9th-february-2017   grime radio nts study_only   # YGG (2017-02-09)
+https://www.nts.live/shows/ygg/episodes/ygg-12th-january-2017   grime radio nts study_only   # YGG (2017-01-13)
+https://www.nts.live/shows/ygg/episodes/ygg-15th-december-2016   grime radio nts study_only   # YGG (2016-12-15)
+https://www.nts.live/shows/ygg/episodes/ygg-17th-november-2016   grime radio nts study_only   # YGG (2016-11-17)
+https://www.nts.live/shows/ygg/episodes/ygg-20th-october-2016   grime radio nts study_only   # YGG (2016-10-20)
+https://www.nts.live/shows/ygg/episodes/ygg-22nd-september-2016   grime radio nts study_only   # YGG (2016-09-22)
+https://www.nts.live/shows/ygg/episodes/ygg-w-big-zuu-25th-august-2016   grime radio nts study_only   # Joints Takeover w/ Big Zuu, Ramzey, Crafty, Big John & Reece WessT (2016-08-25)
+https://www.nts.live/shows/ygg/episodes/ygg-w-aj-tracey-big-zuu-lyrical-strally-pk-saint-dj-travis-t-28th-july-2016   grime radio nts study_only   # YGG w/ AJ Tracey & Big Zuu (2016-07-28)
+https://www.nts.live/shows/ygg/episodes/ygg-30th-june-2016   grime radio nts study_only   # YGG (2016-06-30)
+https://www.nts.live/shows/ygg/episodes/ygg-2nd-june-2016   grime radio nts study_only   # YGG (2016-06-02)
+https://www.nts.live/shows/ygg/episodes/ygg-5th-may-2016   grime radio nts study_only   # YGG, DJ Travis T & General Courts (2016-05-05)
+https://www.nts.live/shows/ygg/episodes/ygg-7th-april-2016   grime radio nts study_only   # YGG (2016-04-07)
+https://www.nts.live/shows/ygg/episodes/ygg-10th-march-2016   grime radio nts study_only   # YGG (2016-03-10)
+
+# NTS show: UK Garage Evolutions (NTS series) - https://www.nts.live/shows/uk-garage-evolutions [6 playable episodes]
+https://www.nts.live/shows/uk-garage-evolutions/episodes/true-north-big-ang-25th-july-2021   uk_garage speed_garage radio nts study_only   # UK Garage Evolutions: True North w/ Big Ang (2021-07-25)
+https://www.nts.live/shows/uk-garage-evolutions/episodes/shots-in-the-dark-dj-narrows-25th-july-2021   uk_garage speed_garage radio nts study_only   # UK Garage Evolutions: Shots in the Dark w/ DJ Narrows (2021-07-25)
+https://www.nts.live/shows/uk-garage-evolutions/episodes/turn-of-speed-double-99-rip-productions-25th-july-2021   uk_garage speed_garage radio nts study_only   # UK Garage Evolutions: Turn of Speed w/ Double 99/RIP Productions (2021-07-25)
+https://www.nts.live/shows/uk-garage-evolutions/episodes/breaking-step-sticky-25th-july-2021   uk_garage speed_garage radio nts study_only   # UK Garage Evolutions: Breaking Step w/ Sticky (2021-07-25)
+https://www.nts.live/shows/uk-garage-evolutions/episodes/time-is-ripe-jeremy-sylvester-25th-july   uk_garage speed_garage radio nts study_only   # UK Garage Evolutions: Time is Ripe w/ Jeremy Sylvester (2021-07-25)
+https://www.nts.live/shows/uk-garage-evolutions/episodes/across-the-pond-matt-jam-lamont-25th-july-2021   uk_garage speed_garage radio nts study_only   # UK Garage Evolutions: Across The Pond w/ Matt Jam Lamont (2021-07-25)
+
+# NTS show: Not Today w/ DJ Platt (golden-era garage, Manchester) - https://www.nts.live/shows/not-today [39 playable episodes]
+https://www.nts.live/shows/not-today/episodes/not-today-6th-december-2025   uk_garage speed_garage radio nts study_only   # Not Today (2025-12-06)
+https://www.nts.live/shows/not-today/episodes/not-today-8th-november-2025   uk_garage speed_garage radio nts study_only   # Not Today w/ DJ Sharda (2025-11-08)
+https://www.nts.live/shows/not-today/episodes/not-today-11th-october-2025   uk_garage speed_garage radio nts study_only   # Not Today (2025-10-11)
+https://www.nts.live/shows/not-today/episodes/not-today-21st-september-2025   uk_garage speed_garage radio nts study_only   # Not Today (2025-09-20)
+https://www.nts.live/shows/not-today/episodes/not-today-19th-july-2025   uk_garage speed_garage radio nts study_only   # Not Today (2025-07-19)
+https://www.nts.live/shows/not-today/episodes/not-today-katie-cooper-21st-june-2025   uk_garage speed_garage radio nts study_only   # Not Today w/ Katie Cooper (2025-06-21)
+https://www.nts.live/shows/not-today/episodes/not-today-24th-may-2025   uk_garage speed_garage radio nts study_only   # Not Today (2025-05-24)
+https://www.nts.live/shows/not-today/episodes/not-today-26th-april-2025   uk_garage speed_garage radio nts study_only   # Not Today - Breakbeat Garage II (2025-04-26)
+https://www.nts.live/shows/not-today/episodes/not-today-29th-march-2025   uk_garage speed_garage radio nts study_only   # Not Today (2025-03-29)
+https://www.nts.live/shows/not-today/episodes/not-today-1st-march-2025   uk_garage speed_garage radio nts study_only   # Not Today (2025-03-01)
+https://www.nts.live/shows/not-today/episodes/not-today-1st-february-2025   uk_garage speed_garage radio nts study_only   # Not Today (2025-02-01)
+https://www.nts.live/shows/not-today/episodes/not-today-9th-november-2024   uk_garage speed_garage radio nts study_only   # Not Today (2024-11-09)
+https://www.nts.live/shows/not-today/episodes/not-today-12th-october-2024   uk_garage speed_garage radio nts study_only   # Not Today (2024-10-12)
+https://www.nts.live/shows/not-today/episodes/not-today-14th-september-2024   uk_garage speed_garage radio nts study_only   # Not Today (2024-09-14)
+https://www.nts.live/shows/not-today/episodes/not-today-17th-august-2024   uk_garage speed_garage radio nts study_only   # Not Today (2024-08-17)
+https://www.nts.live/shows/not-today/episodes/not-today-22nd-june-2024   uk_garage speed_garage radio nts study_only   # Not Today w/ Katie Cooper (2024-06-28)
+https://www.nts.live/shows/not-today/episodes/not-today-25th-may-2024   uk_garage speed_garage radio nts study_only   # Not Today - Breakbeat Garage Special (2024-05-25)
+https://www.nts.live/shows/not-today/episodes/not-today-27th-april-2024   uk_garage speed_garage radio nts study_only   # Not Today (2024-04-27)
+https://www.nts.live/shows/not-today/episodes/not-today-30th-march-2024   uk_garage speed_garage radio nts study_only   # Not Today (2024-03-30)
+https://www.nts.live/shows/not-today/episodes/not-today-2nd-march-2024   uk_garage speed_garage radio nts study_only   # Not Today (2024-03-02)
+https://www.nts.live/shows/not-today/episodes/not-today-10th-february-2024   uk_garage speed_garage radio nts study_only   # Not Today (2024-02-10)
+https://www.nts.live/shows/not-today/episodes/not-today-6th-january-2024   uk_garage speed_garage radio nts study_only   # Not Today (2024-01-06)
+https://www.nts.live/shows/not-today/episodes/not-today-11th-november-2023   uk_garage speed_garage radio nts study_only   # Not Today - D.E.A Project Special (2023-11-11)
+https://www.nts.live/shows/not-today/episodes/not-today-14th-october-2023   uk_garage speed_garage radio nts study_only   # Not Today (2023-10-14)
+https://www.nts.live/shows/not-today/episodes/not-today-19th-august-2023   uk_garage speed_garage radio nts study_only   # Not Today (2023-08-19)
+https://www.nts.live/shows/not-today/episodes/not-today-22nd-july-2023   uk_garage speed_garage radio nts study_only   # Not Today (2023-07-22)
+https://www.nts.live/shows/not-today/episodes/not-today-24th-june-2023   uk_garage speed_garage radio nts study_only   # Not Today (2023-06-24)
+https://www.nts.live/shows/not-today/episodes/not-today-27th-may-2023   uk_garage speed_garage radio nts study_only   # Not Today (2023-05-27)
+https://www.nts.live/shows/not-today/episodes/not-today-29th-april-2023   uk_garage speed_garage radio nts study_only   # Not Today (2023-04-29)
+https://www.nts.live/shows/not-today/episodes/not-today-4th-march-2023   uk_garage speed_garage radio nts study_only   # Not Today (2023-03-04)
+https://www.nts.live/shows/not-today/episodes/not-today-26th-november-2022   uk_garage speed_garage radio nts study_only   # Not Today (2022-11-26)
+https://www.nts.live/shows/not-today/episodes/not-today-1st-october-2022   uk_garage speed_garage radio nts study_only   # Not Today (2022-10-01)
+https://www.nts.live/shows/not-today/episodes/not-today-3rd-september-2022   uk_garage speed_garage radio nts study_only   # Not Today w/ Emma Rose (2022-09-03)
+https://www.nts.live/shows/not-today/episodes/not-today-6th-august-2022   uk_garage speed_garage radio nts study_only   # Not Today (2022-08-06)
+https://www.nts.live/shows/not-today/episodes/not-today-w-dj-platt-9th-july-2022   uk_garage speed_garage radio nts study_only   # Not Today w/ Irtap (2022-07-09)
+https://www.nts.live/shows/not-today/episodes/not-today-w-dj-platt-11th-june-2022   uk_garage speed_garage radio nts study_only   # Not Today (2022-06-11)
+https://www.nts.live/shows/not-today/episodes/not-today-22nd-may-2022   uk_garage speed_garage radio nts study_only   # Not Today w/ DJ Platt b2b Sharda (2022-05-22)
+https://www.nts.live/shows/not-today/episodes/not-today-w-dj-platt-16th-april-2022   uk_garage speed_garage radio nts study_only   # Not Today (2022-04-16)
+https://www.nts.live/shows/not-today/episodes/not-today-w-dj-platt-14th-march-2022   uk_garage speed_garage radio nts study_only   # Not Today (2022-03-19)
+
+# NTS show: Spaces In Between w/ Introspekt (UKG, 2-step) - https://www.nts.live/shows/introspekt [39 playable episodes]
+https://www.nts.live/shows/introspekt/episodes/introspekt-9th-october-2026   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2026-10-09)
+https://www.nts.live/shows/introspekt/episodes/introspekt-11th-september-2026   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2026-09-11)
+https://www.nts.live/shows/introspekt/episodes/introspekt-14th-august-2026   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2026-08-14)
+https://www.nts.live/shows/introspekt/episodes/introspekt-17th-july-2026   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2026-07-17)
+https://www.nts.live/shows/introspekt/episodes/introspekt-19th-june-2026   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2026-06-19)
+https://www.nts.live/shows/introspekt/episodes/introspekt-22nd-may-2026   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2026-05-22)
+https://www.nts.live/shows/introspekt/episodes/introspekt-24th-april-2026   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2026-04-24)
+https://www.nts.live/shows/introspekt/episodes/introspekt-27th-march-2026   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2026-03-27)
+https://www.nts.live/shows/introspekt/episodes/introspekt-27th-february-2026   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2026-02-27)
+https://www.nts.live/shows/introspekt/episodes/introspekt-30th-january-2026   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2026-01-30)
+https://www.nts.live/shows/introspekt/episodes/introspekt-5th-december-2025   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2025-12-05)
+https://www.nts.live/shows/introspekt/episodes/introspekt-7th-november-2025   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2025-11-07)
+https://www.nts.live/shows/introspekt/episodes/introspekt-10th-october-2025   uk_garage dubstep radio nts study_only   # Space In Between w/ Introspekt & Linda Lo (2025-10-10)
+https://www.nts.live/shows/introspekt/episodes/introspekt-12th-september-2025   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2025-09-12)
+https://www.nts.live/shows/introspekt/episodes/introspekt-15th-august-2025   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2025-08-15)
+https://www.nts.live/shows/introspekt/episodes/introspekt-18th-july-2025   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2025-07-18)
+https://www.nts.live/shows/introspekt/episodes/introspekt-23rd-may-2025   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2025-05-23)
+https://www.nts.live/shows/introspekt/episodes/introspekt-25th-april-2025   uk_garage dubstep radio nts study_only   # Spaces In Between: Introspekt 100% Production Mix (2025-04-25)
+https://www.nts.live/shows/introspekt/episodes/introspekt-28th-march-2025   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2025-03-28)
+https://www.nts.live/shows/introspekt/episodes/introspekt-28th-february-2025   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt & Alírio (2025-02-28)
+https://www.nts.live/shows/introspekt/episodes/introspekt-31st-january-2025   uk_garage dubstep radio nts study_only   # Spaces In Between w/ Introspekt (2025-01-31)
+https://www.nts.live/shows/introspekt/episodes/introspekt-3rd-january-2025   uk_garage dubstep radio nts study_only   # INTROSPEKT (2025-01-03)
+https://www.nts.live/shows/introspekt/episodes/introspekt-6th-december-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT (2024-12-06)
+https://www.nts.live/shows/introspekt/episodes/introspekt-8th-november-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT (2024-11-08)
+https://www.nts.live/shows/introspekt/episodes/introspekt-11th-october-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT (2024-10-11)
+https://www.nts.live/shows/introspekt/episodes/introspekt-13th-september-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT (2024-09-13)
+https://www.nts.live/shows/introspekt/episodes/introspekt-16th-august-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT (2024-08-16)
+https://www.nts.live/shows/introspekt/episodes/introspekt-19th-july-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT (2024-07-19)
+https://www.nts.live/shows/introspekt/episodes/introspekt-21st-june-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT (2024-06-21)
+https://www.nts.live/shows/introspekt/episodes/introspekt-24th-may-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT (2024-05-24)
+https://www.nts.live/shows/introspekt/episodes/introspekt-26th-april-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT (2024-04-26)
+https://www.nts.live/shows/introspekt/episodes/introspekt-29th-march-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT w/ Bored Lord (2024-03-29)
+https://www.nts.live/shows/introspekt/episodes/introspekt-1st-march-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT (2024-03-01)
+https://www.nts.live/shows/introspekt/episodes/introspekt-2nd-february-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT: Dubstep is a Feeling (2024-02-02)
+https://www.nts.live/shows/introspekt/episodes/introspekt-5th-january-2024   uk_garage dubstep radio nts study_only   # INTROSPEKT (2024-01-05)
+https://www.nts.live/shows/introspekt/episodes/introspekt-8th-december-2023   uk_garage dubstep radio nts study_only   # INTROSPEKT (2023-12-08)
+https://www.nts.live/shows/introspekt/episodes/introspekt-10th-november-2023   uk_garage dubstep radio nts study_only   # INTROSPEKT (2023-11-10)
+https://www.nts.live/shows/introspekt/episodes/introspekt-13th-october-2023   uk_garage dubstep radio nts study_only   # INTROSPEKT (2023-10-13)
+https://www.nts.live/shows/introspekt/episodes/introspekt-15th-september-2023   uk_garage dubstep radio nts study_only   # INTROSPEKT (2023-09-15)
+
+# NTS show: Blood & Fire (70s dub & reggae reissue label residency) - https://www.nts.live/shows/blood-and-fire [53 playable episodes]
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-10th-august-2025   roots_dub radio nts study_only   # Blood & Fire (2025-08-10)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-15th-june-2025   roots_dub radio nts study_only   # Blood & Fire w/ Barney Doodlebug  (2025-06-15)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-18th-may-2025   roots_dub radio nts study_only   # Blood & Fire (2025-05-18)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-20th-april-2025   roots_dub radio nts study_only   # Blood & Fire (2025-04-20)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-23rd-march-2025   roots_dub radio nts study_only   # Blood & Fire (2025-03-23)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-26th-january-2025   roots_dub radio nts study_only   # Blood & Fire (2025-01-26)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-6th-october-2024   roots_dub radio nts study_only   # Blood & Fire Presents J-Walk - Casio Madness  (2024-10-06)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-8th-september-2024   roots_dub radio nts study_only   # Blood & Fire (2024-09-08)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-19th-may-2024   roots_dub radio nts study_only   # Blood & Fire w/ John Cooper Clarke (2024-05-19)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-22nd-april-2024   roots_dub radio nts study_only   # BLOOD & FIRE SHOUTS FOR PEACE (2024-04-22)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-25th-february-2024   roots_dub radio nts study_only   # Blood & Fire: Street Party Mix Live From SK1 Records (2024-02-25)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-28th-january-2024   roots_dub radio nts study_only   # Blood & Fire (2024-01-28)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-3rd-december-2023   roots_dub radio nts study_only   # Blood & Fire Meet Prince Fatty (2023-12-03)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-5th-november-2023   roots_dub radio nts study_only   # Blood & Fire Present Cease All War (2023-11-05)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-8th-october-2023   roots_dub radio nts study_only   # Blood & Fire meet African Head Charge - Uptown In Manchester x On The Spot Scene Report (2023-10-08)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-13th-august-2023   roots_dub radio nts study_only   # Blood & Fire meet Grace Jones at Bluedot (2023-08-13)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-18th-june-2023   roots_dub radio nts study_only   # Blood & Fire (2023-06-18)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-21st-may-2023   roots_dub radio nts study_only   # Blood & Fire (2023-05-21)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-23rd-april-2023   roots_dub radio nts study_only   # Blood & Fire (2023-04-23)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-26th-march-2023   roots_dub radio nts study_only   # Blood & Fire (2023-03-26)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-26th-february-2023   roots_dub radio nts study_only   # BLOOD & FIRE PRESENT 'NUEVO REGGAE BALEAR' BY J-WALK (2023-02-26)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-29th-january-2023   roots_dub radio nts study_only   # Blood & Fire - King Tubby Special (2023-01-29)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-4th-december-2022   roots_dub radio nts study_only   # Blood & Fire  (2022-12-04)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-9th-october-2022   roots_dub radio nts study_only   # PRINCE BUSTER X BLOOD AND FIRE SPECIAL (2022-10-09)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-14th-august-2022   roots_dub radio nts study_only   # Blood & Fire - J-walk Summer Reggae Special (2022-08-14)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-22nd-may-2022   roots_dub radio nts study_only   # Blood & Fire - Godzilla special  (2022-05-22)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-24th-april-2022   roots_dub radio nts study_only   # Blood & Fire  (2022-04-24)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-27th-march-2022   roots_dub radio nts study_only   # CITY CULTURE LIVE IN A RUB A DUB STYLE W/ BLOOD & FIRE AKA KING SPINNA (2022-03-27)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-27th-february-2022   roots_dub radio nts study_only   # MARTIAN TIN CAN RADIO X BLOOD & FIRE REGGAE SPECIAL (2022-02-27)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-30th-january-2022   roots_dub radio nts study_only   # BLOOD AND FIRE PRESENT - BASSPEARE - A TRIBUTE TO ROBBIE SHAKESPEARE (2022-01-30)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-5th-december-2021   roots_dub radio nts study_only   # BLOOD & FIRE x BEFORE I DIE SOUND (2021-12-05)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-7th-november-2021   roots_dub radio nts study_only   # Blood & Fire w/ Jak - Early Jamaican DJs special (2021-11-07)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-12th-september-2021   roots_dub radio nts study_only   # Blood & Fire -     Lee Perry Tribute (2021-09-12)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-15th-august-2021   roots_dub radio nts study_only   # Blood & Fire  (2021-08-15)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-18th-july-2021   roots_dub radio nts study_only   # Blood & Fire  (2021-07-18)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-23rd-may-2021   roots_dub radio nts study_only   # Blood & Fire  (2021-05-23)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-25th-april-2021   roots_dub radio nts study_only   # Blood & Fire - Trinity and Blood & Fire live in France (2021-04-25)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-28th-march-2021   roots_dub radio nts study_only   # Blood & Fire  (2021-03-28)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-28th-february-2021   roots_dub radio nts study_only   # Blood & Fire Presents: A Tribute To The Mighty Mighty U Roy (2021-02-28)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-31st-january-2021   roots_dub radio nts study_only   # Blood & Fire  (2021-01-31)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-6th-december-2020   roots_dub radio nts study_only   # Blood & Fire w/ Al Breadwinner (2020-12-06)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-8th-november-2020   roots_dub radio nts study_only   # Blood & Fire - Another Tribute to Bunny 'Striker' Lee (2020-11-08)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-11th-october-2020   roots_dub radio nts study_only   # Blood & Fire - A Tribute to Bunny 'Striker' Lee (2020-10-11)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-13th-september-2020   roots_dub radio nts study_only   # Blood & Fire x SK1 Records Special (2020-09-13)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-19th-july-2020   roots_dub radio nts study_only   # Blood & Fire  (2020-07-19)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-21st-june-2020   roots_dub radio nts study_only   # Blood & Fire  (2020-06-21)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-24th-may-2020   roots_dub radio nts study_only   # Horace Andy - City Culture w/ Blood & Fire at MIF (2020-05-24)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-26th-april-2020   roots_dub radio nts study_only   # Blood & Fire (2020-04-26)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-present-jwalk-29th-march-2020   roots_dub radio nts study_only   # Blood & Fire present J-Walk (2020-03-29)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-2nd-february-2020   roots_dub radio nts study_only   # Blood & Fire  (2020-02-02)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-5th-january-2020   roots_dub radio nts study_only   # Blood & Fire (2020-01-05)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-fire-8th-december-2019   roots_dub radio nts study_only   # Blood & Fire  (2019-12-08)
+https://www.nts.live/shows/blood-and-fire/episodes/blood-and-fire-w-king-spinna-10th-november-2019   roots_dub radio nts study_only   # Blood & Fire  (2019-11-10)
+
+# NTS show: Studio One label deep-dives (incl. Dub Specialist) - https://www.nts.live/shows/studio-one [8 playable episodes]
+https://www.nts.live/shows/studio-one/episodes/studio-one-7th-january-2021   roots_dub radio nts study_only   # Studio One - Jackie Mittoo Special  (2021-01-07)
+https://www.nts.live/shows/studio-one/episodes/studio-one-8th-december-2020   roots_dub radio nts study_only   # Studio One - A Love I Can Feel (2020-12-08)
+https://www.nts.live/shows/studio-one/episodes/studio-one-ska-special-20th-november-2020   roots_dub radio nts study_only   # Studio One - Ska Special (2020-11-20)
+https://www.nts.live/shows/studio-one/episodes/the-heptones-22nd-october-2020   roots_dub radio nts study_only   # Studio One - The Heptones Special  (2020-10-22)
+https://www.nts.live/shows/studio-one/episodes/women-of-studio-one-30th-september-2020   roots_dub radio nts study_only   # Studio One - Women of Studio One (2020-09-30)
+https://www.nts.live/shows/studio-one/episodes/studioone-instrumentals-30th-june-2020   roots_dub radio nts study_only   # Studio One - Instrumentals (2020-06-29)
+https://www.nts.live/shows/studio-one/episodes/dub-specialist-8th-may-2020   roots_dub radio nts study_only   # Studio One - Dub Specialist (2020-05-07)
+https://www.nts.live/shows/studio-one/episodes/studio-one-best-harmonies-backing-vocals-8th-april-2020   roots_dub radio nts study_only   # Studio One - Best Harmonies & Backing Vocals (2020-04-07)
+
+# NTS show: A King Tubby Tribute (Firehouse guide, dubplate specials) - https://www.nts.live/shows/king-tubby-tribute [3 playable episodes]
+https://www.nts.live/shows/king-tubby-tribute/episodes/firehouse-28th-january-2023   roots_dub radio nts study_only   # A King Tubby Tribute: Guide to Firehouse (2023-01-28)
+https://www.nts.live/shows/king-tubby-tribute/episodes/tubby-and-friends-28th-january-2023   roots_dub radio nts study_only   # A King Tubby Tribute: Tubby & Friends (2023-01-28)
+https://www.nts.live/shows/king-tubby-tribute/episodes/dubplate-specials-28th-january-2023   roots_dub radio nts study_only   # A King Tubby Tribute: One Aways - Dubplate Specials (2023-01-28)
+
+# NTS show: Lloyd 'Musclehead' Saxon (Saxon Sound System co-founder) - https://www.nts.live/shows/lloyd-musclehead-saxon [10 playable episodes]
+https://www.nts.live/shows/lloyd-musclehead-saxon/episodes/lloyd-musclehead-saxon-9th-october-2026   roots_dub soundclash soundsystem radio nts study_only   # Lloyd 'Musclehead' Saxon  (2026-10-09)
+https://www.nts.live/shows/lloyd-musclehead-saxon/episodes/lloyd-musclehead-saxon-31st-august-2026   roots_dub soundclash soundsystem radio nts study_only   # Lloyd 'Musclehead' Saxon  (2026-08-31)
+https://www.nts.live/shows/lloyd-musclehead-saxon/episodes/lloyd-musclehead-saxon-6th-july-2026   roots_dub soundclash soundsystem radio nts study_only   # Lloyd 'Musclehead' Saxon (2026-07-06)
+https://www.nts.live/shows/lloyd-musclehead-saxon/episodes/lloyd-musclehead-saxon-5th-june-2026   roots_dub soundclash soundsystem radio nts study_only   # Lloyd 'Musclehead' Saxon  (2026-06-04)
+https://www.nts.live/shows/lloyd-musclehead-saxon/episodes/lloyd-musclehead-saxon-9th-april-2026   roots_dub soundclash soundsystem radio nts study_only   # Lloyd 'Musclehead' Saxon (2026-04-09)
+https://www.nts.live/shows/lloyd-musclehead-saxon/episodes/lloyd-musclehead-saxon-12th-march-2026   roots_dub soundclash soundsystem radio nts study_only   # Lloyd 'Musclehead' Saxon (2026-03-12)
+https://www.nts.live/shows/lloyd-musclehead-saxon/episodes/lloyd-musclehead-saxon-14th-february-2026   roots_dub soundclash soundsystem radio nts study_only   # Lloyd 'Musclehead' Saxon (2026-02-14)
+https://www.nts.live/shows/lloyd-musclehead-saxon/episodes/lloyd-musclehead-saxon-16th-january-2026   roots_dub soundclash soundsystem radio nts study_only   # Lloyd 'Musclehead' Saxon (2026-01-16)
+https://www.nts.live/shows/lloyd-musclehead-saxon/episodes/lloyd-musclehead-saxon-6th-december-2025   roots_dub soundclash soundsystem radio nts study_only   # Lloyd 'Musclehead' Saxon (2025-12-06)
+https://www.nts.live/shows/lloyd-musclehead-saxon/episodes/lloyd-musclehead-saxon-5th-november-2025   roots_dub soundclash soundsystem radio nts study_only   # Lloyd 'Musclehead' Saxon (2025-11-05)
+
+# NTS show: L'Odyssey In Dub w/ Jah Cousteau (late-70s roots & dub) - https://www.nts.live/shows/lenard-smith [3 playable episodes]
+https://www.nts.live/shows/lenard-smith/episodes/l-odyssey-in-dub-w-lenard-smith-3rd-january-2017   roots_dub radio nts study_only   # L'Odyssey In Dub w/ Jah Cousteau (2018-01-03)
+https://www.nts.live/shows/lenard-smith/episodes/l-odyssey-in-dub-w-lenard-smith-11-october-2017   roots_dub radio nts study_only   # L'Odyssey In Dub w/ Jah Cousteau (2017-10-11)
+https://www.nts.live/shows/lenard-smith/episodes/lodyssey-in-dub-w-lenard-smith-13th-september-2017   roots_dub radio nts study_only   # L'Odyssey In Dub w/ Jah Cousteau (2017-09-13)
+
+# NTS show: Adrian Sherwood (On-U Sound) - https://www.nts.live/shows/adriansherwood [4 playable episodes]
+https://www.nts.live/shows/adriansherwood/episodes/adrian-sherwood-31st-march-2015   roots_dub steppers_dub radio nts study_only   # Adrian Sherwood (2015-03-31)
+https://www.nts.live/shows/adriansherwood/episodes/adrian-sherwood-24th-march-2015   roots_dub steppers_dub radio nts study_only   # Adrian Sherwood (2015-03-24)
+https://www.nts.live/shows/adriansherwood/episodes/adrian-sherwood-17th-march-2015   roots_dub steppers_dub radio nts study_only   # Adrian Sherwood (2015-03-17)
+https://www.nts.live/shows/adriansherwood/episodes/adrian-sherwood-10th-march-2015   roots_dub steppers_dub radio nts study_only   # Adrian Sherwood (2015-03-10)
+
+# NTS show: Women of British Reggae (4-part series) - https://www.nts.live/shows/women-of-british-reggae [4 playable episodes]
+https://www.nts.live/shows/women-of-british-reggae/episodes/dancehall-liberation-30th-october-2022   roots_dub radio nts study_only   # Women of British Reggae: Dancehall & Liberation (2022-10-30)
+https://www.nts.live/shows/women-of-british-reggae/episodes/soundsystem-29th-october-2022   roots_dub radio nts study_only   # Women of British Reggae: Sisters in Soundsystems (2022-10-29)
+https://www.nts.live/shows/women-of-british-reggae/episodes/pirate-radio-28th-october-2022   roots_dub radio nts study_only   # Women of British Reggae: Pirate Radio, Female Energy (2022-10-28)
+https://www.nts.live/shows/women-of-british-reggae/episodes/lovers-rock-27th-october-2022   roots_dub radio nts study_only   # Women of British Reggae: Lovers to the World (2022-10-27)
+
+# NTS show: Nzinga Soundz (female-fronted roots sound system) - https://www.nts.live/shows/nzinga-soundz [8 playable episodes]
+https://www.nts.live/shows/nzinga-soundz/episodes/nzinga-soundz-28th-july-2021   roots_dub soundsystem radio nts study_only   # Nzinga Soundz - Songs of Freedom: Celebrating 60 Years of Independence (2021-07-28)
+https://www.nts.live/shows/nzinga-soundz/episodes/nzinga-soundz-30th-june-2021   roots_dub soundsystem radio nts study_only   # Nzinga Soundz w/ Lady Banton (2021-06-30)
+https://www.nts.live/shows/nzinga-soundz/episodes/nzinga-soundz-26th-may-2021   roots_dub soundsystem radio nts study_only   # Nzinga Soundz - Let's Walk w/ Dr Martin Glynn (2021-05-26)
+https://www.nts.live/shows/nzinga-soundz/episodes/nzinga-soundz-29th-april-2021   roots_dub soundsystem radio nts study_only   # Nzinga Soundz - Covers, Samples & Versions Special (2021-04-29)
+https://www.nts.live/shows/nzinga-soundz/episodes/bunny-wailer-u-roy-tribute-18th-march-2021   roots_dub soundsystem radio nts study_only   # Nzinga Soundz - Bunny Wailer & U Roy Tribute w/ Lloyd Bradley (2021-03-18)
+https://www.nts.live/shows/nzinga-soundz/episodes/nzinga-soundz-lez-henry-matt-worley-16th-december-2020   roots_dub soundsystem radio nts study_only   # Nzinga Soundz w/ Lez Henry & Matt Worley (2020-12-16)
+https://www.nts.live/shows/nzinga-soundz/episodes/johnny-nash-toots-the-maytals-special-18th-november-2020   roots_dub soundsystem radio nts study_only   # Nzinga Soundz - Johnny Nash & Toots & The Maytals Special (2020-11-18)
+https://www.nts.live/shows/nzinga-soundz/episodes/soundsystem-showcase-nzinga-soundz-28th-august-2020   roots_dub soundsystem radio nts study_only   # Nzinga Soundz - Carnival Special (2020-08-27)
+
+# NTS show: Toast Collective (rocksteady, rubadub, DJ toasting) - https://www.nts.live/shows/toast-collective [41 playable episodes]
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-6th-august-2022   roots_dub soundclash radio nts study_only   # Toast Collective (2022-08-05)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-w-sammy-herzella-14th-may-2022   roots_dub soundclash radio nts study_only   # Toast Collective w/ Sammy Herzella (2022-05-14)
+https://www.nts.live/shows/toast-collective/episodes/sammy-herzella-23rd-january-2021   roots_dub soundclash radio nts study_only   # Sammy Herzella (2021-01-23)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-22nd-july-2020   roots_dub soundclash radio nts study_only   # Toast Collective (2020-07-22)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-13th-june-2020   roots_dub soundclash radio nts study_only   # Toast Collective w/ Sammy Herzella (2020-06-13)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-16th-may-2020   roots_dub soundclash radio nts study_only   # Toast Collective (2020-05-16)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-18th-april-2020   roots_dub soundclash radio nts study_only   # Toast Collective (2020-04-17)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-21st-march-2020   roots_dub soundclash radio nts study_only   # Toast Collective w/ Sammy Herzella (2020-03-20)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-22nd-february-2020   roots_dub soundclash radio nts study_only   # Toast Collective (2020-02-22)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-25th-january-2020   roots_dub soundclash radio nts study_only   # Toast Collective (2020-01-25)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-30th-november-2019   roots_dub soundclash radio nts study_only   # Toast Collective (2019-11-30)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-5th-october-2019   roots_dub soundclash radio nts study_only   # Toast Collective (2019-10-05)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-7th-september-2019   roots_dub soundclash radio nts study_only   # Toast Collective (2019-09-07)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-17th-august-2019   roots_dub soundclash radio nts study_only   # Toast Collective (2019-08-17)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-26th-january-2019   roots_dub soundclash radio nts study_only   # Farhad Hakim w/ Wzrd Yoshi & Greentea peng. (2019-01-26)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-29th-december-2018   roots_dub soundclash radio nts study_only   # Toast Collective (2018-12-29)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-w-ash-walker-sammy-herzella-3rd-november-2018   roots_dub soundclash radio nts study_only   # Toast Collective w/ Ash Walker and Sammy Herzella (2018-11-03)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-w-farhad-hakim-6th-october-2018   roots_dub soundclash radio nts study_only   # Toast Collective w/ Farhad Hakim (2018-10-06)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-w-farhad-hakim-8th-september-2018   roots_dub soundclash radio nts study_only   # Toast Collective w/ Sammy Herzella (2018-09-08)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-w-farhad-hakim-and-blase-vanguard-11th-august-2018   roots_dub soundclash radio nts study_only   # Toast Collective w/ Farhad Hakim and Blasé Vanguard  (2018-08-11)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-14th-july-2018   roots_dub soundclash radio nts study_only   # Toast Collective w/ Sammy (2018-07-14)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-16th-june-2018   roots_dub soundclash radio nts study_only   # Toast Collective w/ Farhad Hakim (2018-06-16)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-19th-may-2018   roots_dub soundclash radio nts study_only   # Toast Collective w/ Sammy Herzella (2018-05-19)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-21st-april-2018   roots_dub soundclash radio nts study_only   # Toast Collective w/ Sammy Herzella (2018-04-21)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-24th-march-2018   roots_dub soundclash radio nts study_only   # Toast Collective (2018-03-24)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-24th-february-2018   roots_dub soundclash radio nts study_only   # Toast Collective (2018-02-24)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-w-sammy-herzella-30th-january-2018   roots_dub soundclash radio nts study_only   # Toast Collective w/ Sammy Herzella  (2018-01-27)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-7th-october-2017   roots_dub soundclash radio nts study_only   # Toast Collective (2017-10-07)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-9th-september-2017   roots_dub soundclash radio nts study_only   # Toast Collective (2017-09-09)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-12-08-17   roots_dub soundclash radio nts study_only   # Toast Collective (2017-08-12)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-15th-july-2017   roots_dub soundclash radio nts study_only   # Toast Collective (2017-07-15)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-17th-june-2017   roots_dub soundclash radio nts study_only   # Toast Collective w/ Daddy Ranks (2017-06-17)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-20th-may-2017   roots_dub soundclash radio nts study_only   # Toast Collective (2017-05-20)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-22nd-april-2017   roots_dub soundclash radio nts study_only   # Toast Collective (2017-04-22)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-25th-march-2017   roots_dub soundclash radio nts study_only   # Toast Collective (2017-03-25)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-26th-february-2017   roots_dub soundclash radio nts study_only   # Toast Collective (2017-02-26)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-29th-january-2017   roots_dub soundclash radio nts study_only   # Toast Collective - Best of Foundation Jamaican Sounds Special (2017-01-29)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-1st-january-2017   roots_dub soundclash radio nts study_only   # Toast Collective (2017-01-01)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-3rd-december-2016   roots_dub soundclash radio nts study_only   # Toast Collective (2016-12-04)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-5th-november-2016   roots_dub soundclash radio nts study_only   # Toast Collective (2016-11-06)
+https://www.nts.live/shows/toast-collective/episodes/toast-collective-9th-august-2016   roots_dub soundclash radio nts study_only   # Toast Collective (2016-08-09)
+
+# NTS show: Wine Lips (reggae & dub) - https://www.nts.live/shows/winelips [49 playable episodes]
+https://www.nts.live/shows/winelips/episodes/wine-lips-1st-november-2021   roots_dub radio nts study_only   # Wine Lips w/ DDF - 50th Anniversary (2021-11-01)
+https://www.nts.live/shows/winelips/episodes/winelips-ddf-31st-may-2021   roots_dub radio nts study_only   # Wine Lips w/ DDF (2021-05-31)
+https://www.nts.live/shows/winelips/episodes/wine-lips-2nd-march-2021   roots_dub radio nts study_only   # Wine Lips (2021-03-02)
+https://www.nts.live/shows/winelips/episodes/wine-lips-17th-november-2020   roots_dub radio nts study_only   # Wine Lips w/ DDF (2020-11-17)
+https://www.nts.live/shows/winelips/episodes/wine-lips-9th-september-2020   roots_dub radio nts study_only   # Wine Lips (2020-09-09)
+https://www.nts.live/shows/winelips/episodes/wine-lips-25th-may-2020   roots_dub radio nts study_only   # Wine Lips - At The Pictures (2020-05-25)
+https://www.nts.live/shows/winelips/episodes/wine-lips-7th-february-2020   roots_dub radio nts study_only   # Wine Lips (2020-02-07)
+https://www.nts.live/shows/winelips/episodes/wine-lips-6th-august-2019   roots_dub radio nts study_only   # Wine Lips (2019-08-06)
+https://www.nts.live/shows/winelips/episodes/wine-lips-24th-june-2019   roots_dub radio nts study_only   # Wine Lips (2019-06-24)
+https://www.nts.live/shows/winelips/episodes/wine-lips-2nd-april-2019   roots_dub radio nts study_only   # Wine Lips - Music Worth Dying For (2019-04-02)
+https://www.nts.live/shows/winelips/episodes/wine-lips-15th-february-2019   roots_dub radio nts study_only   # Wine Lips (2019-02-15)
+https://www.nts.live/shows/winelips/episodes/wine-lips-15th-december-2017   roots_dub radio nts study_only   # Wine Lips (2017-12-15)
+https://www.nts.live/shows/winelips/episodes/wine-lips-28th-july-2017   roots_dub radio nts study_only   # Wine Lips (2017-07-28)
+https://www.nts.live/shows/winelips/episodes/wine-lips-22nd-december-2016   roots_dub radio nts study_only   # Wine Lips (2016-12-22)
+https://www.nts.live/shows/winelips/episodes/wine-lips-24th-november-2016   roots_dub radio nts study_only   # Wine Lips (2016-11-24)
+https://www.nts.live/shows/winelips/episodes/wine-lips-27th-october-2016   roots_dub radio nts study_only   # Wine Lips - Wally Badarou Special) (2016-10-27)
+https://www.nts.live/shows/winelips/episodes/wine-lips-wackies-special-29th-september-2016   roots_dub radio nts study_only   # Wine Lips - Wackie's Special (2016-09-29)
+https://www.nts.live/shows/winelips/episodes/wine-lips-1st-september-2016   roots_dub radio nts study_only   # Wine Lips (2016-09-01)
+https://www.nts.live/shows/winelips/episodes/wine-lips-jah-shaka-special-4th-august-2016   roots_dub radio nts study_only   # Wine Lips - Jah Shaka Special (2016-08-04)
+https://www.nts.live/shows/winelips/episodes/wine-lips-7th-july-2016   roots_dub radio nts study_only   # Wine Lips (2016-07-07)
+https://www.nts.live/shows/winelips/episodes/wine-lips-9th-june-2016   roots_dub radio nts study_only   # Wine Lips (2016-06-09)
+https://www.nts.live/shows/winelips/episodes/wine-lips-12th-may-2015   roots_dub radio nts study_only   # Wine Lips (2016-05-12)
+https://www.nts.live/shows/winelips/episodes/wine-lips-14th-april-2016   roots_dub radio nts study_only   # Wine Lips (2016-04-14)
+https://www.nts.live/shows/winelips/episodes/wine-lips-17th-march   roots_dub radio nts study_only   # Wine Lips (2016-03-17)
+https://www.nts.live/shows/winelips/episodes/wine-lips-18th-february-2016   roots_dub radio nts study_only   # Wine Lips (2016-02-18)
+https://www.nts.live/shows/winelips/episodes/wine-lips-21st-january-2016   roots_dub radio nts study_only   # Wine Lips (2016-01-21)
+https://www.nts.live/shows/winelips/episodes/wine-lips-26th-november-2015   roots_dub radio nts study_only   # Wine Lips (2015-11-26)
+https://www.nts.live/shows/winelips/episodes/wine-lips-29th-october-2015   roots_dub radio nts study_only   # Wine Lips (2015-10-29)
+https://www.nts.live/shows/winelips/episodes/wine-lips-1st-october-2015   roots_dub radio nts study_only   # Wine Lips (2015-10-01)
+https://www.nts.live/shows/winelips/episodes/wine-lips-w-farhad-toast-collective-3rd-september-2015   roots_dub radio nts study_only   # Wine Lips w/ Farhad (Toast Collective) (2015-09-03)
+https://www.nts.live/shows/winelips/episodes/wine-lips-6th-august-2015   roots_dub radio nts study_only   # Wine Lips (2015-08-06)
+https://www.nts.live/shows/winelips/episodes/wine-lips-16th-july-2015   roots_dub radio nts study_only   # Wine Lips (2015-07-16)
+https://www.nts.live/shows/winelips/episodes/wine-lips-24th-june-2015   roots_dub radio nts study_only   # Wine Lips (2015-06-24)
+https://www.nts.live/shows/winelips/episodes/wine-lips-11th-june-2015   roots_dub radio nts study_only   # Wine Lips (2015-06-11)
+https://www.nts.live/shows/winelips/episodes/wine-lips-14th-may-2015   roots_dub radio nts study_only   # Wine Lips (2015-05-14)
+https://www.nts.live/shows/winelips/episodes/wine-lips-23rd-april-2015   roots_dub radio nts study_only   # Wine Lips (2015-04-23)
+https://www.nts.live/shows/winelips/episodes/wine-lips-1st-april-2015   roots_dub radio nts study_only   # Wine Lips (2015-04-01)
+https://www.nts.live/shows/winelips/episodes/wine-lips-19th-february-2015   roots_dub radio nts study_only   # Wine Lips (2015-02-19)
+https://www.nts.live/shows/winelips/episodes/wine-lips-22nd-january-2015   roots_dub radio nts study_only   # Wine Lips (2015-01-22)
+https://www.nts.live/shows/winelips/episodes/wine-lips-4th-december-2014   roots_dub radio nts study_only   # Wine Lips (2014-12-04)
+https://www.nts.live/shows/winelips/episodes/wine-lips-6th-november-2014   roots_dub radio nts study_only   # Wine Lips (2014-11-06)
+https://www.nts.live/shows/winelips/episodes/wine-lips-9th-october-2014   roots_dub radio nts study_only   # Wine Lips (2014-10-09)
+https://www.nts.live/shows/winelips/episodes/wine-lips-11th-september-2014   roots_dub radio nts study_only   # Wine Lips (2014-09-11)
+https://www.nts.live/shows/winelips/episodes/wine-lips-carnival-special-14th-august-2014   roots_dub radio nts study_only   # Carnival Special - 14th August 2014 (2014-08-14)
+https://www.nts.live/shows/winelips/episodes/wine-lips-19th-june-2014   roots_dub radio nts study_only   # Wine Lips (2014-06-19)
+https://www.nts.live/shows/winelips/episodes/wine-lips-22nd-may-2014   roots_dub radio nts study_only   # Wine Lips (2014-05-22)
+https://www.nts.live/shows/winelips/episodes/winelips270314   roots_dub radio nts study_only   # Wine Lips (2014-03-27)
+https://www.nts.live/shows/winelips/episodes/ddf27022014   roots_dub radio nts study_only   # Wine Lips (2014-02-27)
+https://www.nts.live/shows/winelips/episodes/winelips300114   roots_dub radio nts study_only   # Wine Lips (2014-01-30)
+
+# NTS show: Blazer Sound System (NYC reggae/dancehall sound) - https://www.nts.live/shows/blazer-sound-system [31 playable episodes]
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-16th-june-2023   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System (2023-06-15)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-21st-april-2023   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System - Jah Shaka Special (2023-04-20)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-24th-february-2023   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System (2023-02-24)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-4th-november-2022   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2022-11-04)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-8th-september-2022   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2022-09-08)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-14th-july-2022   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2022-07-14)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-17th-may-2022   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2022-05-17)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-22nd-march-2022   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2022-03-22)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-30th-november-2021   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2022-01-25)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-2nd-november-2021   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2021-11-02)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-5th-october-2021   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System - Scratch Tribute (2021-10-05)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-10th-august-2021   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2021-08-10)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-13th-july-2021   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System w/ Rockers NYC (2021-07-13)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-15th-june-2021   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2021-06-15)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-18th-may-2021   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2021-05-18)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-6th-october-2020   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2020-10-06)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-11th-august-2020   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2020-08-11)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-14th-july-2020   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2020-07-14)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-21st-april-2020   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2020-04-21)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-25th-february-2020   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System w/ Rainstick (2020-02-25)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazersoundsystem-28th-january-2020   roots_dub soundclash soundsystem radio nts study_only   # blazer sound system w/ Zebrablood (2020-01-28)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-soundsystem-21st-december-2019   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2019-12-21)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-3rd-december-2019   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System w/ ZB (2019-12-03)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-5th-november-2019   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2019-11-05)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-10th-september-2019   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2019-09-10)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-13th-august-2019   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2019-08-13)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-soundsystem-16th-july-2019   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2019-07-16)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-18th-june-2019   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2019-06-18)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-21st-may-2019   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2019-05-21)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-23th-april-2019   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2019-04-23)
+https://www.nts.live/shows/blazer-sound-system/episodes/blazer-sound-system-26th-march-2019   roots_dub soundclash soundsystem radio nts study_only   # Blazer Sound System  (2019-03-26)
+
+# NTS show: This City Plays (filtered: Story of Grime, Heartless Crew, Wiley) - https://www.nts.live/shows/this-city-plays [3 playable episodes]
+https://www.nts.live/shows/this-city-plays/episodes/this-city-plays-dan-hancox-22nd-may-2018   grime uk_garage radio nts study_only   # This City Plays: The Story of Grime (2018-05-22)
+https://www.nts.live/shows/this-city-plays/episodes/this-city-plays-w-heartless-crew-25th-april-2017   grime uk_garage radio nts study_only   # This City Plays w/ Heartless Crew (2017-05-03)
+https://www.nts.live/shows/this-city-plays/episodes/this-city-plays-w-wiley-20th-august-2012   grime uk_garage radio nts study_only   # This City Plays w/ Wiley  (2012-08-20)
+
+# NTS show: Soup To Nuts w/ Scratcha DVA (filtered to grime/garage-guest episodes) - https://www.nts.live/shows/soup-to-nuts-scratcha [20 playable episodes]
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-15th-november-2024   grime radio nts study_only   # Soup To Nuts w/ Scratcha, Killa P & Numa Crew (2024-11-15)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-4th-october-2024   grime radio nts study_only   # Soup To Nuts w/ Scratcha, Mez & Grandmixxer (2024-10-04)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-30th-august-2024   grime radio nts study_only   # Soup To Nuts w/ Scratcha, Madam X & Dream The Grime Journalist (2024-08-30)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-2nd-august-2024   grime radio nts study_only   # Soup To Nuts w/ Scratcha & Mak 10 (2024-08-02)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-5th-july-2024   grime radio nts study_only   # Soup To Nuts w/ Scratcha & Dream (The Grime Journalist) (2024-07-05)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-24th-may-2024   grime radio nts study_only   # Soup To Nuts w/ Scratcha & Roska  (2024-05-24)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-26th-april-2024   grime radio nts study_only   # Soup To Nuts w/ Scratcha & Jon E Cash (2024-04-26)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-22nd-march-2024   grime radio nts study_only   # Soup To Nuts w/ Scratcha, Marcus Nasty & Groundwork (2024-03-22)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-16th-february-2024   grime radio nts study_only   # Soup To Nuts w/ Scratcha, Elijah & L-Vis 1990 (2024-02-16)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-2nd-february-2024   grime radio nts study_only   # SOUP TO NUTS W/ SCRATCHA, PLASTICIAN & NICO ADOMAKO (2024-02-02)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-1st-december-2023   grime radio nts study_only   # Soup To Nuts w/ Scratcha & Mak 10 (2023-12-01)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-skream-15th-september-2023   grime radio nts study_only   # Soup To Nuts w/ Skream (2023-09-15)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-23rd-june-2023   grime radio nts study_only   # SOUP TO NUTS W/ SCRATCHA, OMAGOQA & TRIM (2023-06-23)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-11th-may-2023   grime radio nts study_only   # Soup To Nuts w/ Scratcha, Grandmixxer & Tash LC (2023-05-12)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-14th-april-2023   grime radio nts study_only   # Soup To Nuts w/ Scratcha, Scrufizzer & N:Fostell (2023-04-14)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-7th-april-2023   grime radio nts study_only   # SOUP TO NUTS W/ SCRATCHA, DJ TRAVELLA, DIAKI & DJ TUBBY (2023-04-07)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-w-scratcha-20th-january-2023   grime radio nts study_only   # Soup To Nuts w/ Scratcha & Terror Danjah (2023-01-20)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-16th-december-2022   grime radio nts study_only   # Soup To Nuts w/ Scratcha & Ikonika (2022-12-16)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-28th-october-2022   grime radio nts study_only   # Soup To Nuts w/ Scratcha, Jammz & Speech Debelle  (2022-10-28)
+https://www.nts.live/shows/soup-to-nuts-scratcha/episodes/soup-to-nuts-scratcha-28th-january-2022   grime radio nts study_only   # Soup To Nuts w/ Scratcha & Kode9 (2022-01-28)
+
+# NTS one-off episodes (specials on other shows)
+
+# 
+https://www.nts.live/shows/the-nts-guide-to/episodes/the-nts-guide-to-dmz-6th-may-2026   dubstep radio nts study_only   # NTS Guide to: DMZ (2h01)
+https://www.nts.live/shows/the-nts-guide-to/episodes/the-nts-guide-to-weightless-grime-27th-february-2025   grime radio nts study_only   # NTS Guide to: Weightless Grime
+https://www.nts.live/shows/the-nts-guide-to/episodes/the-nts-guide-to-rhythm-and-grime-19th-june-2026   grime radio nts study_only   # NTS Guide to: Rhythm & Grime
+https://www.nts.live/shows/the-nts-guide-to/episodes/the-nts-guide-to-snoopy-s-dub-list-23rd-october-2026   roots_dub radio nts study_only   # NTS Guide to: Snoopy's Dub List
+https://www.nts.live/shows/in-focus/episodes/in-focus-mad-professor-17th-may-2019   roots_dub steppers_dub radio nts study_only   # In Focus: Mad Professor
+https://www.nts.live/shows/in-focus/episodes/lee-scratch-perry-4th-september-2021   roots_dub radio nts study_only   # In Focus: Lee Scratch Perry
+https://www.nts.live/shows/guests/episodes/scientist-13th-june-2018   roots_dub radio nts study_only   # Scientist (guest show)
+https://www.nts.live/shows/planet-carnival/episodes/mad-professor-28th-august-2020   roots_dub steppers_dub radio nts study_only   # Mad Professor (Planet Carnival)
+https://www.nts.live/shows/melodies-international/episodes/melodies-international-mad-professor-25th-september-2023   roots_dub radio nts study_only   # Melodies International w/ Mad Professor
+https://www.nts.live/shows/efficient-space/episodes/efficient-space-mad-professor-special-3rd-march-2026   roots_dub radio nts study_only   # Efficient Space - Mad Professor Special
+https://www.nts.live/shows/ross-allen/episodes/ross-allen-18th-july-2019   steppers_dub soundsystem radio nts study_only   # Ross Allen w/ Mikey Dread (Channel One Soundsystem)
+https://www.nts.live/shows/soup-to-nuts-ross-allen/episodes/soup-to-nuts-ross-allen-20th-april-2023   roots_dub radio nts study_only   # Soup To Nuts w/ Ross Allen - Jah Shaka Tribute
+https://www.nts.live/shows/death-is-not-the-end/episodes/death-is-not-the-end-16th-april-2023   roots_dub soundsystem radio nts study_only   # Death Is Not The End - Jah Shaka Tribute
+https://www.nts.live/shows/death-is-not-the-end/episodes/death-is-not-the-end-25th-august-2018   roots_dub soundsystem radio nts study_only   # Death Is Not The End - Sound systems at Notting Hill Carnival '84-88
+https://www.nts.live/shows/death-is-not-the-end/episodes/death-is-not-the-end-30th-august-2026   roots_dub soundsystem radio nts study_only   # Death Is Not The End - Sound systems at Notting Hill Carnival Pt II
+https://www.nts.live/shows/we-are/episodes/we-are-w-death-is-not-the-end-saxon-sounds-special-20th-february-2017   roots_dub soundclash soundsystem radio nts study_only   # We Are w/ Death Is Not The End - Saxon Sounds Special
+https://www.nts.live/shows/guests/episodes/lord-tusk-17th-december-2018   roots_dub soundsystem radio nts study_only   # Jah Shaka Sound System Brixton 1996 w/ Lord Tusk
+https://www.nts.live/shows/guests/episodes/lord-tusk-jah-shaka-soundsystem-1st-july-2019   roots_dub soundsystem radio nts study_only   # Jah Shaka Sound System pt 2 (Moonshot & New Cross 1995) w/ Lord Tusk
+https://www.nts.live/shows/guests/episodes/lord-tusk-roots-of-dub-12th-february-2018   roots_dub radio nts study_only   # Lord Tusk - Chambers of Dub Special
+https://www.nts.live/shows/colours/episodes/colours-part-two-29th-june-2020   roots_dub soundsystem radio nts study_only   # Colours w/ Kamelion Crying Hands - Jah Shaka Sound System Kensal Rise 1990
+https://www.nts.live/shows/guests/episodes/50-years-of-dub-vendor-records-w-hark1karan-john-dub-vendor-28th-may-2026   roots_dub radio nts study_only   # 50 Years of Dub Vendor Records w/ Hark1karan & John 'Dub Vendor'
+https://www.nts.live/shows/your-specialist-subject/episodes/your-specialist-subject-groundselector---king-tubby-s-dub-lessons-31st-december-2024   roots_dub radio nts study_only   # King Tubby's Dub Lessons w/ groundselector
+https://www.nts.live/shows/the-heatwave/episodes/the-heatwave-30th-january-2019   roots_dub radio nts study_only   # The Heatwave - King Tubby Special
+https://www.nts.live/shows/kelvin-brown/episodes/kelvin-brown-29th-november-2020   roots_dub radio nts study_only   # Kelvin Brown Dubwise Special
+https://www.nts.live/shows/prosumer/episodes/prosumer-1st-september-2026   roots_dub radio nts study_only   # Prosumer - Reggae & Dub Special
+https://www.nts.live/shows/optimo/episodes/optimo-7th-september-2021   roots_dub radio nts study_only   # Optimo - Lee 'Scratch' Perry Special
+https://www.nts.live/shows/thereignset/episodes/the-reign-set-12th-september-2021   roots_dub radio nts study_only   # The Reign Set - Lee Perry Special
+https://www.nts.live/shows/the-sound-of-gta-a-musical-history/episodes/lil-c-14th-december-2020   roots_dub radio nts study_only   # Lil C - Reggae, Dub & Dancehall: The Sound of GTA
+https://www.nts.live/shows/tropical-waste/episodes/tropical-waste-16th-september-2016   dubstep radio nts study_only   # Tropical Waste w/ Pinch & Ausschuss
+https://www.nts.live/shows/live-from-311-oxford-street/episodes/hyperdub-uniqlo-4th-june-2016   dubstep uk_garage live nts study_only   # Hyperdub - Live From Uniqlo 311 Oxford St
+https://www.nts.live/shows/laurel-halo/episodes/laurel-halo-kode-9-17th-march-2022   dubstep radio nts study_only   # Awe w/ Laurel Halo & Kode9
+https://www.nts.live/shows/alexander-nut/episodes/alexander-nut-22nd-september-2020   dubstep grime radio nts study_only   # Alexander Nut - Dubstep & Grime Special
+https://www.nts.live/shows/moxie/episodes/moxie-123rd-december-2020   dubstep radio nts study_only   # Moxie - Dubstep Special
+https://www.nts.live/shows/jenny-cara/episodes/jenny-cara-17th-july-2025   dubstep radio nts study_only   # Situationship w/ Jenny Cara - Dubstep Special
+https://www.nts.live/shows/perfume-advert/episodes/cong-burn-w-lack-22nd-september-2019   dubstep radio nts study_only   # Cong Burn w/ Lack - '04-'06 dubstep special
+https://www.nts.live/shows/soup-to-nuts-shy-one/episodes/soup-to-nuts-shy-one-29th-january-2025   grime radio nts study_only   # Soup To Nuts w/ Shy One: Grime Special
+https://www.nts.live/shows/soup-to-nuts-shy-one/episodes/soup-to-nuts-shy-one-5th-february-2025   grime radio nts study_only   # Soup To Nuts w/ Shy One: Grime Special pt II
+https://www.nts.live/shows/michelle/episodes/michelle-20th-february-2021   grime radio nts study_only   # Michelle - Grime Special
+https://www.nts.live/shows/moxie/episodes/moxie-24th-june-2020   uk_garage radio nts study_only   # Moxie - Garage Special
+https://www.nts.live/shows/moxie/episodes/moxie-15th-june-2022   uk_garage radio nts study_only   # Moxie - Garage Special pt 2
+https://www.nts.live/shows/moxie/episodes/moxie-16th-september-2026   uk_garage radio nts study_only   # Moxie - Garage Special pt 3
+https://www.nts.live/shows/moxie/episodes/moxie-5th-june-2019   uk_garage radio nts study_only   # Moxie & Dr Banana - Garage Special
+https://www.nts.live/shows/swing-ting/episodes/swing-ting-w-brackles-murl-11th-november-2017   uk_garage radio nts study_only   # Swing Ting Garage Special w/ Brackles, Murlo, Samrai
+https://www.nts.live/shows/swing-ting/episodes/swing-ting-w-platt-finn-7th-july-2018   uk_garage radio nts study_only   # Swing Ting Garage Special w/ Platt & Finn
+https://www.nts.live/shows/finn/episodes/finn-15th-july-2022   speed_garage radio nts study_only   # Finn - Speed Garage Special
+https://www.nts.live/shows/fold/episodes/fold-10th-march-2022   uk_garage radio nts study_only   # Fold w/ Yosh - UK Garage Special
+https://www.nts.live/shows/martelo/episodes/martelo-29th-november-2017   uk_garage radio nts study_only   # Martelo - UK Garage Special
+https://www.nts.live/shows/martha/episodes/martha-3rd-july-2026   uk_garage radio nts study_only   # MARTHA - Summer Garage Special
+https://www.nts.live/shows/physical-therapy/episodes/physical-therapy-12th-july-2024   speed_garage radio nts study_only   # Physical Therapy: Fast Garage Special
+https://www.nts.live/shows/physical-therapy/episodes/physical-therapy-22nd-april-2022   uk_garage radio nts study_only   # Physical Therapy - Slow Garage
+
