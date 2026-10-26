@@ -228,7 +228,7 @@ def load(path: str) -> np.ndarray:
         try:
             import soundfile
             x, sr = soundfile.read(path, dtype="float32", always_2d=True)
-        except ImportError:
+        except Exception:  # noqa: BLE001 - no soundfile, or a format it cannot read
             raw = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-f", "f32le", "-ac", "2",
                                   "-ar", str(SR), "-"], check=True, capture_output=True).stdout
             x, sr = np.frombuffer(raw, dtype=np.float32).reshape(-1, 2), SR
