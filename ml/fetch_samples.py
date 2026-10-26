@@ -19,8 +19,12 @@ import zipfile
 
 def main():
     args = sys.argv[1:]
-    src = args[0]
     out = args[args.index("--out") + 1] if "--out" in args else "samples/packs"
+    return fetch(args[0], out)
+
+
+def fetch(src, out="samples/packs", log=print):
+    """Every plain-GET pack in the TSV `src` into `out`."""
     os.makedirs(out, exist_ok=True)
     lic_path = os.path.join(out, "LICENCES.tsv")
     have = set()
@@ -38,7 +42,7 @@ def main():
                 shutil.copyfileobj(resp, f, 1 << 20)
             os.replace(dest + ".part", dest)
         except Exception as e:  # noqa: BLE001
-            print(f"failed {name}: {e}", flush=True)
+            log(f"failed {name}: {e}")
             continue
         folder = os.path.join(out, os.path.splitext(name)[0])
         try:
@@ -55,10 +59,10 @@ def main():
                     except OSError:
                         continue
         except Exception as e:  # noqa: BLE001
-            print(f"unpack failed {name}: {e} (kept the archive)", flush=True)
+            log(f"unpack failed {name}: {e} (kept the archive)")
         with open(lic_path, "a") as f:
             f.write("\t".join([name, r["pack_name"], r["licence"], r["url"]]) + "\n")
-        print(f"got {name}", flush=True)
+        log(f"got pack {name}")
     return 0
 
 

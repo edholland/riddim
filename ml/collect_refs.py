@@ -303,6 +303,14 @@ def main():
 
     def one(job):
         url, tags = job
+        if url.startswith("samples:"):
+            # a sample-pack list (TSV) rather than recordings: packs go to
+            # samples/packs beside the references
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import fetch_samples
+            dest = os.path.join(os.path.dirname(os.path.abspath(out)), "samples", "packs")
+            fetch_samples.fetch(url[len("samples:"):], dest, log=lambda m: print(m, flush=True))
+            return
         if shutil.disk_usage(out).free < floor * 2**30:
             print(f"skip (under {floor} GB free on disk): {url}", flush=True)
             return
