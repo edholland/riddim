@@ -242,7 +242,8 @@ def stream_source(url, tags, audio, seen, write, ffmpeg):
                 seen.discard(rid)
             return
         if r.returncode != 0 or not os.path.exists(meta_path):
-            print(f"failed {u}\n  {r.stderr.strip()[-300:]}", flush=True)
+            errs = [l for l in r.stderr.splitlines() if "ERROR" in l] or r.stderr.splitlines()[-1:]
+            print(f"failed {u}\n  {(errs[-1] if errs else '')[:300]}", flush=True)
             with MANIFEST_LOCK:
                 seen.discard(rid)
             continue
