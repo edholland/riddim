@@ -103,7 +103,11 @@ def embed_many(paths, cache_path):
     for p in paths:
         k = _cache_key(p)
         if k not in cache:
-            cache[k] = embed(p)
+            try:
+                cache[k] = embed(p)
+            except subprocess.CalledProcessError as e:  # a corrupt file never stops the run
+                print(f"  skipping {p}: ffmpeg exit {e.returncode}", flush=True)
+                cache[k] = np.zeros((0, 512), dtype=np.float32)
             np.savez(cache_path, **cache)
         out[p] = cache[k]
     return out
