@@ -99,6 +99,9 @@ class Profile:
     # How often the siren fires where one may (a dub-out, a later drop's
     # downbeat): the sound-system dub's signature, rarer the further from it.
     sirens: float = 0.0
+    # The desk's bass pulls per 32 bars, where the profile parts from its
+    # family (arrange.dynamics.params_for); None is the family's range.
+    bass_drops: tuple[float, float] | None = None
     note: str = ""
 
     @property
@@ -124,6 +127,8 @@ ROOTS_DUB = Profile(
     stab_patterns=("skank", "double_chop", "half_skank", "three_four",
                    "late_skank"),
     bars_per_chord_choices=(1.0, 2.0, 2.0, 4.0),
+    # 300 roots dub records, felt tempo: the sub pulled ~0.6 times per 32 bars.
+    bass_drops=(0.3, 0.9),
     sirens=0.6,
     family="dub",
     bars_per_chord=2.0,

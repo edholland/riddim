@@ -73,8 +73,11 @@ def bass_drop_windows(section: Section, dyn: "DynamicsParams", rng: random.Rando
     return out
 
 
-def params_for(family: str, rng: random.Random) -> DynamicsParams:
-    """Draw dynamics for a genre family. Dubstep commits harder to the drop."""
+def params_for(family: str, rng: random.Random,
+               bass_drops: tuple[float, float] | None = None) -> DynamicsParams:
+    """Draw dynamics for a genre family. Dubstep commits harder to the drop.
+    `bass_drops` is a profile's own range for the desk's pulls, in place of
+    the family's (the same draw, so nothing else in the song moves)."""
     if family == "dubstep":
         # The 140 drop is earned by what is held back (the low end), not by
         # an EDM snare roll and white-noise riser: the records have short
@@ -89,7 +92,7 @@ def params_for(family: str, rng: random.Random) -> DynamicsParams:
             cadence=round(rng.uniform(0.6, 1.0), 2),
             layering=round(rng.uniform(0.4, 0.9), 2),
             lift=0.15,
-            bass_drops=round(rng.uniform(0.0, 0.3), 2),
+            bass_drops=round(rng.uniform(*(bass_drops or (0.0, 0.3))), 2),
         )
     if family == "garage":
         # Garage builds less and stops more: shorter rolls, the bass and
@@ -105,7 +108,7 @@ def params_for(family: str, rng: random.Random) -> DynamicsParams:
             cadence=round(rng.uniform(0.5, 0.9), 2),
             layering=round(rng.uniform(0.4, 0.8), 2),
             lift=0.35,
-            bass_drops=round(rng.uniform(0.4, 1.0), 2),
+            bass_drops=round(rng.uniform(*(bass_drops or (0.4, 1.0))), 2),
         )
     return DynamicsParams(
         roll=round(rng.uniform(0.2, 0.6), 2),
@@ -117,11 +120,11 @@ def params_for(family: str, rng: random.Random) -> DynamicsParams:
         cadence=round(rng.uniform(0.4, 0.9), 2),
         layering=round(rng.uniform(0.3, 0.8), 2),
         lift=0.3,
-        # Measured on 600 roots and steppers records (ml/library_stats.py):
-        # the sub gone with the band playing about 0.3-0.65 times per 32
-        # bars, breakdowns included - so the desk's own pulls are rarer than
-        # the 0.8-1.6 drawn here before.
-        bass_drops=round(rng.uniform(0.4, 1.0), 2),
+        # Measured on 300 steppers and 300 digital dub records at their
+        # felt tempo (ml/library_stats.py): the sub pulled with the band
+        # playing about 1.2 times per 32 bars. Roots pulls half as often
+        # (Profile.bass_drops).
+        bass_drops=round(rng.uniform(*(bass_drops or (0.8, 1.6))), 2),
     )
 
 

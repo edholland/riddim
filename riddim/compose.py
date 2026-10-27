@@ -544,7 +544,7 @@ def _resolve_material(
     phrase_bars = params.hook.unit_bars * 4
     if params.dynamics is None:
         params.dynamics = dynamics.params_for(
-            prof.family, random.Random(f"{params.seed}:dynamics"))
+            prof.family, random.Random(f"{params.seed}:dynamics"), prof.bass_drops)
     for i, (sec, prog) in enumerate(zip(sections, progs)):
         cycle = len(prog.degrees) * params.bars_per_chord
         sings = structure.kind_of(sec) in ("peak", "body") and sec.plays("lead") or \
@@ -676,7 +676,7 @@ def _resolve_material(
             prof.family, random.Random(f"{params.seed}:interplay"))
     if params.dynamics is None:
         params.dynamics = dynamics.params_for(
-            prof.family, random.Random(f"{params.seed}:dynamics"))
+            prof.family, random.Random(f"{params.seed}:dynamics"), prof.bass_drops)
     # The stabs' real ceiling - the highest note any voicing plays, plus the
     # inversion a lifted stab can climb - not the top of their window: the
     # lead sits above what the chords actually play, not above where they
