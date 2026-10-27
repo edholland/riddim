@@ -138,6 +138,10 @@ ROOTS_DUB = Profile(
     # of 1 and of 3 (steps 3, 11) about as often as the off-eighths - the
     # "x..x" figure; the transcriber puts no such notes into riddim's own
     # eighth-note subs, so they are the records'.
+    # Every walking line from the records' fit: the generator's walks skip the
+    # one in nearly every bar or in none (0.06-0.17 in steppers 201-203,
+    # against the records' 0.54), and the fit won the judge each time.
+    mined_bass=1.0,
     sub_sixteenths=True,
     sirens=0.6,
     family="dub",
@@ -162,6 +166,10 @@ STEPPERS_DUB = Profile(
     stab_patterns=("skank", "double_chop", "half_skank"),
     bars_per_chord_choices=(2.0, 2.0, 4.0),
     # 96 steppers records: steps 3 and 11 struck in 0.41 and 0.38 of bars.
+    # Every walking line from the records' fit: the generator's walks skip the
+    # one in nearly every bar or in none (0.06-0.17 in steppers 201-203,
+    # against the records' 0.54), and the fit won the judge each time.
+    mined_bass=1.0,
     sub_sixteenths=True,
     sirens=0.6,
     family="dub",
