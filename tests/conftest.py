@@ -12,6 +12,9 @@ from functools import lru_cache
 # The tests hear the synths: a sample library on this machine (samples/packs)
 # must not change what they render. tests/test_library.py builds its own.
 os.environ["RIDDIM_LIBRARY"] = "off"
+# Nor may the bass rhythms mined from the references (riddim/theory/cells.json):
+# the critic's stories are found on the generator. test_transcribe.py fakes its own.
+os.environ["RIDDIM_CELLS"] = "off"
 
 
 @lru_cache(maxsize=None)

@@ -109,15 +109,26 @@ def _fake_cells(monkeypatch, data):
     return cells
 
 
-def test_bass_pair_peak_keeps_downbeat(monkeypatch):
-    one, push = 1 | 1 << 6 | 1 << 10, 1 | 1 << 6 | 1 << 10 | 1 << 14
-    off = 1 << 2 | 1 << 6 | 1 << 10 | 1 << 14
-    cells = _fake_cells(monkeypatch, {"roots_dub": {"bass": [[one, 9], [push, 4], [off, 3]]}})
+def _fit(on, count):
+    """A fit whose records strike only the steps in `on`, `count` notes a bar."""
+    return {"stats": {"steps": [0.9 if k in on else 0.0 for k in range(16)],
+                      "notes": [1.0 if k == count else 0.0 for k in range(17)]}}
+
+
+def test_bass_pair_draws_from_the_fit(monkeypatch):
+    cells = _fake_cells(monkeypatch, {"roots_dub": _fit({0, 6, 10, 14}, 3)})
     for seed in range(20):
         verse, peak = cells.bass_pair("roots_dub", random.Random(seed))
         v, p = ({int(h.step) for h in x.hits} for x in (verse, peak))
-        assert len(p) >= len(v) and ((0 in v) == (0 in p))
+        assert len(v) == 3 and v <= {0, 6, 10, 14}
+        assert v < p <= {0, 6, 10, 14}           # the peak keeps the verse, adds to it
     assert cells.bass_pair("uk_garage", random.Random(0)) is None
+
+
+def test_cells_off(monkeypatch):
+    from riddim.theory import cells
+    monkeypatch.setenv("RIDDIM_CELLS", "off")
+    assert cells.stats("roots_dub") == {} and cells.bass_pair("roots_dub", random.Random(0)) is None
 
 
 def test_compose_plays_mined_bass(monkeypatch):
@@ -126,8 +137,8 @@ def test_compose_plays_mined_bass(monkeypatch):
     from riddim import profile
     from riddim.compose import compose
     from riddim.units import STEPS_PER_BAR, TICKS_PER_16TH
-    mask = 1 | 1 << 6 | 1 << 10        # the sub stays on eighths (compose._on_eighths)
-    _fake_cells(monkeypatch, {"steppers_dub": {"bass": [[mask, 5]]}})
+    # The sub stays on eighths (compose._on_eighths).
+    _fake_cells(monkeypatch, {"steppers_dub": _fit({0, 6, 10}, 3)})
 
     def steps(mined):
         prof = replace(profile.get("steppers_dub"), mined_bass=mined)

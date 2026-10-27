@@ -16,8 +16,10 @@ beat is the one, and every bar's bass notes (step, length, pitch, how far off
 the grid) and the other stem's onsets. `build` keeps, per riddim profile, the
 bar rhythms that more than one record plays, weighted by how many records
 play them - so one looped riddim can't fill the pool - and the numbers that
-say what a family's bass does: notes a bar, the one and the & of 4 struck,
-how long a note is held, the offbeat swing. The rhythms are counts of grid
+say what a family's bass does: how often each step is struck, how many
+notes a bar, how long a note is held, the offbeat swing. The step shares are
+what riddim draws from (theory/cells.py); exact bar rhythms repeat across
+records too rarely to draw from alone. The rhythms are counts of grid
 positions, not audio: the records stay study-only.
 """
 
@@ -41,6 +43,9 @@ sys.path.insert(0, HERE)
 import library_stats as ls  # noqa: E402
 
 CELLS_JSON = os.path.join(REPO, "riddim", "theory", "cells.json")
+# Dub techno is a 4/4 at ~120 that FOR_PROFILES files under the half-time dub
+# profile; read on that profile's grid its bars are the wrong length.
+SKIP = {"dub_techno"}
 
 
 def _target_bpm(family: str) -> float:
@@ -160,7 +165,20 @@ def summary(records: list[dict]) -> dict:
     if not bars:
         return {}
     swing = [r["swing"] for r in records if r.get("swing") is not None]
+    # Each record counts once: its bars' step and note-count shares, averaged
+    # over records, so one long loop can't speak for the family.
+    steps, counts = np.zeros(16), np.zeros(17)
+    n = 0
+    for r in records:
+        rb = [b for b in r["bars"] if b]
+        if not rb:
+            continue
+        n += 1
+        steps += np.mean([[any(x[0] == k for x in b) for k in range(16)] for b in rb], axis=0)
+        counts += np.bincount([min(16, len(b)) for b in rb], minlength=17) / len(rb)
     return {"records": len(records), "bars": len(bars),
+            "steps": [round(float(v), 3) for v in steps / max(1, n)],
+            "notes": [round(float(v), 3) for v in counts / max(1, n)],
             "notes_per_bar": round(float(np.median([len(b) for b in bars])), 2),
             "one": round(float(np.mean([any(n[0] == 0 for n in b) for b in bars])), 2),
             "and_of_4": round(float(np.mean([any(n[0] == 14 for n in b) for b in bars])), 2),
@@ -171,7 +189,7 @@ def summary(records: list[dict]) -> dict:
 def build(records: list[dict]) -> dict:
     by: dict = defaultdict(list)
     for r in records:
-        if r.get("bars") and ls.FOR_PROFILES.get(r["family"]):
+        if r.get("bars") and ls.FOR_PROFILES.get(r["family"]) and r["family"] not in SKIP:
             by[ls.FOR_PROFILES[r["family"]]].append(r)
     from riddim import transcribe as T
     out = {}
@@ -192,7 +210,9 @@ def report(cells: dict) -> str:
         lines += [f"## {prof} ({', '.join(c['families'])})", "",
                   f"{s.get('records')} records, {s.get('bars')} bars; notes a bar {s.get('notes_per_bar')}, "
                   f"the one {s.get('one')}, the & of 4 {s.get('and_of_4')}, held {s.get('hold_steps')} steps, "
-                  f"swing {s.get('swing')}", "", "| bass | records | other | records |", "|---|---|---|---|"]
+                  f"swing {s.get('swing')}", "",
+                  "Share of bars struck, step by step: " + " ".join(f"{v:.2f}" for v in s.get("steps", [])),
+                  "", "| bass | records | other | records |", "|---|---|---|---|"]
         for i in range(min(8, max(len(c["bass"]), len(c["stab"])))):
             b = c["bass"][i] if i < len(c["bass"]) else None
             o = c["stab"][i] if i < len(c["stab"]) else None

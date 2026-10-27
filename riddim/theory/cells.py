@@ -1,8 +1,12 @@
-"""Rhythm cells mined from records (ml/mine_cells.py): the bar rhythms real
-bass players in each family play, by how many records play them.
+"""Bass rhythms fitted to records (ml/mine_cells.py): how often the bass
+players in each family strike each step of the bar, and how many notes they
+play a bar, read from separated stems of 40 records a family.
 
-The pools are grid positions counted from separated stems, not audio. A
-profile with no pool (or no cells.json at all) keeps the generator alone.
+Exact bar rhythms repeat across records too rarely to draw from (the most
+shared roots bar is played by 2 records of 80), so a bar is drawn from the
+fit instead: a note count from the family's spread, the steps by how often
+the records strike them. The data is grid positions, not audio. A profile
+with no fit (or no cells.json, or RIDDIM_CELLS=off) keeps the generator.
 """
 
 from __future__ import annotations
@@ -18,8 +22,14 @@ from ..units import STEPS_PER_BAR
 PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cells.json")
 
 
-@lru_cache(maxsize=None)
 def _data(path: str = PATH) -> dict:
+    if os.environ.get("RIDDIM_CELLS", "").lower() == "off":
+        return {}
+    return _read(path)
+
+
+@lru_cache(maxsize=None)
+def _read(path: str) -> dict:
     try:
         with open(path) as f:
             return json.load(f)
@@ -47,20 +57,36 @@ def pattern(mask: int, velocity: tuple[int, int] = (88, 112), note_length: float
     return Pattern(STEPS_PER_BAR, hits, STEPS_PER_BAR)
 
 
-def _hits(mask: int) -> int:
-    return bin(mask).count("1")
+def _draw(weights: dict[int, float], n: int, rng: random.Random) -> set[int]:
+    """`n` steps without replacement, each by its weight."""
+    out: set[int] = set()
+    pool = {k: w for k, w in weights.items() if w > 0}
+    while pool and len(out) < n:
+        k = rng.choices(list(pool), list(pool.values()))[0]
+        out.add(k)
+        del pool[k]
+    return out
 
 
-def bass_pair(profile: str, rng: random.Random) -> list[Pattern] | None:
-    """A verse cell drawn by how many records play it, and a peak cell that
-    plays at least as much and keeps the verse's downbeat - the same bassist
+def _mask(steps) -> int:
+    m = 0
+    for k in steps:
+        m |= 1 << k
+    return m
+
+
+def bass_pair(profile: str, rng: random.Random, most: int = 8) -> list[Pattern] | None:
+    """A verse bar drawn from the profile's fit, and a peak bar that keeps
+    it and adds a note or two the records also strike - the same bassist
     digging in, not a different tune."""
-    cells = pool(profile)
-    if not cells:
+    s = stats(profile)
+    shares, counts = s.get("steps"), s.get("notes")
+    if not shares or not counts:
         return None
-    masks, weights = zip(*cells)
-    verse = rng.choices(masks, weights)[0]
-    busier = [(m, w) for m, w in cells if m != verse and _hits(m) >= _hits(verse)
-              and (m & 1) == (verse & 1) and _hits(m) <= _hits(verse) + 2]
-    peak = rng.choices(*zip(*busier))[0] if busier else verse
-    return [pattern(verse), pattern(peak)]
+    sizes = list(range(1, min(most, len(counts) - 1) + 1))
+    n = rng.choices(sizes, [counts[k] for k in sizes])[0] if sum(counts[k] for k in sizes) else 4
+    weights = {k: float(w) for k, w in enumerate(shares)}
+    verse = _draw(weights, n, rng)
+    extra = _draw({k: w for k, w in weights.items() if k not in verse},
+                  min(rng.choice((1, 2)), most - len(verse)), rng)
+    return [pattern(_mask(verse)), pattern(_mask(verse | extra))]
