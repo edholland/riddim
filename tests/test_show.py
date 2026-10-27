@@ -20,7 +20,7 @@ from riddim.theory import harmony, hook
 from riddim.theory.rhythm import metric_weight
 from riddim.theory.scale import Scale
 from riddim.units import TICKS_PER_16TH, TICKS_PER_BAR
-from riddim.profile import PROFILES
+from riddim.profile import PROFILES, get as get_profile
 
 ALL_PROFILES = tuple(PROFILES)
 
@@ -509,7 +509,8 @@ def test_everything_is_on_the_grid():
     """No swing, no timing humanisation, no laid-back snare: the Deluge owns
     the feel. Drums, perc, chords and pad on the sixteenth grid - except the
     deliberate 32nds of a full build roll on the snare - the bass on the
-    eighth grid, and the lead on the 32nd grid (its grace notes and
+    eighth grid (the sixteenth in roots and steppers, as their records play),
+    and the lead on the 32nd grid (its grace notes and
     mordents are 32nds, exactly)."""
     from riddim.units import TICKS_PER_16TH as T
     for profile in ALL_PROFILES:
@@ -518,7 +519,8 @@ def test_everything_is_on_the_grid():
             for part in song.parts:
                 for n in part.notes:
                     if part.role == "sub":
-                        assert n.start % (2 * T) == 0, (profile, seed, part.role, n)
+                        grid = T if get_profile(profile).sub_sixteenths else 2 * T
+                        assert n.start % grid == 0, (profile, seed, part.role, n)
                     elif part.role == "lead" or (part.role == "drums" and n.midi == KIT_ROWS["snare"]):
                         assert n.start % (T // 2) == 0, (profile, seed, part.role, n)
                     else:
@@ -1035,7 +1037,8 @@ def test_wild_songs_stay_inside_the_lines():
             end = song.arrangement.length_ticks
             for part in song.parts:
                 assert all(n.end <= end and n.length > 0 for n in part.notes), (profile, seed, part.role)
-            assert all(n.start % (2 * T) == 0 for n in song.part("sub").notes)
+            grid = T if get_profile(profile).sub_sixteenths else 2 * T
+            assert all(n.start % grid == 0 for n in song.part("sub").notes)
             again = compose(params=SongParams.from_dict(json.loads(json.dumps(song.params.to_dict()))))
             assert [x.notes for x in song.parts] == [x.notes for x in again.parts]
 

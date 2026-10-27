@@ -1464,7 +1464,8 @@ def _build_sub(part, section, prof, m: Material, rng):
             replies = line.response_in(lo_step, lo_step + STEPS_PER_BAR, "sub")
             if replies:
                 notes = _sub_reply(notes, replies, lo_step, roots[b], m, prof)
-            notes = _on_eighths(notes)
+            if not prof.sub_sixteenths:
+                notes = _on_eighths(notes)
             if not params.anchor_root and not hook_here:
                 # A bass that skips the one still states a new chord: where
                 # the harmony changes, its root lands with the one-drop kick
@@ -1656,7 +1657,9 @@ def _yield_to_lead(notes, busy: set[int], lo_step: float, space: float = 1.0,
 def _on_eighths(notes):
     """The sub plays on the eighth-note grid. A sub bass on the in-between
     sixteenths is heard as out of
-    time, not as syncopation: the low end has to be where the kick is. A note
+    time, not as syncopation: the low end has to be where the kick is. (Not
+    in roots and steppers, whose records play the a of 1 and 3 as often as
+    the off-eighths: Profile.sub_sixteenths.) A note
     on an odd sixteenth moves forward to the next eighth (or back, but never
     onto the downbeat, which belongs to the root); if both are taken, it
     goes."""

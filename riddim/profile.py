@@ -105,6 +105,8 @@ class Profile:
     # How often a walking bassline takes its rhythm from the cells mined
     # from this profile's records (theory/cells.py) instead of the generator.
     mined_bass: float = 0.5
+    # Whether the sub may sit on the in-between sixteenths (compose._on_eighths).
+    sub_sixteenths: bool = False
     note: str = ""
 
     @property
@@ -132,6 +134,11 @@ ROOTS_DUB = Profile(
     bars_per_chord_choices=(1.0, 2.0, 2.0, 4.0),
     # 300 roots dub records, felt tempo: the sub pulled ~0.6 times per 32 bars.
     bass_drops=(0.3, 0.9),
+    # 80 roots records (ml/mine_cells.py, the one from beat_this) strike the a
+    # of 1 and of 3 (steps 3, 11) about as often as the off-eighths - the
+    # "x..x" figure; the transcriber puts no such notes into riddim's own
+    # eighth-note subs, so they are the records'.
+    sub_sixteenths=True,
     sirens=0.6,
     family="dub",
     bars_per_chord=2.0,
@@ -154,6 +161,8 @@ STEPPERS_DUB = Profile(
                   "drop_and_climb"),
     stab_patterns=("skank", "double_chop", "half_skank"),
     bars_per_chord_choices=(2.0, 2.0, 4.0),
+    # 96 steppers records: steps 3 and 11 struck in 0.41 and 0.38 of bars.
+    sub_sixteenths=True,
     sirens=0.6,
     family="dub",
     bars_per_chord=2.0,

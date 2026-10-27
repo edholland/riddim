@@ -141,7 +141,7 @@ def test_compose_plays_mined_bass(monkeypatch):
     _fake_cells(monkeypatch, {"steppers_dub": _fit({0, 6, 10}, 3)})
 
     def steps(mined):
-        prof = replace(profile.get("steppers_dub"), mined_bass=mined)
+        prof = replace(profile.get("steppers_dub"), mined_bass=mined, sub_sixteenths=False)
         song = compose(prof, seed=5)
         part = next(p for p in song.parts if p.role in ("sub", "bass"))
         return Counter(round(n.start / TICKS_PER_16TH) % STEPS_PER_BAR for n in part.notes)

@@ -10,6 +10,10 @@ With --cells the pair is the library with the generator's basslines (A,
 ..._gen.wav) against the bass rhythms fitted to the records (B, ..._cells.wav,
 riddim/theory/cells.json) on every walking bassline.
 
+With --toggle sub_sixteenths (any Profile field) the pair is each profile
+with that field off (A, ..._off.wav) against the profile as it is (B,
+..._on.wav); profiles where it is already off are left out.
+
 With --gain "dub.drums=0.7,dubstep.drums=0.8" the pair is instead the
 library as it is (A) against the library with those mix trims (B, files
 ..._trim.wav) - for setting levels against the measured stems.
@@ -44,6 +48,7 @@ def main(argv=None) -> int:
                                                "e.g. dub.drums=0.7")
     ap.add_argument("--cells", action="store_true",
                     help="A/B the generator's bass rhythms against the mined fit")
+    ap.add_argument("--toggle", default="", help="A/B a Profile field off against as it is")
     a = ap.parse_args(argv)
 
     from riddim import library, profile
@@ -56,17 +61,25 @@ def main(argv=None) -> int:
         print(f"no sample library at {lib_root}", file=sys.stderr)
         return 1
     pairs = []
-    sides = (("_gen.wav", "_cells.wav") if a.cells else
+    sides = (("_off.wav", "_on.wav") if a.toggle else ("_gen.wav", "_cells.wav") if a.cells else
              ("_library.wav", "_trim.wav") if a.gain else ("_synth.wav", "_library.wav"))
     for fam, profs in PANEL.items():
         for prof in profs:
+            if a.toggle and not getattr(profile.get(prof), a.toggle):
+                continue
             for k in range(a.per_family):
                 seed = a.seed + k
                 song = compose(prof, seed=seed)
                 base = os.path.join(a.out, f"{prof}_{seed}")
                 os.environ["RIDDIM_LIBRARY"] = lib_root
                 library._LIB.clear()
-                if a.cells:
+                if a.toggle:
+                    from dataclasses import replace
+                    off = type(getattr(profile.get(prof), a.toggle))(0)
+                    audio.write(compose(replace(profile.get(prof), **{a.toggle: off}), seed=seed),
+                                base + "_off.wav")
+                    audio.write(song, base + "_on.wav")
+                elif a.cells:
                     from dataclasses import replace
                     for side, mined in (("_gen.wav", 0.0), ("_cells.wav", 1.0)):
                         song = compose(replace(profile.get(prof), mined_bass=mined), seed=seed)
@@ -88,7 +101,13 @@ def main(argv=None) -> int:
                                          song.bpm >= 120 or "dubstep" in prof, "garage" in prof)
                 used = ", ".join(f"{v}: {_name(inst[v])}" for v in
                                  ("organ", "skank", "sub", "hat", "shaker", "siren") if v in inst)
-                if a.cells:
+                if a.toggle:
+                    from dataclasses import replace
+                    off = type(getattr(profile.get(prof), a.toggle))(0)
+                    audio.write(compose(replace(profile.get(prof), **{a.toggle: off}), seed=seed),
+                                base + "_off.wav")
+                    audio.write(song, base + "_on.wav")
+                elif a.cells:
                     used = f"bass style: {song.params.bass.style}"
                 pairs.append((fam, prof, seed, base, used))
                 print(f"{prof} {seed}: {used}", flush=True)
