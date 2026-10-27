@@ -299,3 +299,21 @@ def test_arrangement_finds_sections_and_pulls():
     assert got["first_sub_bar"] == 8
     assert got["pulls_per_32"] > 0
     assert 8 in got["sections"] or got["sections"][0] == 8
+
+
+def test_gain_trims_parse():
+    from riddim.render.audio import parse_gains
+    assert parse_gains("dub.drums=0.7, dubstep.sub=1.2") == {"dub": {"drums": 0.7},
+                                                            "dubstep": {"sub": 1.2}}
+    assert parse_gains("") == {}
+
+
+def test_half_time_records_fold_to_their_felt_tempo():
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "ml"))
+    import library_stats as ls
+    r = ls.fold({"family": "roots_dub", "bpm": 144.0, "bars": 140, "sections": [8, 16],
+                 "pulls_per_32": 0.3, "first_sub_bar": 2})
+    assert r["bpm"] == 72.0 and r["bars"] == 70 and r["sections"] == [4, 8]
+    assert r["pulls_per_32"] == 0.6 and r["first_sub_bar"] == 1
+    assert ls.fold({"family": "dubstep", "bpm": 140.0})["bpm"] == 140.0

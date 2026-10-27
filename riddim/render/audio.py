@@ -146,6 +146,17 @@ GAIN = {"sub": 0.45, "bass": 0.42, "drums": 0.75, "perc": 0.5, "chords": 0.5, "p
 # Per-family trims on GAIN, multiplied in: each family's balance measured
 # against its own records (Demucs stems, `claude/loop-rounds.md`).
 FAMILY_GAIN: dict[str, dict[str, float]] = {}
+
+
+def parse_gains(text: str) -> dict[str, dict[str, float]]:
+    """"dub.drums=0.7,dubstep.sub=1.2" -> {"dub": {"drums": 0.7}, ...}: trims
+    to audition (`RIDDIM_FAMILY_GAIN`, ml/library_ab.py --gain)."""
+    out: dict[str, dict[str, float]] = {}
+    for item in filter(None, (t.strip() for t in (text or "").split(","))):
+        key, val = item.split("=")
+        fam, role = key.split(".")
+        out.setdefault(fam, {})[role] = float(val)
+    return out
 # Sends: (plate, spring, hall, delay)
 SENDS = {"drums": (0.0, 0.0, 0.05, 0.0), "chords": (0.0, 0.35, 0.1, 0.5),
          "pad": (0.0, 0.0, 0.45, 0.0), "lead": (0.0, 0.0, 0.3, 0.3),
@@ -958,7 +969,8 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     echo = _dub_delay(_hp(delay_send, 250), d, fb)
 
     music = np.zeros((n, 2), dtype=np.float32)
-    trim = FAMILY_GAIN.get(family, {})
+    trim = {**FAMILY_GAIN.get(family, {}),
+            **parse_gains(__import__("os").environ.get("RIDDIM_FAMILY_GAIN", "")).get(family, {})}
     for role, x in stems.items():
         music += x * GAIN.get(role, 0.2) * trim.get(role, 1.0)
     music += plate * 0.18 + spring * 0.12 + hall * 0.2 + echo * 0.32

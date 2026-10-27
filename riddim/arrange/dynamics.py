@@ -117,7 +117,11 @@ def params_for(family: str, rng: random.Random) -> DynamicsParams:
         cadence=round(rng.uniform(0.4, 0.9), 2),
         layering=round(rng.uniform(0.3, 0.8), 2),
         lift=0.3,
-        bass_drops=round(rng.uniform(0.8, 1.6), 2),
+        # Measured on 600 roots and steppers records (ml/library_stats.py):
+        # the sub gone with the band playing about 0.3-0.65 times per 32
+        # bars, breakdowns included - so the desk's own pulls are rarer than
+        # the 0.8-1.6 drawn here before.
+        bass_drops=round(rng.uniform(0.4, 1.0), 2),
     )
 
 

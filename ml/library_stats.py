@@ -314,10 +314,32 @@ def _med(xs) -> str:
     return f"{m:.2f} ({q1:.2f} to {q3:.2f})" if abs(m) < 10 else f"{m:.1f} ({q1:.1f} to {q3:.1f})"
 
 
+# Families whose groove is felt in half time: the tempo detector reads them
+# at double (a 72 bpm one-drop as 144), so their bars come out halved.
+HALF_TIME = {"roots_dub", "roots_reggae", "steppers_dub", "digital_dub"}
+
+
+def fold(r: dict) -> dict:
+    """A record's numbers at its felt tempo: a half-time family read above
+    110 bpm is halved, its bar counts with it."""
+    if r.get("family") not in HALF_TIME or (r.get("bpm") or 0) <= 110:
+        return r
+    r = dict(r, bpm=r["bpm"] / 2)
+    if r.get("bars"):
+        r["bars"] = r["bars"] / 2
+        r["sections"] = [s / 2 for s in r.get("sections", [])]
+        r["pulls_per_32"] = (r.get("pulls_per_32") or 0) * 2
+        if (r.get("first_sub_bar") or -1) >= 0:
+            r["first_sub_bar"] = r["first_sub_bar"] / 2
+    return r
+
+
 def summarise(stats: list[dict], stems: list[dict]) -> str:
+    stats = [fold(r) for r in stats]
     out = ["# Reference library, measured", "",
            "Medians per family, interquartile range in brackets. Records only; sets are measured "
-           "separately (step 4).", "",
+           "separately (step 4). Half-time families (" + ", ".join(sorted(HALF_TIME)) + ") are "
+           "read at their felt tempo: above 110 bpm the tempo and bar counts are halved.", "",
            "## Levels and bands", "",
            "| family | n | RMS dB | crest dB | dyn range | sub | bass | low mid | high mid | air | bpm |",
            "|---|---|---|---|---|---|---|---|---|---|---|"]
