@@ -147,7 +147,8 @@ def cmd_split(a) -> int:
     by: dict = defaultdict(list)
     for p in plan:
         by[p["family"]].append(p)
-    pick = [p for fam in by for p in by[fam][: a.per_family]]
+    fams = set(a.families.split(",")) if a.families else set(by)
+    pick = [p for fam in by if fam in fams for p in by[fam][: a.per_family]]
     todo = [p for p in pick if not os.path.exists(os.path.join(a.out, "_cells", p["id"], "other.wav"))]
     print(f"{len(todo)} of {len(pick)} records to split", flush=True)
     for i, p in enumerate(todo):
@@ -281,6 +282,7 @@ def main(argv=None) -> int:
     ap.add_argument("--refs", default=ls.REFS)
     ap.add_argument("--out", default=ls.OUT)
     ap.add_argument("--per-family", type=int, default=40)
+    ap.add_argument("--families", default="", help="split: only these, comma-separated")
     ap.add_argument("--cells", default=CELLS_JSON)
     ap.add_argument("--redo", action="store_true", help="read: start cells.jsonl again")
     ap.add_argument("--no-tracker", action="store_true",
