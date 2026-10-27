@@ -85,9 +85,14 @@ def bass_pair(profile: str, rng: random.Random, most: int = 8) -> list[Pattern] 
         return None
     sizes = list(range(1, min(most, len(counts) - 1) + 1))
     n = rng.choices(sizes, [counts[k] for k in sizes])[0] if sum(counts[k] for k in sizes) else 4
-    weights = {k: float(w) for k, w in enumerate(shares)}
-    verse = _draw(weights, n, rng)
-    extra = _draw({k: w for k, w in weights.items() if k not in verse},
+    # The one is a whole-song choice: a share of records (one_never) all but
+    # never play it, the rest play it most bars - so the verse either has it
+    # or is built around its absence, never drops it at random.
+    on_one = rng.random() >= s.get("one_never", 0.0)
+    weights = {k: float(w) for k, w in enumerate(shares) if k}
+    verse = ({0} | _draw(weights, n - 1, rng)) if on_one else _draw(weights, n, rng)
+    weights[0] = float(shares[0]) if on_one else 0.0
+    extra = _draw({k: w for k, w in weights.items() if k not in verse and k},
                   min(rng.choice((1, 2)), most - len(verse)), rng)
     return [pattern(_mask(verse)), pattern(_mask(verse | extra))]
 

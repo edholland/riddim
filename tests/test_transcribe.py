@@ -164,3 +164,15 @@ def test_sixteenths_follow_the_records(monkeypatch):
     cells = _fake_cells(monkeypatch, {"steppers_dub": {"stats": {"steps": shares}}})
     assert cells.sixteenths("steppers_dub") == {3, 11}
     assert cells.sixteenths("uk_garage") == {3, 11}           # no fit: the a of 1 and 3
+
+
+def test_the_one_is_a_whole_song_choice(monkeypatch):
+    fit = _fit({0, 4, 6, 10, 14}, 3)
+    cells = _fake_cells(monkeypatch, {"steppers_dub": fit})
+    for seed in range(10):
+        verse, peak = cells.bass_pair("steppers_dub", random.Random(seed))
+        assert verse.hits[0].step == 0 and peak.hits[0].step == 0
+    fit["stats"]["one_never"] = 1.0
+    for seed in range(10):
+        verse, peak = cells.bass_pair("steppers_dub", random.Random(seed))
+        assert all(h.step != 0 for h in verse.hits + peak.hits)

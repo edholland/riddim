@@ -217,7 +217,12 @@ def summary(records: list[dict]) -> dict:
         n += 1
         steps += np.mean([[any(x[0] == k for x in b) for k in range(16)] for b in rb], axis=0)
         counts += np.bincount([min(16, len(b)) for b in rb], minlength=17) / len(rb)
+    # How many records' bass almost never plays the one: a whole-song choice
+    # (steppers that live off the beat), not a bar-by-bar one.
+    ones = [np.mean([any(x[0] == 0 for x in b) for b in r["bars"] if b])
+            for r in records if any(r["bars"])]
     return {"records": len(records), "bars": len(bars),
+            "one_never": round(float(np.mean([o < 0.1 for o in ones])), 3) if ones else 0.0,
             "steps": [round(float(v), 3) for v in steps / max(1, n)],
             "notes": [round(float(v), 3) for v in counts / max(1, n)],
             "notes_per_bar": round(float(np.median([len(b) for b in bars])), 2),
