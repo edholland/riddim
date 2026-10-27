@@ -105,9 +105,6 @@ class Profile:
     # How often a walking bassline takes its rhythm from the cells mined
     # from this profile's records (theory/cells.py) instead of the generator.
     mined_bass: float = 0.5
-    # How often a song's bassline keeps a note on the one, where the profile
-    # parts from the feel's default (bassline.params_for_feel: 0.6 straight).
-    bass_on_one: float | None = None
     note: str = ""
 
     @property
@@ -135,9 +132,6 @@ ROOTS_DUB = Profile(
     bars_per_chord_choices=(1.0, 2.0, 2.0, 4.0),
     # 300 roots dub records, felt tempo: the sub pulled ~0.6 times per 32 bars.
     bass_drops=(0.3, 0.9),
-    # The records strike the one in ~0.8 of bars (ml/mine_cells.py, 40 records a
-    # family); a bassline that skips it does so nearly every bar.
-    bass_on_one=0.75,
     sirens=0.6,
     family="dub",
     bars_per_chord=2.0,
@@ -160,9 +154,6 @@ STEPPERS_DUB = Profile(
                   "drop_and_climb"),
     stab_patterns=("skank", "double_chop", "half_skank"),
     bars_per_chord_choices=(2.0, 2.0, 4.0),
-    # The records strike the one in ~0.8 of bars (ml/mine_cells.py, 40 records a
-    # family); a bassline that skips it does so nearly every bar.
-    bass_on_one=0.75,
     sirens=0.6,
     family="dub",
     bars_per_chord=2.0,
@@ -192,9 +183,6 @@ DUBSTEP_140 = Profile(
                    "late_pair", "organ", "dotted"),
     bars_per_chord_choices=(2.0, 4.0, 4.0, 8.0),
     sirens=0.3,
-    # The records' bass reads near-flat across the bar (wobble and grime subs
-    # defeat the note reader), so the fit has nothing to say here yet.
-    mined_bass=0.0,
     family="dubstep",
     drop_chords=2,
     lead_styles=("hook", "hook", "hook", "riff", "call_response"),
@@ -276,9 +264,6 @@ DARK_GARAGE = Profile(
     bars_per_chord_choices=(2.0, 4.0, 4.0),
     lead_styles=("hook", "riff", "riff", "call_response"),
     sirens=0.2,
-    # The records' bass reads near-flat across the bar (wobble and grime subs
-    # defeat the note reader), so the fit has nothing to say here yet.
-    mined_bass=0.0,
     family="dubstep",
     drop_chords=2,
     bars_per_chord=4.0,
