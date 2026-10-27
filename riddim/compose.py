@@ -631,6 +631,9 @@ def _resolve_material(
         srng = random.Random(f"{params.seed}:bassstyle")
         names, weights = zip(*bass_style_pool(prof))
         params.bass = replace(params.bass, style=srng.choices(names, weights)[0])
+        if prof.bass_on_one is not None:
+            on_one = random.Random(f"{params.seed}:onone").random() < prof.bass_on_one
+            params.bass = replace(params.bass, anchor_root=on_one)
     bass_rng = random.Random(params.seed_for("sub"))
     cells = [
         groove.generate(params.bass.groove(), bass_rng),
