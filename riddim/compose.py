@@ -1464,8 +1464,8 @@ def _build_sub(part, section, prof, m: Material, rng):
             replies = line.response_in(lo_step, lo_step + STEPS_PER_BAR, "sub")
             if replies:
                 notes = _sub_reply(notes, replies, lo_step, roots[b], m, prof)
-            if not prof.sub_sixteenths:
-                notes = _on_eighths(notes)
+            notes = _on_eighths(notes, mined_cells.sixteenths(prof.name)
+                                if prof.sub_sixteenths else frozenset())
             if not params.anchor_root and not hook_here:
                 # A bass that skips the one still states a new chord: where
                 # the harmony changes, its root lands with the one-drop kick
@@ -1654,12 +1654,12 @@ def _yield_to_lead(notes, busy: set[int], lo_step: float, space: float = 1.0,
     return joined
 
 
-def _on_eighths(notes):
+def _on_eighths(notes, keep: frozenset[int] = frozenset()):
     """The sub plays on the eighth-note grid. A sub bass on the in-between
     sixteenths is heard as out of
     time, not as syncopation: the low end has to be where the kick is. (Not
-    in roots and steppers, whose records play the a of 1 and 3 as often as
-    the off-eighths: Profile.sub_sixteenths.) A note
+    on the sixteenths in `keep`: in roots and steppers, the ones their records
+    play about as often as the off-eighths - Profile.sub_sixteenths.) A note
     on an odd sixteenth moves forward to the next eighth (or back, but never
     onto the downbeat, which belongs to the root); if both are taken, it
     goes."""
@@ -1667,7 +1667,7 @@ def _on_eighths(notes):
     out, used = [], set()
     for mi, st, ln, v in sorted(notes, key=lambda n: n[1]):
         s = int(round(st))
-        if s % 2 == 0:
+        if s % 2 == 0 or s in keep:
             q = float(s)
         elif s + 1 < STEPS_PER_BAR and float(s + 1) not in taken:
             q = float(s + 1)               # forward to the next eighth

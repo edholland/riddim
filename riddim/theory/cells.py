@@ -90,3 +90,14 @@ def bass_pair(profile: str, rng: random.Random, most: int = 8) -> list[Pattern] 
     extra = _draw({k: w for k, w in weights.items() if k not in verse},
                   min(rng.choice((1, 2)), most - len(verse)), rng)
     return [pattern(_mask(verse)), pattern(_mask(verse | extra))]
+
+
+def sixteenths(profile: str, default: frozenset[int] = frozenset({3, 11})) -> frozenset[int]:
+    """The in-between sixteenths a profile's bass players use: the odd steps
+    struck at least 0.8 times as often as the off-eighths (2, 6, 10, 14).
+    Without a fit, the a of 1 and of 3."""
+    shares = stats(profile).get("steps")
+    if not shares:
+        return default
+    bar = 0.8 * sum(shares[k] for k in (2, 6, 10, 14)) / 4
+    return frozenset(k for k in range(1, 16, 2) if shares[k] >= bar)

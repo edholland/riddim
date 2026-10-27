@@ -157,3 +157,10 @@ def test_phase_from_tracker_downbeats():
     assert mc.phase_from(beats, beats[2::4] + 0.01) == (2, 1.0)
     assert mc.phase_from(beats, beats[0::2])[0] is None      # double-time tracker: a tie
     assert mc.phase_from(beats, None) == (None, 0.0)
+
+
+def test_sixteenths_follow_the_records(monkeypatch):
+    shares = [0.5, 0.1, 0.3, 0.4, 0.4, 0.1, 0.3, 0.2, 0.4, 0.1, 0.3, 0.35, 0.4, 0.1, 0.3, 0.1]
+    cells = _fake_cells(monkeypatch, {"steppers_dub": {"stats": {"steps": shares}}})
+    assert cells.sixteenths("steppers_dub") == {3, 11}
+    assert cells.sixteenths("uk_garage") == {3, 11}           # no fit: the a of 1 and 3
