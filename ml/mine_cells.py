@@ -9,6 +9,7 @@ hook model's transcriptions) can reuse them.
 
     python ml/mine_cells.py split   --per-family 40      # Demucs, kept stems
     python ml/mine_cells.py read                          # stems -> notes on the grid
+                                                          #   (downbeats: pip install beat-this)
     python ml/mine_cells.py build                         # riddim/theory/cells.json + report
 
 `read` writes references/stats/cells.jsonl: per record, its tempo, which
@@ -80,7 +81,42 @@ def _mono(path: str) -> np.ndarray:
     return listen.load(path).mean(axis=1).astype(float)
 
 
-def read(folder: str, family: str) -> dict:
+_TRACKER = []
+
+
+def downbeats(mix: np.ndarray, sr: int) -> np.ndarray | None:
+    """Downbeat times (s) from beat_this (CPJKU), a trained beat and downbeat
+    tracker - independent of the bass, so the bar's one isn't chosen by where
+    the bass happens to start. None if it isn't installed."""
+    if not _TRACKER:
+        try:
+            from beat_this.inference import Audio2Beats
+        except ImportError:
+            return None
+        import torch
+        dev = "mps" if torch.backends.mps.is_available() else "cpu"
+        _TRACKER.append(Audio2Beats(checkpoint_path="final0", device=dev, dbn=False))
+    _, down = _TRACKER[0](mix.astype(np.float32), sr)
+    return np.asarray(down, dtype=float)
+
+
+def phase_from(beats: np.ndarray, down: np.ndarray, tol: float = 0.07) -> tuple[int | None, float]:
+    """Which of the grid's first four beats the tracker's downbeats fall on,
+    and how clearly: the best rotation's share of downbeats matched, less the
+    runner-up's. A tracker at double the felt tempo marks every half bar, so
+    two rotations tie and the answer is None."""
+    if down is None or not len(down) or len(beats) < 8:
+        return None, 0.0
+    shares = []
+    for r in range(4):
+        downs = beats[r::4]
+        shares.append(float(np.mean([np.min(np.abs(downs - d)) < tol for d in down])))
+    order = np.argsort(shares)[::-1]
+    margin = shares[order[0]] - shares[order[1]]
+    return (int(order[0]) if margin >= 0.25 else None), round(margin, 2)
+
+
+def read(folder: str, family: str, tracker: bool = True) -> dict:
     """One record's stems onto the grid."""
     from riddim import transcribe as T
     bass, drums, other = (_mono(os.path.join(folder, s + ".wav")) for s in ("bass", "drums", "other"))
@@ -88,13 +124,17 @@ def read(folder: str, family: str) -> dict:
     if len(beats) < 9:
         return {"error": "no beat"}
     notes = T.bass_notes(bass)
-    phase = T.bar_phase(beats, notes, drums)
+    guess = T.bar_phase(beats, notes, drums)
+    phase, margin = phase_from(beats, downbeats(bass + drums + other, T.SR) if tracker else None)
+    if tracker and phase is None:
+        return {"error": f"downbeat unclear (margin {margin})", "guess": guess}
+    phase = guess if phase is None else phase
     bars = T.bars(notes, beats, phase)
     hits = [(t, 0.0, 0.0) for t in T.onset_times(other, 300, 3000)]
     stabs = [T.mask(b) for b in T.bars(hits, beats, phase)]
     offs = [n[3] for b in bars for n in b if n[0] % 2]
     return {"bpm": round(60.0 / float(np.median(np.diff(beats))), 2), "phase": phase,
-            "bars": bars, "stabs": stabs,
+            "guess": guess, "margin": margin, "bars": bars, "stabs": stabs,
             "swing": round(float(np.median(offs)), 3) if len(offs) >= 8 else None}
 
 
@@ -131,7 +171,7 @@ def cmd_read(a) -> int:
     for i, rid in enumerate(ids):
         fam = plan[rid]["family"]
         try:
-            rec = read(os.path.join(root, rid), fam)
+            rec = read(os.path.join(root, rid), fam, tracker=not a.no_tracker)
         except Exception as e:  # noqa: BLE001
             rec = {"error": str(e)[:200]}
         rec.update(id=rid, family=fam)
@@ -243,6 +283,9 @@ def main(argv=None) -> int:
     ap.add_argument("--per-family", type=int, default=40)
     ap.add_argument("--cells", default=CELLS_JSON)
     ap.add_argument("--redo", action="store_true", help="read: start cells.jsonl again")
+    ap.add_argument("--no-tracker", action="store_true",
+                    help="read: pick the one from bass and kick (riddim.transcribe.bar_phase) "
+                         "instead of beat_this's downbeats")
     a = ap.parse_args(argv)
     return {"split": cmd_split, "read": cmd_read, "build": cmd_build}[a.step](a)
 

@@ -156,7 +156,9 @@ def to_step(t: float, beats: np.ndarray, first: int) -> float | None:
 
 def bar_phase(beats: np.ndarray, notes, drums: np.ndarray | None = None) -> int:
     """Which of the first four beats is the one: where bass notes start and
-    the kick lands together most."""
+    the kick lands together most. A guess - on riddim's own renders it lands
+    on beat 3 about half the time - and one that leans toward bars that start
+    with the bass, so ml/mine_cells.py prefers a trained downbeat tracker."""
     # The kick's level, not its rise: the one is struck harder, and a rise in
     # log level can't tell a hard kick from a soft one.
     kick = listen._envelope(listen._band(drums, 40, 120)) if drums is not None else None

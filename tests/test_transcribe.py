@@ -149,3 +149,11 @@ def test_compose_plays_mined_bass(monkeypatch):
     on, off = steps(1.0), steps(0.0)
     assert on[6] + on[10] > off[6] + off[10]
     assert on[4] + on[12] < off[4] + off[12]
+
+
+def test_phase_from_tracker_downbeats():
+    mc = _mine()
+    beats = np.arange(0, 20, 0.8)
+    assert mc.phase_from(beats, beats[2::4] + 0.01) == (2, 1.0)
+    assert mc.phase_from(beats, beats[0::2])[0] is None      # double-time tracker: a tie
+    assert mc.phase_from(beats, None) == (None, 0.0)
