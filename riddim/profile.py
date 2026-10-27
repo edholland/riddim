@@ -183,6 +183,10 @@ DUBSTEP_140 = Profile(
                    "late_pair", "organ", "dotted"),
     bars_per_chord_choices=(2.0, 4.0, 4.0, 8.0),
     sirens=0.3,
+    # The records' bass reads near-flat across the bar even with a tracked
+    # downbeat (wobble and grime subs defeat the note reader), so the mined
+    # fit has nothing to say here yet.
+    mined_bass=0.0,
     family="dubstep",
     drop_chords=2,
     lead_styles=("hook", "hook", "hook", "riff", "call_response"),
@@ -264,6 +268,10 @@ DARK_GARAGE = Profile(
     bars_per_chord_choices=(2.0, 4.0, 4.0),
     lead_styles=("hook", "riff", "riff", "call_response"),
     sirens=0.2,
+    # The records' bass reads near-flat across the bar even with a tracked
+    # downbeat (wobble and grime subs defeat the note reader), so the mined
+    # fit has nothing to say here yet.
+    mined_bass=0.0,
     family="dubstep",
     drop_chords=2,
     bars_per_chord=4.0,
