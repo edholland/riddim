@@ -103,6 +103,7 @@
   "stats": {
    "records": 24,
    "bars": 282,
+   "one_never": 0.5,
    "steps": [
     0.178,
     0.195,
@@ -266,6 +267,7 @@
   "stats": {
    "records": 31,
    "bars": 249,
+   "one_never": 0.615,
    "steps": [
     0.15,
     0.105,
@@ -450,6 +452,7 @@
   "stats": {
    "records": 80,
    "bars": 865,
+   "one_never": 0.013,
    "steps": [
     0.742,
     0.244,
@@ -666,6 +669,7 @@
   "stats": {
    "records": 96,
    "bars": 1043,
+   "one_never": 0.158,
    "steps": [
     0.543,
     0.149,
@@ -914,6 +918,7 @@
   "stats": {
    "records": 60,
    "bars": 1008,
+   "one_never": 0.254,
    "steps": [
     0.364,
     0.214,
