@@ -23,6 +23,8 @@ include = ["riddim*"]
 [tool.setuptools.package-data]
 # The audio preview's samples and impulse responses (see their LICENSES.md).
 "riddim.render" = ["samples/*.md", "samples/*/*.wav"]
+# Rhythm cells mined from the references (ml/mine_cells.py): grid positions only.
+"riddim.theory" = ["cells.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -37,6 +37,7 @@ from .theory import (
     bassline, chord as chord_mod, fill, groove, harmony, hook as hook_mod,
     melody, percussion, pitch, rhythm,
 )
+from .theory import cells as mined_cells
 from .theory.rhythm import metric_weight
 from .theory.scale import Scale, parse_key
 from .units import STEPS_PER_BAR, TICKS_PER_16TH, TICKS_PER_BAR
@@ -640,6 +641,11 @@ def _resolve_material(
                                 syncopation=min(1.0, params.bass.syncopation + 0.1)).groove(),
                         bass_rng),
     ]
+    # Some songs play a rhythm real records play instead - drawn on its own
+    # stream after the generated pair, so nothing else moves.
+    mrng = random.Random(f"{params.seed}:minedbass")
+    if mrng.random() < prof.mined_bass:
+        cells = mined_cells.bass_pair(prof.name, mrng) or cells
 
     # Lead. The style is drawn from the shared stream (as it always was);
     # the performance dials from their own, so nothing downstream moves.

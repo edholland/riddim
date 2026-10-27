@@ -101,3 +101,40 @@ def test_build_by_profile():
     assert c["bass"] == [[1 | 1 << 14, 2]]
     assert c["stats"]["and_of_4"] == 1.0 and c["stats"]["one"] == 1.0
     assert "steppers_dub" in mc.report(cells)
+
+
+def _fake_cells(monkeypatch, data):
+    from riddim.theory import cells
+    monkeypatch.setattr(cells, "_data", lambda path=cells.PATH: data)
+    return cells
+
+
+def test_bass_pair_peak_keeps_downbeat(monkeypatch):
+    one, push = 1 | 1 << 6 | 1 << 10, 1 | 1 << 6 | 1 << 10 | 1 << 14
+    off = 1 << 2 | 1 << 6 | 1 << 10 | 1 << 14
+    cells = _fake_cells(monkeypatch, {"roots_dub": {"bass": [[one, 9], [push, 4], [off, 3]]}})
+    for seed in range(20):
+        verse, peak = cells.bass_pair("roots_dub", random.Random(seed))
+        v, p = ({int(h.step) for h in x.hits} for x in (verse, peak))
+        assert len(p) >= len(v) and ((0 in v) == (0 in p))
+    assert cells.bass_pair("uk_garage", random.Random(0)) is None
+
+
+def test_compose_plays_mined_bass(monkeypatch):
+    from collections import Counter
+    from dataclasses import replace
+    from riddim import profile
+    from riddim.compose import compose
+    from riddim.units import STEPS_PER_BAR, TICKS_PER_16TH
+    mask = 1 | 1 << 6 | 1 << 10        # the sub stays on eighths (compose._on_eighths)
+    _fake_cells(monkeypatch, {"steppers_dub": {"bass": [[mask, 5]]}})
+
+    def steps(mined):
+        prof = replace(profile.get("steppers_dub"), mined_bass=mined)
+        song = compose(prof, seed=5)
+        part = next(p for p in song.parts if p.role in ("sub", "bass"))
+        return Counter(round(n.start / TICKS_PER_16TH) % STEPS_PER_BAR for n in part.notes)
+
+    on, off = steps(1.0), steps(0.0)
+    assert on[6] + on[10] > off[6] + off[10]
+    assert on[4] + on[12] < off[4] + off[12]

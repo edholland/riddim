@@ -102,6 +102,9 @@ class Profile:
     # The desk's bass pulls per 32 bars, where the profile parts from its
     # family (arrange.dynamics.params_for); None is the family's range.
     bass_drops: tuple[float, float] | None = None
+    # How often a walking bassline takes its rhythm from the cells mined
+    # from this profile's records (theory/cells.py) instead of the generator.
+    mined_bass: float = 0.5
     note: str = ""
 
     @property
