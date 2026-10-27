@@ -1,0 +1,103 @@
+"""Reading stems back onto the grid, and mining rhythm pools from them."""
+
+import os
+import random
+import sys
+
+import numpy as np
+
+from riddim import transcribe as T
+
+CELL = [(0, 3, 40), (4, 2, 43), (6, 2, 45), (10, 3, 40), (14, 2, 38)]
+
+
+def _stems(bpm=76.0, bars=6, lead=0.37, rotate=0, seed=1):
+    """A kick on every beat (harder on 1 and 3) and a sine bass playing CELL,
+    the bar starting `rotate` beats after the first kick."""
+    sr, step = T.SR, 60.0 / bpm / 4
+    n = int((lead + (bars + 1) * 16 * step + 1) * sr)
+    drums, bass = np.zeros(n), np.zeros(n)
+    rng = random.Random(seed)
+    for k in range((bars + 1) * 4):
+        t = lead + k * 4 * step + rng.gauss(0, 0.004)
+        i, length = int(t * sr), int(0.15 * sr)
+        tt = np.arange(length) / sr
+        hard = (k - rotate) % 2 == 0
+        drums[i:i + length] += (1.0 if hard else 0.5) * np.sin(
+            2 * np.pi * (50 + 80 * np.exp(-tt * 40)) * tt) * np.exp(-tt * 20)
+    for b in range(bars):
+        for s, d, m in CELL:
+            t = lead + (rotate * 4 + b * 16 + s) * step
+            length = int(d * step * 0.9 * sr)
+            tt = np.arange(length) / sr
+            env = np.minimum(1, tt / 0.01) * np.minimum(1, (length / sr - tt) / 0.02)
+            i = int(t * sr)
+            bass[i:i + length] += 0.5 * np.sin(2 * np.pi * 440 * 2 ** ((m - 69) / 12) * tt) * env
+    return bass, drums
+
+
+def test_bass_notes_pitches():
+    bass, _ = _stems(bars=2)
+    notes = T.bass_notes(bass)
+    assert [round(m) for _, _, m in notes[:5]] == [m for _, _, m in CELL]
+
+
+def test_beat_grid_tempo():
+    _, drums = _stems()
+    beats = T.beat_grid(drums, 75)
+    assert abs(60 / np.median(np.diff(beats)) - 76) < 0.5
+
+
+def test_bars_recover_cell():
+    bass, drums = _stems()
+    notes = T.bass_notes(bass)
+    beats = T.beat_grid(drums, 75)
+    bars = T.bars(notes, beats, T.bar_phase(beats, notes, drums))
+    assert len(bars) >= 4
+    for bar in bars[:4]:
+        assert T.mask_string(T.mask(bar)) == "x...x.x...x...x."
+        assert [round(m) for _, _, m, _ in bar] == [m for _, _, m in CELL]
+
+
+def test_bar_phase_finds_the_one():
+    bass, drums = _stems(rotate=1)
+    notes = T.bass_notes(bass)
+    beats = T.beat_grid(drums, 75)
+    bars = [b for b in T.bars(notes, beats, T.bar_phase(beats, notes, drums)) if b]
+    assert T.mask_string(T.mask(bars[1])) == "x...x.x...x...x."
+
+
+def test_mask_string():
+    assert T.mask(([0, 1], [14, 1])) == (1 | 1 << 14)
+    assert T.mask_string(1 | 1 << 14) == "x.............x."
+
+
+def _mine():
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "ml"))
+    import mine_cells
+    return mine_cells
+
+
+def test_pool_counts_records_not_bars():
+    mc = _mine()
+    recs = [{"bars": [[(0,), (4,)]] * 30}, {"bars": [[(0,), (4,)]]},
+            {"bars": [[(0,), (8,)]] * 3}, {"bars": [[(0,), (8,)]]}, {"bars": [[(0,), (12,)]] * 50}]
+    got = mc.pool(recs, lambda r: [T.mask(x) for x in r["bars"]])
+    masks = [m for m, _ in got]
+    assert (1 | 1 << 12) not in masks           # one record's loop is not a pool
+    assert masks[0] == (1 | 1 << 4) and got[0][1] == 2
+
+
+def test_build_by_profile():
+    mc = _mine()
+    bar = [(0, 3.0, 40.0, 0.0), (14, 2.0, 38.0, 0.05)]
+    recs = [{"family": "steppers_dub", "bars": [bar] * 4, "stabs": [0b0100010001000100] * 4,
+             "swing": 0.02},
+            {"family": "digital_dub", "bars": [bar] * 4, "stabs": [0b0100010001000100] * 4,
+             "swing": 0.0}]
+    cells = mc.build(recs)
+    c = cells["steppers_dub"]
+    assert c["families"] == ["digital_dub", "steppers_dub"]
+    assert c["bass"] == [[1 | 1 << 14, 2]]
+    assert c["stats"]["and_of_4"] == 1.0 and c["stats"]["one"] == 1.0
+    assert "steppers_dub" in mc.report(cells)
