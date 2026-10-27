@@ -6,6 +6,10 @@ and scored by the judge against each family's references if it can.
     python ml/library_ab.py --out ab --refs dub=references/dub.npz \\
         --refs dubstep=references/dubstep.npz --refs garage=references/garage.npz
 
+With --cells the pair is the library with the generator's basslines (A,
+..._gen.wav) against the bass rhythms fitted to the records (B, ..._cells.wav,
+riddim/theory/cells.json) on every walking bassline.
+
 With --gain "dub.drums=0.7,dubstep.drums=0.8" the pair is instead the
 library as it is (A) against the library with those mix trims (B, files
 ..._trim.wav) - for setting levels against the measured stems.
@@ -38,6 +42,8 @@ def main(argv=None) -> int:
     ap.add_argument("--library", default=None, help="packs folder (default samples/packs)")
     ap.add_argument("--gain", default="", help="A/B mix trims instead of synth/library, "
                                                "e.g. dub.drums=0.7")
+    ap.add_argument("--cells", action="store_true",
+                    help="A/B the generator's bass rhythms against the mined fit")
     a = ap.parse_args(argv)
 
     from riddim import library, profile
@@ -50,16 +56,22 @@ def main(argv=None) -> int:
         print(f"no sample library at {lib_root}", file=sys.stderr)
         return 1
     pairs = []
-    sides = ("_library.wav", "_trim.wav") if a.gain else ("_synth.wav", "_library.wav")
+    sides = (("_gen.wav", "_cells.wav") if a.cells else
+             ("_library.wav", "_trim.wav") if a.gain else ("_synth.wav", "_library.wav"))
     for fam, profs in PANEL.items():
         for prof in profs:
             for k in range(a.per_family):
                 seed = a.seed + k
                 song = compose(prof, seed=seed)
                 base = os.path.join(a.out, f"{prof}_{seed}")
-                if a.gain:
-                    os.environ["RIDDIM_LIBRARY"] = lib_root
-                    library._LIB.clear()
+                os.environ["RIDDIM_LIBRARY"] = lib_root
+                library._LIB.clear()
+                if a.cells:
+                    from dataclasses import replace
+                    for side, mined in (("_gen.wav", 0.0), ("_cells.wav", 1.0)):
+                        song = compose(replace(profile.get(prof), mined_bass=mined), seed=seed)
+                        audio.write(song, base + side)
+                elif a.gain:
                     os.environ.pop("RIDDIM_FAMILY_GAIN", None)
                     audio.write(song, base + "_library.wav")
                     os.environ["RIDDIM_FAMILY_GAIN"] = a.gain
@@ -76,6 +88,8 @@ def main(argv=None) -> int:
                                          song.bpm >= 120 or "dubstep" in prof, "garage" in prof)
                 used = ", ".join(f"{v}: {_name(inst[v])}" for v in
                                  ("organ", "skank", "sub", "hat", "shaker", "siren") if v in inst)
+                if a.cells:
+                    used = f"bass style: {song.params.bass.style}"
                 pairs.append((fam, prof, seed, base, used))
                 print(f"{prof} {seed}: {used}", flush=True)
 
