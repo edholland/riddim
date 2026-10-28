@@ -101,13 +101,7 @@ def main(argv=None) -> int:
                                          song.bpm >= 120 or "dubstep" in prof, "garage" in prof)
                 used = ", ".join(f"{v}: {_name(inst[v])}" for v in
                                  ("organ", "skank", "sub", "hat", "shaker", "siren") if v in inst)
-                if a.toggle:
-                    from dataclasses import replace
-                    off = type(getattr(profile.get(prof), a.toggle))(0)
-                    audio.write(compose(replace(profile.get(prof), **{a.toggle: off}), seed=seed),
-                                base + "_off.wav")
-                    audio.write(song, base + "_on.wav")
-                elif a.cells:
+                if a.cells:
                     used = f"bass style: {song.params.bass.style}"
                 pairs.append((fam, prof, seed, base, used))
                 print(f"{prof} {seed}: {used}", flush=True)

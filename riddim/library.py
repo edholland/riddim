@@ -447,6 +447,19 @@ PICKS: dict[str, dict[str, list[str]]] = {
 }
 
 
+def overrides() -> dict[tuple[str, str], list[str]]:
+    """Picks set from `$RIDDIM_PICKS` ahead of the table, for auditioning a
+    sound on the judge's panel without editing it: "garage.organ=Soulful
+    Keys/Multisamples/ElPiano0[12345]/;dub.siren=..." (one pattern a voice)."""
+    out = {}
+    for item in os.environ.get("RIDDIM_PICKS", "").split(";"):
+        key, _, pat = item.partition("=")
+        fam, _, voice = key.strip().partition(".")
+        if fam and voice and pat.strip():
+            out[(fam, voice)] = [pat.strip()]
+    return out
+
+
 class Library:
     """The packs on disk, and the instruments the picks make from them."""
 
@@ -468,7 +481,7 @@ class Library:
         """The files a song plays for `voice`: the first pick with matches,
         and within it one sound (a folder, or a file stem's family) chosen by
         the song's seed."""
-        for pat in PICKS.get(family, {}).get(voice, []):
+        for pat in overrides().get((family, voice), PICKS.get(family, {}).get(voice, [])):
             got = self.match(pat)
             if got:
                 return got
