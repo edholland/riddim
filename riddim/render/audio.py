@@ -1075,6 +1075,11 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
 
     music = _tone(music, TONE.get(prof or "", TONE.get(family, {})))
 
+    # Nothing playing (every part muted): silence. The master would otherwise
+    # normalise its own tape hiss up to full scale.
+    if not np.any(music[lead_in:]):
+        return np.zeros_like(music[lead_in:], dtype=np.float32)
+
     # Master: glue, tape, a soft ceiling.
     mix = _hp(music, 24)
     mix /= (np.max(np.abs(mix)) or 1.0)
