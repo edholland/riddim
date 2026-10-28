@@ -349,6 +349,20 @@ def _wobble(midi, dur, vel, rnd, rate_hz):
     return (_hp(y, 70) * _env(n, 0.006, 0.04) * _vel(vel)).astype(np.float32)
 
 
+def _organ_bass(midi, dur, vel, rnd):
+    """UK garage's mid-bass: the M1 organ-bass kind of tone - a square and
+    its octave through a low-pass that snaps shut, so each note bounces off
+    the 2-step kick instead of growling under it as the 140 wobble does."""
+    n = int((dur + 0.03) * SR)
+    f = _f(midi) * 2
+    ph = _phase(f, n, rnd.jitter(0.5))
+    x = 0.6 * _sq(ph, 0.5) + 0.35 * _sq(_phase(f * 2, n, rnd.jitter(0.5)), 0.5)
+    t = np.arange(n) / SR
+    open_, shut = _lp(x, 1400, order=4), _lp(x, 220, order=4)
+    y = shut + (open_ - shut) * np.exp(-t / 0.06)
+    return (_hp(y, 70) * _env(n, 0.003, 0.03, decay=0.6) * _vel(vel) * 0.9).astype(np.float32)
+
+
 def _pluck(midi, dur, vel, rnd):
     """A plucked guitar chop: Karplus-Strong - a burst of noise in a
     tuned, damped loop - choked short, as a skank is."""
@@ -893,9 +907,15 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                     x = _sub(note.midi, dur, note.velocity, rnd)
                 _add(buf, start, _pan(x, 0.0))
                 # The bass's mid: a growl at 140, a pluck in dub.
-                if is140:
+                if prof == "uk_garage":
+                    mb = _organ_bass(note.midi, dur, note.velocity, rnd)
+                elif is140:
                     rate = 2.0 / beat if note.length * spt > beat else 1.0 / beat
                     mb = _wobble(note.midi, dur, note.velocity, rnd, rate)
+                    if garage:
+                        # Dark garage is the deep sub with a little growl over
+                        # it; the judge heard a dubstep wobble in it (+1.5 sd).
+                        mb = mb * 0.5
                 else:
                     mb = _bass_guitar(note.midi + 12, dur, note.velocity, rnd)
                 _add(stems["bass"], start, _pan(mb, 0.0))

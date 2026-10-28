@@ -261,7 +261,9 @@ UK_GARAGE = Profile(
     stab_patterns=("organ", "two_step", "stutter", "dotted", "answer_kick"),
     bars_per_chord_choices=(1.0, 2.0, 2.0),
     lead_styles=("hook", "hook", "riff", "riff", "call_response"),
-    sirens=0.1,
+    # The judge hears reggae in our garage (horns +1.8 sd against the records):
+    # the siren is dub's, not garage's.
+    sirens=0.0,
     family="garage",
     bars_per_chord=2.0,
     progression_tension=0.4,
