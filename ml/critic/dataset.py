@@ -3,6 +3,7 @@ records, embedded the way ml/critic/embed.py does, mix and stems.
 
     python ml/critic/dataset.py ours --per-profile 300     # render + embed riddim's songs
     python ml/critic/dataset.py stems                      # embed the records' stems
+    python ml/critic/dataset.py demucs --per-profile 100   # ours split by Demucs, as the records were
 
 **Ours.** For each profile, songs from seed 1000. Each is rendered with every
 knob we have tuned as the branch has it, except that each knob is put back
@@ -148,6 +149,61 @@ def cmd_ours(a) -> int:
     return 0
 
 
+def cmd_demucs(a) -> int:
+    """Riddim's songs split the way the records were (mine_cells.split:
+    htdemucs on the middle 40 s, each stem mono at riddim.listen's rate), so
+    the stem critics compare Demucs output with Demucs output, not with
+    riddim's clean buffers. The same songs and knobs as `ours` (from its
+    log where it has them). Into references/critic/train_demucs/<backbone>/
+    <profile>.npz, keys "<seed>/<stem>"; the audio is deleted."""
+    import mine_cells
+    from riddim.compose import compose
+    from riddim.render import audio
+    out_dir = os.path.join(REFS, "critic", "train_demucs")
+    logged = {}
+    if os.path.exists(os.path.join(TRAIN, "songs.jsonl")):
+        for r in (json.loads(line) for line in open(os.path.join(TRAIN, "songs.jsonl"))):
+            logged[(r["profile"], r["seed"])] = r["old"]
+    tmp = tempfile.mkdtemp(prefix="critic_dm_")
+    try:
+        for prof in PROFILES:
+            kn = knobs(prof)
+            files = {b: os.path.join(out_dir, b, prof + ".npz") for b in USE}
+            for b in USE:
+                os.makedirs(os.path.join(out_dir, b), exist_ok=True)
+            store = {b: dict(np.load(f, allow_pickle=True)) if os.path.exists(f) else {} for b, f in files.items()}
+            for seed in range(a.seed, a.seed + a.per_profile):
+                if f"{seed}/other" in store[USE[0]]:
+                    continue
+                old = logged.get((prof, seed))
+                if old is None:
+                    rng = random.Random(f"{prof}:{seed}:knobs")
+                    old = sorted(k for k in kn if rng.random() < OLD)
+                with patched([c for k in old for c in kn[k]]):
+                    mix = audio.render(compose(prof, seed=seed))
+                wav = os.path.join(tmp, "mix.wav")
+                _write(wav, mix, audio.SR)
+                folder = os.path.join(tmp, "stems")
+                mine_cells.split(wav, folder)
+                paths = [os.path.join(folder, st + ".wav") for st in ("drums", "bass", "other")]
+                emb = embed.embed_files(paths, os.path.join(tmp, "_cache"), "s", USE)
+                for b, d in emb.items():
+                    for st, p in zip(("drums", "bass", "other"), paths):
+                        store[b][f"{seed}/{st}"] = d[p]
+                shutil.rmtree(folder, ignore_errors=True)
+                shutil.rmtree(os.path.join(tmp, "_cache"), ignore_errors=True)
+                os.remove(wav)
+                if (seed - a.seed + 1) % 10 == 0:
+                    for b, f in files.items():
+                        np.savez(f, **store[b])
+                print(f"  {prof} {seed} split", flush=True)
+            for b, f in files.items():
+                np.savez(f, **store[b])
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return 0
+
+
 def cmd_stems(a) -> int:
     cells = os.path.join(REFS, "stats", "_cells")
     fam_of = {json.loads(line)["id"]: json.loads(line)["family"]
@@ -166,11 +222,11 @@ def cmd_stems(a) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("step", choices=("ours", "stems"))
+    ap.add_argument("step", choices=("ours", "stems", "demucs"))
     ap.add_argument("--per-profile", type=int, default=300)
     ap.add_argument("--seed", type=int, default=1000)
     a = ap.parse_args(argv)
-    return {"ours": cmd_ours, "stems": cmd_stems}[a.step](a)
+    return {"ours": cmd_ours, "stems": cmd_stems, "demucs": cmd_demucs}[a.step](a)
 
 
 if __name__ == "__main__":
