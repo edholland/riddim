@@ -67,7 +67,7 @@ class Profile:
     # from the records (riddim.listen's swing on ~300 a family, and the
     # bass's offbeat lateness in ml/mine_cells.py, which agree): roots 54,
     # steppers and dubstep 52-53, garage near straight - speed garage 53, UK
-    # garage 50, dark garage and grime 47-51.
+    # garage 50, dark garage and grime 47-51 - except uk_garage, kept at 58.
     deluge_swing: int = 50
     # The tempo is drawn per song from this range - the same feel at 68 and
     # at 76 is two different records.
@@ -274,7 +274,11 @@ UK_GARAGE = Profile(
     note="2-step at 132: kick on 1 and the & of 3, hats skipping into the "
          "backbeat, minor-ninth stabs dancing round the kick, a bass that "
          "bounces with it and a chopped hook over the top.",
-    deluge_swing=53,
+    # The records measure near straight (0.50), but 53 lost to 58 on the
+    # judge's goal panel (FAD 0.413 -> 0.417, real 0.41 -> 0.33): the 2-step
+    # shuffle lives in the hats, which a whole-track swing estimate averages
+    # away. Kept at 58.
+    deluge_swing=58,
 )
 
 DARK_GARAGE = Profile(

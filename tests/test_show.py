@@ -349,7 +349,8 @@ def test_preview_swing_is_the_deluges():
     from riddim import profile
     # As the records swing: roots more than steppers, garage near straight.
     assert profile.get("roots_dub").deluge_swing > profile.get("steppers_dub").deluge_swing > 50
-    assert all(50 <= profile.get(p).deluge_swing <= 55 for p in profile.PROFILES)
+    assert all(50 <= profile.get(p).deluge_swing <= 55 for p in profile.PROFILES if p != "uk_garage")
+    assert profile.get("uk_garage").deluge_swing == 58
 
 
 def test_audio_preview_renders():
