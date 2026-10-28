@@ -157,6 +157,34 @@ DRUMMER_MS: dict[str, float] = {"roots_dub": 8.5}
 DRUMMER_LEAN_MS: dict[str, float] = {"roots_dub": 3.3}
 
 
+# The engineer's hand on the master fader, per profile: how much of each
+# bar's level swing (in dB, against the song's median bar) is ridden out.
+# Roots records ride within about 2 dB block to block (p90-p10 of the 8-bar
+# energy curve 2.0 dB, ours 4.8) - the section ladder's intros, dub-outs and
+# peaks are holes and lifts in the band, not in the level.
+RIDE: dict[str, float] = {"roots_dub": 0.5}
+
+
+def _ride(x: np.ndarray, amount: float, bar_s: float) -> np.ndarray:
+    """Pull each bar's level `amount` of the way toward the median bar's (in
+    dB, at most 6 dB either way), the gain moving smoothly across a bar.
+    Silent bars are left alone."""
+    n = int(bar_s * SR)
+    if n <= 0 or len(x) < 2 * n:
+        return x
+    bars = len(x) // n
+    rms = np.sqrt(np.mean(x[: bars * n].reshape(bars, n, -1) ** 2, axis=(1, 2)) + 1e-12)
+    live = rms > 1e-4
+    if not live.any():
+        return x
+    db = 20 * np.log10(rms)
+    ref = float(np.median(db[live]))
+    gain_db = np.where(live, np.clip((ref - db) * amount, -6.0, 6.0), 0.0)
+    centres = (np.arange(bars) + 0.5) * n
+    g = 10 ** (np.interp(np.arange(len(x)), centres, gain_db) / 20.0)
+    return (x * g[:, None]).astype(np.float32)
+
+
 def _swing_ticks(tick: float, amount: int) -> float:
     """A Deluge-style swing as a time warp inside each eighth: the off-beat
     sixteenth lands `amount`% of the way through the eighth (50 straight),
@@ -1080,6 +1108,8 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
         music = music + (thin - music) * (sweep * 0.85)[:, None]
 
     music = _tone(music, TONE.get(prof or "", TONE.get(family, {})))
+    if RIDE.get(prof or ""):
+        music = _ride(music, RIDE[prof], 4 * beat)
 
     # Nothing playing (every part muted): silence. The master would otherwise
     # normalise its own tape hiss up to full scale.
