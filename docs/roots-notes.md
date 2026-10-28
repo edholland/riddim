@@ -109,6 +109,58 @@ stays open. Two options until then:
 - Accept roots ranking third behind steppers as the ceiling for instrumental
   roots.
 
+## Judged against instrumental records only (ml/instrumental.py)
+
+A record counts as instrumental if its Demucs vocal stem is under −25 dB.
+Most records have no stems, and for those a CLAP zero-shot score decides. On
+the 459 records that have both, the CLAP score ranks with the stem level at
+0.71. Of the records CLAP calls instrumental, 71% are under −25 dB and 10% have
+a clear vocal.
+
+Instrumental records kept per family:
+
+| family | kept |
+|---|---|
+| roots_dub | 68 of 300 |
+| roots_reggae | 23 of 300 |
+| steppers_dub | 132 of 300 |
+| digital_dub | 165 of 297 |
+| uk_garage | 78 of 300 |
+| dubstep | 89 of 296 |
+| grime | 84 of 299 |
+| dub_techno | 229 of 293 |
+| speed_garage | 2 of 126 |
+| dark_garage | 2 of 12 |
+
+speed_garage and dark_garage have fewer than four, so they drop out of the
+centroids.
+
+Same 8 seeds, at the f21085c audio (head 2ff452b):
+
+| profile | heard as own, all records | heard as own, instrumental only |
+|---|---|---|
+| roots_dub | 0/8 (steppers 6, digital 2); own rank 3 | 2/8 (roots_reggae 2, steppers 6); own rank 1–2 on 7 of 8 |
+| uk_garage | 0/8 (dubstep 5, steppers 3) | **8/8** |
+| steppers_dub | 8/8 | 8/8 |
+
+roots_dub against the roots references:
+
+| references | FAD | closeness | real |
+|---|---|---|---|
+| all roots_dub records | 0.324 | 0.827 | 0.97 |
+| instrumental roots_dub | 0.253 | 0.855 | 0.97 |
+| instrumental roots_dub + roots_reggae | 0.248 | 0.857 | 0.97 |
+
+So the voice explains most of the genre miss:
+
+- uk_garage was heard as dubstep and steppers only because its references
+  sing. Against instrumental garage it is garage on every seed.
+- Roots moves from a clear third to first or second. It is still close to
+  steppers (0.878 against 0.874 on seed 301), so the band carries roots, but
+  narrowly.
+
+`python ml/goal_check.py --instrumental` ranks against these centroids.
+
 ## Still open, beyond the voice
 
 - "a piano" +1.8: no single part explains it. Candidates are the held chord

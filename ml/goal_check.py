@@ -46,12 +46,15 @@ def ref_levels(stems: list[dict], profile: str) -> dict:
     return {s: float(np.median([r[s] for r in rows])) for s in STEMS} if rows else {}
 
 
-def centroids(jdir: str) -> dict[str, np.ndarray]:
+def centroids(jdir: str, keep: dict[str, set[str]] | None = None) -> dict[str, np.ndarray]:
+    """Each family's centroid; with `keep` (ml/instrumental.py), from those
+    records only - a family with fewer than four left drops out."""
     import judge
     out = {}
     for name in sorted(os.listdir(jdir)):
         if name.endswith(".npz") and not name.startswith("ab_"):
-            emb = [v for v in np.load(os.path.join(jdir, name), allow_pickle=True).values() if len(v)]
+            emb = [v for k, v in np.load(os.path.join(jdir, name), allow_pickle=True).items()
+                   if len(v) and (keep is None or k in keep.get(name[:-4], ()))]
             if len(emb) >= 4:
                 out[name[:-4]] = judge._unit(np.concatenate(emb).mean(0))
     return out
@@ -70,6 +73,8 @@ def main(argv=None) -> int:
     ap.add_argument("--seed", type=int, default=301)
     ap.add_argument("--refs", default=ls.REFS)
     ap.add_argument("--no-stems", action="store_true", help="skip Demucs (genre only)")
+    ap.add_argument("--instrumental", action="store_true",
+                    help="genre against centroids of instrumental records only (ml/instrumental.py)")
     a = ap.parse_args(argv)
 
     from riddim.compose import compose
@@ -107,9 +112,14 @@ def main(argv=None) -> int:
             lines.append(f"| {prof} | " + " | ".join(cells) + " |")
         lines.append("")
 
-    cents = centroids(os.path.join(a.refs, "judge"))
+    keep = None
+    if a.instrumental:
+        import instrumental
+        keep = instrumental.instrumental(a.refs)
+    cents = centroids(os.path.join(a.refs, "judge"), keep)
     emb = judge.embed_many([p for _, p in songs], os.path.join(a.out, "goal_emb.npz"))
-    lines += ["## Genre (closest reference family; where the profile's own families rank)", "",
+    lines += ["## Genre (closest reference family; where the profile's own families rank)"
+              + (" - instrumental records only" if a.instrumental else ""), "",
               "| song | closest | own family rank | top three |", "|---|---|---|---|"]
     top1 = defaultdict(list)
     for prof, path in songs:
