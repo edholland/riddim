@@ -16,7 +16,7 @@ start and the 8-song now are only roughly comparable.
 |---|---|---|---|---|
 | **Dub sounds played on keys** | dub "other" stem within 3 dB of the records | roots −8.3 dB, steppers −8.9 dB | roots −0.5 dB, steppers −1.3 dB | **Met.** The "roots" genre reading is still open: see the next row and docs/roots-notes.md. |
 | **Garage reads as garage** | genre probe says UK garage before dubstep | uk_garage 0/4 heard as garage (dubstep, steppers, digital) | 0/8 against all references (dubstep 5, steppers 3); **8/8 against instrumental references** | **Met for the band.** The miss against all references is the voice: only 78 of 300 garage references are instrumental. |
-| **A judge we trust more** | re-measured on the full library; its ranking agrees with Ed's picks on a blind A/B set | 439 reference tracks | Re-measured: 2,923 embedded references across 10 families, 2,530 records' stats, 462 Demucs stem sets, 229 sets. Known biases found and handled (below). | **The blind A/B against Ed's picks hasn't been done.** The one set of picks (the library A/B: Ed kept the library on 10 of 10) was not blind. The judge agreed on all three families' FAD and 8 of 10 pairs' closeness. |
+| **A judge we trust more** | re-measured on the full library; its ranking agrees with Ed's picks on a blind A/B set | 439 reference tracks | Re-measured: 2,923 embedded references across 10 families, 2,530 records' stats, 462 Demucs stem sets, 229 sets. Known biases found and handled (below). | **Not passed.** On the blind A/B (12 of its calls, below), Ed agreed with the judge's calls on 5 of 9 pairs he could tell apart (sign test p = 0.50), and couldn't tell 3. The judge's own score on each clip agreed with him on 6 of 9. The judge stays a guide, not a gate. |
 | **Arrangements move like real sets** | section lengths, drop spacing and bass pulls match the radio and sound-system recordings | not measured | Sets measured (ml/set_stats.py): a change about every 3 minutes, a flat hour, 0.7–0.9 bass pulls per 32 bars. Live tracks now run 2.5–3.5 minutes and pull at that rate. 140 songs pull 0.6–1.4 per 32 bars (renders measure 0.63–0.66). | **Partly met.** Our songs swing between quiet and loud more than records do: the energy spread is 2.4× the records' in roots and 5× in uk_garage. Every flatter arrangement we tried lost FAD (the judge rewards the empty sections). |
 | **Every family has a voice** | vocal stem within −13 to −24 dB, not −60 | −38 to −42 dB | −38 to −49 dB | **Open, out of scope on this branch.** It is the largest gap, and it explains most of the genre misses. |
 | **The drums and voice are on the card** | a Deluge send plays the vocal rows from the riddim kits | – | not worked on here | Open. |
@@ -88,4 +88,56 @@ These are the judge's known biases, all measured on this branch:
   size were left to the other measures.
 
 The plan's gate still applies: the judge only keeps or rejects changes once it
-has matched Ed's blind picks, and that check is still to do.
+has matched Ed's blind picks. That check has now been run, and it has not
+matched (below).
+
+## The blind A/B (28 October, ml/blind_ab.py)
+
+This covered 12 of the judge's keep-or-revert calls. Each pair is the same
+seed made both ways, the same ~38 s from two bars before the first drop,
+matched in loudness, with sides shuffled. "Ed picked" says which side he
+chose: kept is the judge's side, other the side it turned down. The last
+column is the judge's closeness score on the clip itself, kept / other.
+
+| # | profile | change | call | Ed picked | judge on the clip (kept / other) |
+|---|---|---|---|---|---|
+| 0 | roots_dub | a drummer: touches and a player's timing | clear | kept | 0.798 / 0.780 |
+| 1 | roots_dub | every other four bars as rockers | close | **other** | 0.860 / 0.859 |
+| 2 | roots_dub | organ bubble 4 dB down | close | kept | 0.844 / 0.841 |
+| 3 | roots_dub | bass guitar's mid at half | close | kept | 0.855 / 0.852 |
+| 4 | steppers_dub | dub drums 2 dB down | close | **other** | 0.861 / 0.863 |
+| 5 | uk_garage | reverb and delay ×2.5 | clear | kept | 0.776 / 0.790 |
+| 6 | uk_garage | short chord stabs, chords 4.4 dB down | close | kept | 0.784 / 0.785 |
+| 7 | uk_garage | Rhodes instead of organ | split | **other** | 0.821 / 0.823 |
+| 8 | uk_garage | master drive to the records' loudness | clear | **other** | 0.8415 / 0.8421 |
+| 9 | dubstep_140 | master drive to the records' loudness | clear | can't tell | 0.809 / 0.803 |
+| 10 | dark_garage | electric piano instead of the dub organ | clear | can't tell | 0.777 / 0.790 |
+| 11 | dubstep_140 | 140 drums 2 dB down (rejected) | close | can't tell | 0.755 / 0.748 |
+
+- **The judge's calls:** Ed agreed on 5 of 9 decided pairs (56%). A coin
+  would do as well (one-sided sign test p = 0.50).
+- **The judge on the clips:** it agreed with Ed on 6 of 9.
+- **Kept changes Ed preferred undone:**
+  - the roots rockers blocks (1). The clip judge sided with the call, by
+    0.001.
+  - the dub drums −2 dB (4). The clip judge sided with Ed.
+  - the uk_garage Rhodes (7). The clip judge sided with Ed. This is the one
+    call made against the usual FAD rule, on a large "real" gain.
+  - the uk_garage master drive (8). The clip judge sided with Ed, by 0.0006.
+    With loudness matched, this pair hears only the drive's saturation, not
+    the level the judge rewarded.
+- **Can't tell:** the dubstep drive, dark garage's electric piano and the
+  rejected 140 drums trim. Loudness-matched, those changes were inaudible to
+  him.
+
+So at this resolution the judge is not a proxy for Ed's ears. Its calls
+mostly sit inside differences he either can't hear or hears the other way.
+What follows:
+
+- Keep the judge for coarse questions (genre ranking, large FAD moves, level),
+  and stop letting it decide close calls.
+- Reconsider the four reverted-by-Ed changes on listening, not on the
+  judge's numbers.
+- A bigger blind set, with more of the clear-win kind, would say whether the
+  judge is right on the big calls at least: 12 pairs can only show a strong
+  agreement, not a weak one.
