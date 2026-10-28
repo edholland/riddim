@@ -121,7 +121,9 @@ SWING = True
 LIBRARY = True
 # Master: bus glue and soft clip. (A lighter master - nearer the records'
 # 13-15 dB crest - measured worse with the judge: kept as it was.)
-MASTER = {"thresh": -14.0, "ratio": 2.5, "makeup": 4.0, "clip": 1.3}
+# Lighter than it was (2.5:1, +4 dB, clip 1.3): the renders' crest factor sat
+# at 9 dB against the records' 12.5-16 - squashed - and now lands at 13-17.
+MASTER = {"thresh": -14.0, "ratio": 2.0, "makeup": 2.0, "clip": 1.0}
 
 
 def _swing_ticks(tick: float, amount: int) -> float:
@@ -143,6 +145,47 @@ def _swing_ticks(tick: float, amount: int) -> float:
 PAN = {"sub": 0.0, "bass": 0.0, "drums": 0.0, "perc": 0.45, "chords": -0.3, "pad": 0.0, "lead": 0.12}
 GAIN = {"sub": 0.45, "bass": 0.42, "drums": 0.75, "perc": 0.5, "chords": 0.5, "pad": 0.32,
         "lead": 0.42}
+# The mix bus's tone per profile, in dB on five bands (sub < 60 Hz, bass to
+# 250, low mid to 1k, high mid to 5k, air above): set so each profile's band
+# shares land on its records' (references/stats, ~300 records a family, the
+# same five bands as riddim.listen). Measured on the goal panel, every profile
+# came out ~95% below 250 Hz, against 75-85% for the records - the judge heard
+# nearly all of them as steppers, the darkest references.
+TONE: dict[str, dict[str, float]] = {
+    "roots_dub": {"sub": -11.5, "low_mid": 3.3, "high_mid": 5.0, "air": 6.5},
+    "steppers_dub": {"sub": -8.0, "low_mid": 2.2, "high_mid": 1.2, "air": 5.0},
+    "dubstep_140": {"bass": -1.5, "low_mid": 2.7, "high_mid": 10.0, "air": 8.0},
+    "dark_garage": {"sub": -3.0, "low_mid": -1.3, "high_mid": 9.5, "air": 7.0},
+    "uk_garage": {"sub": -3.2, "low_mid": 0.2, "high_mid": 7.7, "air": 7.0},
+}
+_TONE_BANDS = (("low", 60.0), ("peak", 130.0), ("peak", 500.0), ("peak", 2200.0), ("high", 6000.0))
+_TONE_NAMES = ("sub", "bass", "low_mid", "high_mid", "air")
+
+
+def _biquad(kind: str, f0: float, db: float, q: float = 0.7) -> np.ndarray:
+    """An RBJ shelf or peak as one second-order section."""
+    a = 10 ** (db / 40)
+    w = 2 * np.pi * f0 / SR
+    cw, alpha = np.cos(w), np.sin(w) / (2 * q)
+    if kind == "peak":
+        b = [1 + alpha * a, -2 * cw, 1 - alpha * a]
+        d = [1 + alpha / a, -2 * cw, 1 - alpha / a]
+    else:
+        sa = 2 * np.sqrt(a) * alpha
+        sign = 1 if kind == "low" else -1
+        b = [a * ((a + 1) - sign * (a - 1) * cw + sa), sign * 2 * a * ((a - 1) - sign * (a + 1) * cw),
+             a * ((a + 1) - sign * (a - 1) * cw - sa)]
+        d = [(a + 1) + sign * (a - 1) * cw + sa, -sign * 2 * ((a - 1) + sign * (a + 1) * cw),
+             (a + 1) + sign * (a - 1) * cw - sa]
+    return np.array([[b[0] / d[0], b[1] / d[0], b[2] / d[0], 1.0, d[1] / d[0], d[2] / d[0]]])
+
+
+def _tone(x: np.ndarray, gains: dict[str, float]) -> np.ndarray:
+    sos = [_biquad(k, f, gains[name]) for (k, f), name in zip(_TONE_BANDS, _TONE_NAMES)
+           if gains.get(name)]
+    return sosfilt(np.concatenate(sos), x, axis=0).astype(np.float32) if sos else x
+
+
 # Per-family trims on GAIN, multiplied in: each family's balance measured
 # against its own records (Demucs stems, `claude/loop-rounds.md`).
 FAMILY_GAIN: dict[str, dict[str, float]] = {}
@@ -979,6 +1022,8 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     if sweep.any() and SWEEP:
         thin = _hp(music, 900)
         music = music + (thin - music) * (sweep * 0.85)[:, None]
+
+    music = _tone(music, TONE.get(prof or "", TONE.get(family, {})))
 
     # Master: glue, tape, a soft ceiling.
     mix = _hp(music, 24)
