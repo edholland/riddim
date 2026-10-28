@@ -140,6 +140,13 @@ MASTER = {"thresh": -14.0, "ratio": 2.0, "makeup": 2.0, "clip": 1.0}
 # a third of their "real" score.
 DRIVE: dict[str, float] = {"roots_dub": 2.4, "steppers_dub": 3.5, "dubstep_140": 5.5,
                             "dark_garage": 2.5, "uk_garage": 4.8}
+# The bass guitar's mid an octave over the sub, per profile (dub only; the
+# 140 profiles growl instead), multiplied in. Roots' at half won the goal
+# panel (roots_dub 8 seeds against cb3cced, FAD / closeness / real): 1.0
+# 0.332 0.823 0.95, 0.5 0.327 0.826 0.97, none 0.329 0.826 0.98; an octave
+# lower 0.336 0.822 0.97. None of them is heard as roots yet, and the probes'
+# "a piano" hardly moves (+1.7 to +1.8 sd): it is not the bass guitar.
+BASS_MID: dict[str, float] = {"roots_dub": 0.5}
 # The reverb and delay returns per profile, multiplied in. The judge's text
 # probes heard our garage and 140 as "a dry close mix" (+1.7-1.8 sd against
 # the records). uk_garage x2.5 won the goal panel (garage FAD 0.392 -> 0.370,
@@ -974,7 +981,7 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                         # it; the judge heard a dubstep wobble in it (+1.5 sd).
                         mb = mb * 0.5
                 else:
-                    mb = _bass_guitar(note.midi + 12, dur, note.velocity, rnd)
+                    mb = _bass_guitar(note.midi + 12, dur, note.velocity, rnd) * BASS_MID.get(prof or "", 1.0)
                 _add(stems["bass"], start, _pan(mb, 0.0))
                 continue
             if role == "chords":
