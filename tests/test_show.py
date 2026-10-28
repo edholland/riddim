@@ -533,7 +533,8 @@ def test_everything_is_on_the_grid():
 def test_the_groove_repeats_bar_to_bar():
     """A drum voice that reshuffles its hits every bar is heard as out of
     time. In a flat section - outside the A' bar, the fill and any ramp -
-    every bar of kick, snare, hat and rim is the same pattern."""
+    every bar of kick, snare, hat and rim is the same pattern - plus, where
+    the profile has a drummer, a touch or two on top."""
     from collections import Counter
     rows = (KIT_ROWS["kick"], KIT_ROWS["snare"], KIT_ROWS["hat"], KIT_ROWS["rim"])
     for profile in ALL_PROFILES:
@@ -556,8 +557,16 @@ def test_the_groove_repeats_bar_to_bar():
                     # A voice held back for a whole block (the drop's layer
                     # plan) is silence, not a different pattern.
                     bars = [b for b in bars if b]
-                    if bars:
-                        top = Counter(bars).most_common(1)[0][1]
+                    if not bars:
+                        continue
+                    common, top = Counter(bars).most_common(1)[0]
+                    if get_profile(profile).drummer:
+                        # A drummer's touches sit on top of the riddim: a
+                        # bar is the pattern plus a hit or two, never a
+                        # different one.
+                        assert all(len(set(b) ^ set(common)) <= 2 for b in bars), \
+                            (profile, seed, sec.name, row)
+                    else:
                         assert top == len(bars), (profile, seed, sec.name, row)
 
 

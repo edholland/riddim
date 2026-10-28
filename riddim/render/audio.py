@@ -141,6 +141,11 @@ DRIVE: dict[str, float] = {"roots_dub": 2.4, "steppers_dub": 3.5, "dubstep_140":
 # but stopped being heard as dark garage (2/4 -> 0/4), and dubstep_140 x1.6
 # lost, so those stay dry; roots x0.6 lost on both counts.
 SPACE: dict[str, float] = {"uk_garage": 2.5}
+# A drummer's timing per profile: each kit hit off the grid by a normal
+# spread of this many ms. Roots records measure 14.3 ms of onset jitter
+# against our 11.0 (the detector's own floor on a grid-tight kit), so ~8.5 ms
+# more, added in quadrature, lands on the records' figure.
+DRUMMER_MS: dict[str, float] = {"roots_dub": 8.5}
 
 
 def _swing_ticks(tick: float, amount: int) -> float:
@@ -870,6 +875,9 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     stems = {r: np.zeros((n, 2), dtype=np.float32) for r in PAN}
     kick_env = np.zeros(n, dtype=np.float32)
     beat = 60.0 / song.bpm
+    # Its own stream, so the hits' timing moves nothing else.
+    feel_ms = DRUMMER_MS.get(prof or "", 0.0)
+    trng = np.random.default_rng((song.seed or 0) + 7919)
 
     for part in song.parts:
         role = part.role
@@ -891,6 +899,8 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                 _add(buf, start, _pan(x, p + rnd.jitter(0.05)))
                 continue
             if part.output == "kit":
+                if feel_ms:
+                    start = max(0, start + int(trng.normal(0.0, feel_ms / 1000.0) * SR))
                 x = kit(note.midi, dur, note.velocity)
                 if note.midi == KICK and any(a <= note.start < b for a, b in thin):
                     x = _hp(x, PULL_KICK_HP, order=4)

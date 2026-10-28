@@ -1252,6 +1252,13 @@ def _build_drums(part, section, prof, m: Material, rng):
             _emit(part, [(KIT_ROWS[voice], h.step, min(h.length, 0.9), h.velocity * vel_scale)
                          for h in p.sorted_hits()], bar_tick)
 
+        if prof.drummer and bar % 4 != 3 and not (rolling or fill_this_bar or phrase_fill):
+            # Its own stream per bar, so a song without a drummer is note
+            # for note what it was.
+            drng = random.Random(f"{voice_seed}:drummer:{bar}")
+            if drng.random() < prof.drummer:
+                _drummer_touch(part, voices, bar_tick, vel_scale, drng)
+
         if rolling:
             _emit(part, [(KIT_ROWS["snare"], s, 0.5, v)
                          for s, v in dynamics.roll(bars_left, roll_n, dyn, rng,
@@ -1291,6 +1298,28 @@ def _build_drums(part, section, prof, m: Material, rng):
         if span is not None:
             start, length = span
             part.add(Note(KIT_ROWS["riser"], start, length, int(80 + 40 * dyn.riser)))
+
+
+def _drummer_touch(part: Part, voices: dict, bar_tick: int, vel_scale: float, rng) -> None:
+    """One thing a player adds to a bar of the riddim: ghost snares between
+    the hits, a closed hat opened on an "and", or a rim pickup into the next
+    bar - only where the pattern leaves the step free."""
+    taken = {v: {h.step for h in p.hits} for v, p in voices.items()}
+    snare = taken.get("snare", set()) | taken.get("rim", set())
+    kind = rng.choice(("ghost", "ghost", "open", "rim"))
+    if kind == "ghost":
+        free = [s for s in (6, 10, 13, 15) if s not in snare]
+        notes = [(KIT_ROWS["snare"], s, 0.5, rng.uniform(26, 40))
+                 for s in rng.sample(free, min(len(free), rng.choice((1, 2))))]
+    elif kind == "open":
+        step = rng.choice((6, 14))
+        at = bar_tick + step * TICKS_PER_16TH
+        part.notes = [n for n in part.notes if not (n.midi == KIT_ROWS["hat"] and n.start == at)]
+        notes = [(KIT_ROWS["hat"], step, 2.0, rng.uniform(66, 82))]
+    else:
+        free = [s for s in (7, 15) if s not in snare]
+        notes = [(KIT_ROWS["rim"], s, 0.5, rng.uniform(48, 62)) for s in free[-1:]]
+    _emit(part, [(m, st, ln, v * vel_scale) for m, st, ln, v in notes], bar_tick)
 
 
 def _bass_cell(sub: Part, section: Section) -> list[tuple[int, float]]:
