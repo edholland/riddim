@@ -33,6 +33,15 @@ import numpy as np
 MODEL = "laion/clap-htsat-unfused"
 SR = 48000
 WIN = 10.0
+# Loudness-blind (the default): every recording is set to NORM_DB RMS, over
+# the whole track, before CLAP hears it. CLAP is not level-blind - 3 dB up
+# moved a garage render's "real" from 0.41 to 0.60 - so loudness is measured
+# on its own (goal_check's loudness table) and kept out of the judge. The
+# track's own rises and falls stay. RIDDIM_JUDGE_NORM=0 gives the
+# level-sensitive judge; caches and references for each mode are kept apart
+# (tagged).
+NORM_DB = -14.0
+NORM = os.environ.get("RIDDIM_JUDGE_NORM", "1") != "0"
 
 REAL = ["a professionally produced dubstep record, mixed and mastered",
         "a heavy sound system dub record with deep sub bass",
@@ -54,10 +63,34 @@ def _load_model():
     return _model
 
 
-def decode(path, sr=SR):
+def decode(path, sr=SR, norm=None):
     raw = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-f", "f32le", "-ac", "1",
                           "-ar", str(sr), "-"], check=True, capture_output=True).stdout
-    return np.frombuffer(raw, dtype=np.float32)
+    x = np.frombuffer(raw, dtype=np.float32)
+    if (NORM if norm is None else norm) and len(x):
+        rms = float(np.sqrt(np.mean(x.astype(np.float64) ** 2)))
+        if rms > 0:
+            x = (x * (10 ** (NORM_DB / 20) / rms)).astype(np.float32)
+    return x
+
+
+def tagged(path: str) -> str:
+    """A cache or reference file in the current mode: x.npz is the
+    level-sensitive judge's, x.norm.npz the loudness-blind one's."""
+    if NORM and path.endswith(".npz") and not path.endswith(".norm.npz"):
+        return path[:-4] + ".norm.npz"
+    return path
+
+
+def ref_files(jdir: str) -> dict[str, str]:
+    """The reference embeddings in `jdir` for the current mode, by family."""
+    out = {}
+    for name in sorted(os.listdir(jdir)):
+        if not name.endswith(".npz") or name.startswith("ab_") or name.endswith("_tests.npz"):
+            continue
+        if name.endswith(".norm.npz") == NORM:
+            out[name[: -len(".norm.npz")] if NORM else name[:-4]] = os.path.join(jdir, name)
+    return out
 
 
 def windows(x, sr=SR, win=WIN, skip=0.0):
@@ -98,6 +131,7 @@ def _cache_key(path):
 
 
 def embed_many(paths, cache_path):
+    cache_path = tagged(cache_path)
     cache = dict(np.load(cache_path, allow_pickle=True)) if os.path.exists(cache_path) else {}
     out = {}
     for p in paths:
@@ -134,6 +168,41 @@ def real_prob(emb):
     p = np.exp(logits - logits.max(1, keepdims=True))
     p /= p.sum(1, keepdims=True)
     return float(p[:, :len(REAL)].sum(1).mean())
+
+
+def bootstrap(ref_emb: dict, test_emb: dict, draws: int = 1000, seed: int = 0) -> dict:
+    """95% intervals over songs. The median closeness and real: resample the
+    test songs with replacement, `draws` times. FAD: a jackknife (leave one
+    song out) - a resample with repeated songs is narrower than the songs
+    are, which pushes FAD up, so the bootstrap cannot bracket it. Returns
+    {"fad": (lo, hi), "closeness": (lo, hi), "real": (lo, hi)}."""
+    from scipy import linalg
+    ref = np.concatenate(list(ref_emb.values()))
+    mu_r, s_r = ref.mean(0), np.cov(ref, rowvar=False)
+    centre = _unit(mu_r)
+    keys = [k for k, e in test_emb.items() if len(e)]
+    close = np.array([float((_unit(test_emb[k]) @ centre).mean()) for k in keys])
+    real = np.array([real_prob(test_emb[k]) for k in keys])
+    def fad_of(ks):
+        t = np.concatenate([test_emb[k] for k in ks])
+        mu_t, s_t = t.mean(0), np.cov(t, rowvar=False)
+        covmean = np.real(linalg.sqrtm(s_r.dot(s_t)))
+        return float(((mu_r - mu_t) ** 2).sum() + np.trace(s_r + s_t - 2 * covmean))
+
+    full = fad_of(keys)
+    if len(keys) > 2:
+        loo = np.array([fad_of(keys[:i] + keys[i + 1:]) for i in range(len(keys))])
+        se = float(np.sqrt((len(keys) - 1) / len(keys) * np.sum((loo - loo.mean()) ** 2)))
+    else:
+        se = float("nan")
+    rng = np.random.default_rng(seed)
+    c, r = [], []
+    for _ in range(draws):
+        idx = rng.integers(0, len(keys), len(keys))
+        c.append(float(np.median(close[idx])))
+        r.append(float(np.median(real[idx])))
+    q = lambda v: (float(np.percentile(v, 2.5)), float(np.percentile(v, 97.5)))  # noqa: E731
+    return {"fad": (full - 1.96 * se, full + 1.96 * se), "closeness": q(c), "real": q(r)}
 
 
 def score(ref_emb: dict, test_emb: dict) -> dict:

@@ -51,12 +51,11 @@ def centroids(jdir: str, keep: dict[str, set[str]] | None = None) -> dict[str, n
     records only - a family with fewer than four left drops out."""
     import judge
     out = {}
-    for name in sorted(os.listdir(jdir)):
-        if name.endswith(".npz") and not name.startswith("ab_"):
-            emb = [v for k, v in np.load(os.path.join(jdir, name), allow_pickle=True).items()
-                   if len(v) and (keep is None or k in keep.get(name[:-4], ()))]
-            if len(emb) >= 4:
-                out[name[:-4]] = judge._unit(np.concatenate(emb).mean(0))
+    for fam, path in judge.ref_files(jdir).items():
+        emb = [v for k, v in np.load(path, allow_pickle=True).items()
+               if len(v) and (keep is None or k in keep.get(fam, ()))]
+        if len(emb) >= 4:
+            out[fam] = judge._unit(np.concatenate(emb).mean(0))
     return out
 
 
@@ -69,7 +68,8 @@ def ranks(emb: np.ndarray, cents: dict[str, np.ndarray]) -> list[tuple[str, floa
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--out", default="goals")
-    ap.add_argument("--per-profile", type=int, default=4)
+    ap.add_argument("--per-profile", "--seeds", dest="per_profile", type=int, default=4,
+                    help="songs a profile (16-32 to see past the noise)")
     ap.add_argument("--seed", type=int, default=301)
     ap.add_argument("--refs", default=ls.REFS)
     ap.add_argument("--no-stems", action="store_true", help="skip Demucs (genre only)")
@@ -133,6 +133,41 @@ def main(argv=None) -> int:
                      + ", ".join(f"{f} {s:.3f}" for f, s in r[:3]) + " |")
     lines += ["", "| profile | heard as its own family |", "|---|---|"]
     lines += [f"| {p} | {sum(v)}/{len(v)} |" for p, v in top1.items()]
+
+    # The judge on each profile against its main family's records, with 95%
+    # intervals over songs (judge.bootstrap): a change smaller than these
+    # intervals is not one the judge can see.
+    refs_by_fam = judge.ref_files(os.path.join(a.refs, "judge"))
+    lines += ["", "## The judge, per profile (95% interval over songs)"
+              + ("" if judge.NORM else " - level-sensitive"), "",
+              "| profile | against | FAD | closeness | real |", "|---|---|---|---|---|"]
+    for prof in PROFILES:
+        fam = families_for(prof)[0]
+        if fam not in refs_by_fam:
+            continue
+        ref = dict(np.load(refs_by_fam[fam], allow_pickle=True))
+        mine = {p: emb[p] for q, p in songs if q == prof and len(emb[p])}
+        res, ci = judge.score(ref, mine), judge.bootstrap(ref, mine)
+        t = res["tracks"].values()
+        c = float(np.median([x["closeness"] for x in t]))
+        r = float(np.median([x["real"] for x in t]))
+        lines.append(f"| {prof} | {fam} | {res['fad']:.3f} ({ci['fad'][0]:.3f}-{ci['fad'][1]:.3f}) | "
+                     f"{c:.3f} ({ci['closeness'][0]:.3f}-{ci['closeness'][1]:.3f}) | "
+                     f"{r:.2f} ({ci['real'][0]:.2f}-{ci['real'][1]:.2f}) |")
+
+    # Loudness, its own target now that the judge is loudness-blind.
+    from riddim import listen
+    stats = [ls.fold(r) for r in ls._load(os.path.join(a.refs, "stats", "stats.jsonl"))]
+    lines += ["", "## Loudness (ours / records' median)", "",
+              "| profile | RMS dB | crest dB | dynamic range dB |", "|---|---|---|---|"]
+    for prof in PROFILES:
+        rep = [listen.analyze(p) for q, p in songs if q == prof]
+        recs = [r for r in stats if r.get("family") in families_for(prof)]
+        if not rep or not recs:
+            continue
+        cell = lambda k: (f"{np.median([getattr(x, k) for x in rep]):.1f} / "  # noqa: E731
+                          f"{np.median([r[k] for r in recs if r.get(k) is not None]):.1f}")
+        lines.append(f"| {prof} | {cell('rms_db')} | {cell('crest_db')} | {cell('dynamic_range_db')} |")
     with open(os.path.join(a.out, "report.md"), "w") as f:
         f.write("\n".join(lines) + "\n")
     print("\n".join(lines))

@@ -841,7 +841,7 @@ def kit_hit(inst: dict, row: int, dur: float, vel: int, rnd, garage: bool = Fals
     return _drum(row, dur, vel, rnd, garage)
 
 
-def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
+def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | None = None) -> np.ndarray:
     """The song as a stereo float array, shape (n, 2). `window` (start, end
     ticks) renders just that stretch - with what rings into it from the
     four seconds before - for auditioning one section."""
@@ -1117,6 +1117,23 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
         music += x * GAIN.get(role, 0.2) * trim.get(role, 1.0)
     space = SPACE.get(prof or "", 1.0)
     music += (plate * 0.18 + spring * 0.12 + hall * 0.2 + echo * 0.32) * space
+    if stems_out is not None:
+        # The band grouped as Demucs splits a record - drums, bass, other -
+        # at their level in the mix, through the profile's tone, for the
+        # critic's per-stem judges (ml/critic). The returns go with "other",
+        # where most of what feeds them sits: an approximation.
+        tone = TONE.get(prof or "", TONE.get(family, {}))
+        groups = {"drums": ("drums", "perc"), "bass": ("sub", "bass")}
+        taken = {r for rs in groups.values() for r in rs}
+        groups["other"] = tuple(r for r in stems if r not in taken)
+        for g, roles in groups.items():
+            y = np.zeros((n, 2), dtype=np.float32)
+            for r in roles:
+                if r in stems:
+                    y += stems[r] * GAIN.get(r, 0.2) * trim.get(r, 1.0)
+            if g == "other":
+                y += (plate * 0.18 + spring * 0.12 + hall * 0.2 + echo * 0.32) * space
+            stems_out[g] = _tone(y, tone)[lead_in:].astype(np.float32)
 
     # The build's sweep thins everything but the riser and the sub's absence.
     if sweep.any() and SWEEP:

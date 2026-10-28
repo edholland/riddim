@@ -291,7 +291,7 @@ def cmd_embed(a) -> int:
         rows.append({"family": fam, "tracks": len(emb), "median_closeness": round(float(np.median(close)), 3),
                      "median_real": round(float(np.median(real)), 3), "half_fad": round(half, 3)})
         print(f"  {rows[-1]}", flush=True)
-    with open(os.path.join(jdir, "baselines.json"), "w") as f:
+    with open(os.path.join(jdir, "baselines.norm.json" if judge.NORM else "baselines.json"), "w") as f:
         json.dump(rows, f, indent=1)
     return 0
 

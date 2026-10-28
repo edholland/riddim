@@ -64,23 +64,23 @@ def instrumental(refs: str = REFS) -> dict[str, set[str]]:
                 stem_db[_key(refs, plan[r["id"]]["file"])] = r["vocals"]
     out = {}
     jdir = os.path.join(refs, "judge")
-    for name in sorted(os.listdir(jdir)):
-        if not name.endswith(".npz") or name.startswith("ab_"):
-            continue
+    for fam, path in judge.ref_files(jdir).items():
         keep = set()
-        for k, v in np.load(os.path.join(jdir, name), allow_pickle=True).items():
+        for k, v in np.load(path, allow_pickle=True).items():
             if not len(v):
                 continue
             if (stem_db[k] < STEM_DB) if k in stem_db else (vocal_score(v, text) < THRESHOLD):
                 keep.add(k)
-        out[name[:-4]] = keep
+        out[fam] = keep
     return out
 
 
 def main() -> int:
     keep = instrumental()
     for fam, ks in keep.items():
-        total = sum(1 for v in np.load(os.path.join(REFS, "judge", fam + ".npz"), allow_pickle=True).values() if len(v))
+        import judge
+        path = judge.ref_files(os.path.join(REFS, "judge"))[fam]
+        total = sum(1 for v in np.load(path, allow_pickle=True).values() if len(v))
         print(f"{fam:13s} {len(ks):4d} of {total} instrumental")
     return 0
 

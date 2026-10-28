@@ -113,7 +113,7 @@ def main(argv=None) -> int:
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         import judge
         for fam, path in refs.items():
-            ref = dict(np.load(path, allow_pickle=True))
+            ref = dict(np.load(judge.tagged(path), allow_pickle=True))
             mine = [p for p in pairs if p[0] == fam]
             files = [b + s for _, _, _, b, _ in mine for s in sides]
             emb = judge.embed_many(files, os.path.join(a.out, f"ab_{fam}_tests.npz"))

@@ -70,7 +70,7 @@ def main(argv=None) -> int:
     jdir = os.path.join(a.refs, "judge")
     ref = {}
     for fam in sorted({f for p in goal_check.PROFILES for f in goal_check.families_for(p)}):
-        path = os.path.join(jdir, f"{fam}.npz")
+        path = judge.ref_files(jdir).get(fam, os.path.join(jdir, f"{fam}.npz"))
         if os.path.exists(path):
             d = dict(np.load(path, allow_pickle=True))
             ref[fam] = scores(dict(list(d.items())[: a.per_family]), text)
