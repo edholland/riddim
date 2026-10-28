@@ -63,7 +63,11 @@ class Profile:
     swing: float = 0.0
     # The Deluge's swing for this feel (50 = straight, as the Deluge shows
     # it): every off-beat sixteenth moved later together. Not in the notes -
-    # set it on the Deluge; the audio preview applies it the same way.
+    # set it on the Deluge; the audio preview applies it the same way. Set
+    # from the records (riddim.listen's swing on ~300 a family, and the
+    # bass's offbeat lateness in ml/mine_cells.py, which agree): roots 54,
+    # steppers and dubstep 52-53, garage near straight - speed garage 53, UK
+    # garage 50, dark garage and grime 47-51.
     deluge_swing: int = 50
     # The tempo is drawn per song from this range - the same feel at 68 and
     # at 76 is two different records.
@@ -143,6 +147,7 @@ ROOTS_DUB = Profile(
     # against the records' 0.54), and the fit won the judge each time.
     mined_bass=1.0,
     sub_sixteenths=True,
+    deluge_swing=54,
     sirens=0.6,
     family="dub",
     bars_per_chord=2.0,
@@ -171,6 +176,7 @@ STEPPERS_DUB = Profile(
     # against the records' 0.54), and the fit won the judge each time.
     mined_bass=1.0,
     sub_sixteenths=True,
+    deluge_swing=52,
     sirens=0.6,
     family="dub",
     bars_per_chord=2.0,
@@ -268,7 +274,7 @@ UK_GARAGE = Profile(
     note="2-step at 132: kick on 1 and the & of 3, hats skipping into the "
          "backbeat, minor-ninth stabs dancing round the kick, a bass that "
          "bounces with it and a chopped hook over the top.",
-    deluge_swing=58,
+    deluge_swing=53,
 )
 
 DARK_GARAGE = Profile(
@@ -299,7 +305,7 @@ DARK_GARAGE = Profile(
     skank_length=0.6,
     note="Proto-dubstep at 138: the 2-step kit, a deep sub and dark "
          "harmony - the garage record that turned into dubstep.",
-    deluge_swing=55,
+    deluge_swing=50,
 )
 
 # The Deluge kit preset each family's drums play (deluge/kit.py makes them):

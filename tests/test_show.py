@@ -347,7 +347,9 @@ def test_preview_swing_is_the_deluges():
         ticks = [_swing_ticks(k, amount) for k in range(0, 8 * T)]
         assert ticks == sorted(ticks)
     from riddim import profile
-    assert profile.get("uk_garage").deluge_swing > profile.get("roots_dub").deluge_swing == 50
+    # As the records swing: roots more than steppers, garage near straight.
+    assert profile.get("roots_dub").deluge_swing > profile.get("steppers_dub").deluge_swing > 50
+    assert all(50 <= profile.get(p).deluge_swing <= 55 for p in profile.PROFILES)
 
 
 def test_audio_preview_renders():
