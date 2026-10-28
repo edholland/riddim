@@ -271,7 +271,11 @@ UK_GARAGE = Profile(
     sub=Register(28, 52),    # E0 .. E2 - the garage bass moves, so it gets room
     chords=Register(57, 81),
     section_template="dubstep",
-    skank_length=1.0,        # an organ stab, not a guitar chop
+    # Short stabs, not held chords: CLAP heard our held keys as horns and a
+    # melodica (+2.3 / +2.0 sd against the records). At 0.3 steps with the
+    # chords 4.4 dB down (audio.FAMILY_GAIN), 8 seeds: FAD 0.366 -> 0.365,
+    # closeness 0.787 -> 0.797, real 0.81 -> 0.79, horns +2.0, melodica +1.6.
+    skank_length=0.3,
     delay_throw_on=("breakdown", "outro"),
     note="2-step at 132: kick on 1 and the & of 3, hats skipping into the "
          "backbeat, minor-ninth stabs dancing round the kick, a bass that "
