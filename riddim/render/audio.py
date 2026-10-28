@@ -162,7 +162,12 @@ DRUMMER_LEAN_MS: dict[str, float] = {"roots_dub": 3.3}
 # Roots records ride within about 2 dB block to block (p90-p10 of the 8-bar
 # energy curve 2.0 dB, ours 4.8) - the section ladder's intros, dub-outs and
 # peaks are holes and lifts in the band, not in the level.
-RIDE: dict[str, float] = {"roots_dub": 0.5}
+# Off: on the goal panel (roots_dub 8 seeds against 314a667, FAD / closeness /
+# real, spread / dynamic range) 0 scored 0.332 0.823 0.95 (4.8 / 6.9 dB), 0.3
+# 0.334 0.824 0.95 (3.4 / 5.5), 0.5 0.335 0.824 0.95 (2.5 / 4.7), 0.7 0.333
+# 0.825 0.96 (1.6 / 4.0): the spread lands on the records' but the judge
+# does not move (still 0/8 heard as roots; "a big drop" stays +1.5 sd).
+RIDE: dict[str, float] = {}
 
 
 def _ride(x: np.ndarray, amount: float, bar_s: float) -> np.ndarray:
