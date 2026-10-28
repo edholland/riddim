@@ -46,7 +46,7 @@ def packs(tmp_path_factory):
     """Paths shaped like the real packs', with audio that is what it says."""
     root = str(tmp_path_factory.mktemp("packs"))
     keys = os.path.join(root, "musicradar-soulful-keys-samples", "Soulful Keys", "Multisamples")
-    for org in ("Organ02", "Organ03", "Organ04"):
+    for org in ("Organ02", "Organ03", "Organ04", "ElPiano01"):
         for name, midi in (("C2", 48), ("F#2", 54), ("C3", 60), ("F#3", 66), ("C4", 72)):
             _write(os.path.join(keys, org, f"SK_{org}_{name}.wav"),
                    _tone(_hz(midi), 1.0, (0.6, 1.0, 0.5, 0.3)))

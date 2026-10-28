@@ -429,7 +429,11 @@ PICKS: dict[str, dict[str, list[str]]] = {
         "siren": [r"alarm-siren-samples/100bpm/AaS_(Echo|Verb)Proc"],
     },
     "dubstep": {
-        "organ": [r"Soulful Keys/Multisamples/Organ0[34]/"],
+        # An electric piano, not the dub organ: the judge's text probes heard
+        # too much organ and too little Rhodes in our 140 (Rhodes -1.0 sd),
+        # and EP won the goal panel (dubstep FAD 0.382 -> 0.375, real 0.70 ->
+        # 0.75). The voice keeps its name; it plays the chords.
+        "organ": [r"Soulful Keys/Multisamples/ElPiano0[12345]/"],
         "sub": [r"Sub Bass Weight/Multis/(Soft Sub|Solid Sub|Firm Sub|Juno Sub|SH101 Sub)/"],
         "siren": [r"alarm-siren-samples/140bpm/AaS_(Echo|Verb|Filter)Proc"],
     },
