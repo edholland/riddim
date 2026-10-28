@@ -92,7 +92,10 @@ def params_for(family: str, rng: random.Random,
             cadence=round(rng.uniform(0.6, 1.0), 2),
             layering=round(rng.uniform(0.4, 0.9), 2),
             lift=0.15,
-            bass_drops=round(rng.uniform(*(bass_drops or (0.0, 0.3))), 2),
+            # The desk pulls the sub here as often as in dub: about once a
+            # 32 bars on 300 dubstep records (1.03, 0.59 to 1.75) and dark
+            # garage's (1.19), 0.7-0.9 in their sets (references/stats).
+            bass_drops=round(rng.uniform(*(bass_drops or (0.6, 1.4))), 2),
         )
     if family == "garage":
         # Garage builds less and stops more: shorter rolls, the bass and
