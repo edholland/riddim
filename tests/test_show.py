@@ -1064,6 +1064,17 @@ def test_a_live_track_stays_up(profile):
     assert [p.notes for p in live.parts] == [p.notes for p in again.parts]
 
 
+@pytest.mark.parametrize("profile", ["roots_dub", "dubstep_140", "uk_garage"])
+def test_a_live_track_is_a_sets_tune_long(profile):
+    """The sets measured change tune every two to four and a half minutes at
+    any tempo, and pull the bass 0.7-0.9 times a 32 bars."""
+    for seed in (1, 5, 9):
+        song = compose(profile=profile, seed=seed, live=True)
+        minutes = sum(s.bars for s in song.arrangement.sections) * 4 / song.bpm
+        assert 2.0 <= minutes <= 4.5, (profile, seed, minutes)
+        assert 0.7 <= song.params.dynamics.bass_drops <= 0.9
+
+
 def test_live_is_a_word_in_the_ui():
     p = compose(profile="uk_garage", seed=5).params
     q = apply_ops(p, direct("live", p))

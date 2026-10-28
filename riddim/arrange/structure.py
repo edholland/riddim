@@ -506,6 +506,10 @@ class StructureParams:
     # energy, the low point only where the performer launches it, no long
     # intro or outro. See `_live`.
     live: bool = False
+    # The live track's length in bars (0: the table as it stands). The sets
+    # measured in references/stats/sets.md change tune every three minutes
+    # or so in every family (2 to 4.5), so _make_live asks for that.
+    live_bars: int = 0
     # Holes take out the *low end*, not the band: an intro or a breakdown is
     # the tune, the chords, the percussion and the snare at nearly full
     # weight, with the kick and the sub held back for the drop. Measured on
@@ -731,6 +735,30 @@ _LIVE = (
 )
 
 
+# How a live track meets its length: the sections that grow by a phrase
+# when it is short (the entry and exit first, room to mix over, then the
+# break and the second build), and the ones that give four bars when it is
+# long (the builds, then the break). Nothing passes sixteen bars - every
+# section is a loop - and the drops keep theirs.
+_LIVE_GROW = ("groove", "exit", "break", "build_2")
+_LIVE_TRIM = ("build", "build_2", "break")
+
+
+def _live_lengths(target: int) -> dict[str, int]:
+    bars = {label: n for label, _, n, _, _ in _LIVE}
+    if not target:
+        return bars
+    for label in _LIVE_GROW:
+        if sum(bars.values()) >= target - 8:
+            break
+        bars[label] = 16
+    for label in _LIVE_TRIM:
+        if sum(bars.values()) <= target + 8:
+            break
+        bars[label] = 4
+    return bars
+
+
 def _live(p: StructureParams, rng, name: str) -> Arrangement:
     """A track for the stage: short loopable sections, straight in at energy.
 
@@ -741,7 +769,9 @@ def _live(p: StructureParams, rng, name: str) -> Arrangement:
     The second drop is the bigger one and brings the whole band."""
     sections: list[Section] = []
     cursor = 0
-    for dev, (label, kind, bars, (lo, hi), ramp) in enumerate(_LIVE):
+    lengths = _live_lengths(p.live_bars)
+    for dev, (label, kind, _, (lo, hi), ramp) in enumerate(_LIVE):
+        bars = lengths[label]
         if kind is None:
             kind = p.release if p.release in ("dub_out", "breakdown") else rng.choice(("dub_out", "breakdown"))
         energy = round(rng.uniform(lo, hi), 3)

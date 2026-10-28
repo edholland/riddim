@@ -371,9 +371,25 @@ def _make_live(params: SongParams) -> SongParams:
     prof = profile_mod.get(params.profile)
     base = params.structure or structure.params_for_family(
         prof.family, random.Random(params.seed_for("structure")), params.bpm or prof.bpm)
-    params.structure = replace(base, live=True)
+    # About three minutes, the measured sets' tune length at any tempo (~100
+    # bars at 140, ~55 at 72), and the desk pulling the bass at the sets'
+    # rate - 0.7 to 0.9 a 32 bars in every family, where the dub records
+    # alone pull more (references/stats/sets.md).
+    lrng = random.Random(f"{params.seed}:live")
+    bpm = params.bpm or prof.bpm
+    params.structure = replace(base, live=True,
+                               live_bars=max(48, round(lrng.uniform(2.5, 3.5) * bpm / 4)))
+    if params.dynamics is None:
+        params.dynamics = dynamics.params_for(
+            prof.family, random.Random(f"{params.seed}:dynamics"), LIVE_PULLS)
+    else:
+        params.dynamics = replace(params.dynamics,
+                                  bass_drops=round(lrng.uniform(*LIVE_PULLS), 2))
     params.sections = None
     return params
+
+
+LIVE_PULLS = (0.7, 0.9)
 
 
 def bass_style_pool(prof: Profile) -> tuple:
