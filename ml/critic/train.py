@@ -1,6 +1,7 @@
 """Train the critic: real records against riddim's songs, mix and stems.
 
     python ml/critic/train.py fit       # train, test, save; writes references/critic/train.md
+    python ml/critic/train.py critic    # the critics riddim is judged by (log-odds, augmented)
     python ml/critic/train.py check     # shortcut checks on degraded copies
 
 **fit.** For each backbone (AST, CLAP, and the two side by side):
@@ -209,6 +210,156 @@ def cmd_fit(a) -> int:
     return 0
 
 
+def _ids_split(ids: list[str], frac: float, seed: int) -> np.ndarray:
+    """A recording-level split: True for ids in the held-out share (all of a
+    recording's copies - original and augmented - fall on the same side)."""
+    import hashlib
+    return np.array([int(hashlib.md5(f"{seed}:{i}".encode()).hexdigest()[:8], 16) / 0xFFFFFFFF < frac
+                     for i in ids])
+
+
+def collect_aug() -> tuple[list[np.ndarray], list[int], list[str]]:
+    """The augmented copies (dataset.py records_aug, ours_aug), AST, with
+    the same ids as their originals."""
+    X, y, ids = [], [], []
+    for fam_file in sorted(os.listdir(os.path.join(CRIT, "aug", "ast"))):
+        for k, v in _load(os.path.join(CRIT, "aug", "ast", fam_file)).items():
+            if len(v):
+                X.append(_unit(v)), y.append(1), ids.append("rec:" + k)
+    for prof in PROFILES:
+        for k, v in _load(os.path.join(CRIT, "train_aug", "ast", prof + ".npz")).items():
+            if len(v) and k.endswith("/mix"):
+                X.append(_unit(v)), y.append(0), ids.append(f"ours:{prof}:{k.split('/')[0]}")
+    return X, y, ids
+
+
+def _logistic(C: float):
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import make_pipeline
+    from sklearn.preprocessing import StandardScaler
+    return make_pipeline(StandardScaler(), LogisticRegression(max_iter=5000, C=C, class_weight="balanced"))
+
+
+def _song_logloss(z: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """Per-recording log-loss of the song-level log-odds, the classes
+    weighted equally."""
+    p = 1 / (1 + np.exp(-np.clip(z, -30, 30)))
+    loss = -(y * np.log(p + 1e-12) + (1 - y) * np.log(1 - p + 1e-12))
+    w = np.where(y == 1, 0.5 / max(1, (y == 1).sum()), 0.5 / max(1, (y == 0).sum())) * len(y)
+    return loss * w
+
+
+def fit_critic(X, y, ids, seed: int = 0, grid=(0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0)) -> dict:
+    """The C sweep (the smallest C within one SE of the best held-out
+    log-loss) on a validation split, then the held-out test. Returns the
+    model fitted on train + validation, its C, test AUC and the test
+    recordings' log-odds."""
+    from sklearn.metrics import roc_auc_score
+    y = np.array(y)
+    test = _ids_split(ids, 0.2, seed)
+    val = _ids_split(ids, 0.25, seed + 100) & ~test
+    tr = ~test & ~val
+    sweep = []
+    for C in grid:
+        clf = _logistic(C).fit(*_balanced_windows([X[i] for i in np.where(tr)[0]], y[tr]))
+        vi = np.where(val)[0]
+        loss = _song_logloss(_song_logit(clf, [X[i] for i in vi]), y[vi])
+        sweep.append((C, float(loss.mean()), float(loss.std() / np.sqrt(len(loss)))))
+    best = min(sweep, key=lambda t: t[1])
+    C = min(c for c, m, _ in sweep if m <= best[1] + best[2])
+    fit_on = np.where(~test)[0]
+    clf = _logistic(C).fit(*_balanced_windows([X[i] for i in fit_on], y[~test]))
+    ti = np.where(test)[0]
+    z = _song_logit(clf, [X[i] for i in ti])
+    return {"model": clf, "C": C, "sweep": sweep, "auc": float(roc_auc_score(y[ti], z)),
+            "test_ids": [ids[i] for i in ti], "test_z": z, "test_y": y[ti]}
+
+
+def _knob_effects(res: dict, only_original: set | None = None) -> dict[str, tuple[float, int]]:
+    """Held-out riddim songs: mean log-odds with a knob put back minus
+    without, by knob."""
+    log = {(r["profile"], r["seed"]): r["old"]
+           for r in (json.loads(line) for line in open(os.path.join(CRIT, "train", "songs.jsonl")))}
+    seen, rows = set(), []
+    for i, z, yy in zip(res["test_ids"], res["test_z"], res["test_y"]):
+        if yy == 0 and i not in seen and (only_original is None or i in only_original):
+            seen.add(i)
+            _, prof, seed = i.split(":")
+            rows.append((z, log.get((prof, int(seed)), [])))
+    zs = np.array([r[0] for r in rows])
+    out = {}
+    for k in sorted({k for _, o in rows for k in o}):
+        m = np.array([k in o for _, o in rows])
+        if m.sum() >= 5 and (~m).sum() >= 5:
+            out[k] = (float(zs[m].mean() - zs[~m].mean()), int(m.sum()))
+    return out
+
+
+def cmd_critic(a) -> int:
+    """The critics riddim is judged by: the mix critic on AST, trained on
+    originals and their tone- and mastering-augmented copies (both classes),
+    and the drums / bass / other critics on Demucs stems - each with a
+    regularisation sweep. Scores are log-odds (a song's mean window
+    log-odds), since the classes separate completely and P(real) saturates."""
+    os.makedirs(MODELS, exist_ok=True)
+    X, y, ids = collect("mix", "ast")
+    X = [_unit(x) for x in X]
+    Xa, ya, ida = collect_aug()
+    lines = ["# The critic (log-odds)", "",
+             f"Mix: {sum(1 for v in y if v == 1)} records and {sum(1 for v in y if v == 0)} riddim songs, plus "
+             f"{sum(1 for v in ya if v == 1)} / {sum(1 for v in ya if v == 0)} augmented copies (tone and mastering "
+             "randomised). Split by recording: 20% test, 25% of the rest for the C sweep.", ""]
+    runs = {}
+    for name, (XX, yy, ii) in {"plain": (X, y, ids), "augmented": (X + Xa, list(y) + list(ya), ids + ida)}.items():
+        for seed in (0, 1):
+            runs[(name, seed)] = fit_critic(XX, yy, ii, seed)
+    originals = set(ids)
+    lines += ["| mix critic | split seed | C | test AUC | records' median log-odds | riddim's median log-odds |",
+              "|---|---|---|---|---|---|"]
+    for (name, seed), r in runs.items():
+        z, yy = r["test_z"], r["test_y"]
+        lines.append(f"| {name} | {seed} | {r['C']} | {r['auc']:.3f} | {np.median(z[yy == 1]):+.2f} | "
+                     f"{np.median(z[yy == 0]):+.2f} |")
+    # Stability: the same riddim songs scored by the seed-0 and seed-1 models.
+    ours_ids = [i for i in ids if i.startswith("ours")]
+    for name in ("plain", "augmented"):
+        z0 = _song_logit(runs[(name, 0)]["model"], [X[ids.index(i)] for i in ours_ids])
+        z1 = _song_logit(runs[(name, 1)]["model"], [X[ids.index(i)] for i in ours_ids])
+        rho = float(np.corrcoef(np.argsort(np.argsort(z0)), np.argsort(np.argsort(z1)))[0, 1])
+        lines.append(f"\n{name}: riddim songs ranked by the two split seeds' models, rank correlation {rho:.2f}; "
+                     f"scale (sd of log-odds) {z0.std():.2f} / {z1.std():.2f}.")
+    lines += ["", "Held-out riddim songs, mean log-odds with each knob put back to its old setting "
+              "minus without (n songs with it):", "", "| knob | plain | augmented |", "|---|---|---|"]
+    kp = _knob_effects(runs[("plain", 0)], originals)
+    ka = _knob_effects(runs[("augmented", 0)], originals)
+    for k in sorted(set(kp) | set(ka)):
+        cell = lambda d: f"{d[k][0]:+.2f} ({d[k][1]})" if k in d else "-"  # noqa: E731
+        lines.append(f"| {k} | {cell(kp)} | {cell(ka)} |")
+    final = runs[("augmented", 0)]
+    clf = _logistic(final["C"]).fit(*_balanced_windows(X + Xa, np.array(list(y) + list(ya))))
+    with open(os.path.join(MODELS, "mix.pkl"), "wb") as f:
+        pickle.dump({"model": clf, "backbone": "ast", "kind": "logistic", "C": final["C"],
+                     "augmented": True, "test_auc": final["auc"]}, f)
+    lines += ["", "| stem critic (Demucs stems) | C | test AUC | records' median | riddim's median |",
+              "|---|---|---|---|---|"]
+    for part in ("drums", "bass", "other"):
+        Xs, ys, ids_s = collect(part, "ast")
+        Xs = [_unit(x) for x in Xs]
+        if sum(ys) < 20 or len(ys) - sum(ys) < 20:
+            continue
+        r = fit_critic(Xs, ys, ids_s, 0)
+        z, yy = r["test_z"], r["test_y"]
+        lines.append(f"| {part} | {r['C']} | {r['auc']:.3f} | {np.median(z[yy == 1]):+.2f} | {np.median(z[yy == 0]):+.2f} |")
+        clf = _logistic(r["C"]).fit(*_balanced_windows(Xs, np.array(ys)))
+        with open(os.path.join(MODELS, part + ".pkl"), "wb") as f:
+            pickle.dump({"model": clf, "backbone": "ast", "kind": "logistic", "C": r["C"],
+                         "augmented": False, "test_auc": r["auc"]}, f)
+    with open(os.path.join(CRIT, "critic.md"), "w") as f:
+        f.write("\n".join(lines) + "\n")
+    print("\n".join(lines))
+    return 0
+
+
 # --------------------------------------------------------------------------
 # scoring
 # --------------------------------------------------------------------------
@@ -224,8 +375,8 @@ def model(part: str) -> dict:
 
 
 def score_files(paths: dict[str, str], cache_dir: str) -> dict[str, float]:
-    """P(real) for each part's audio file ({part: path}), via the saved
-    critics."""
+    """The critics' log-odds (real against riddim) for each part's audio file
+    ({part: path}); higher is more like a record."""
     out = {}
     for part, path in paths.items():
         m = model(part)
@@ -234,8 +385,7 @@ def score_files(paths: dict[str, str], cache_dir: str) -> dict[str, float]:
         f = _feats({b: emb[b][path] for b in bbs}, m["backbone"])
         if not len(f):
             continue
-        z = float(_song_logit(m["model"], [f])[0])
-        out[part] = 1.0 / (1.0 + np.exp(-z))
+        out[part] = float(_song_logit(m["model"], [f])[0])
     return out
 
 
@@ -271,7 +421,7 @@ def cmd_check(a) -> int:
         "1 s silence first": ["-af", "adelay=1000|1000"],
         "-10 dB": ["-af", "volume=-10dB"],
     }
-    lines = ["| set | edit | median P(real) |", "|---|---|---|"]
+    lines = ["| set | edit | median log-odds |", "|---|---|---|"]
     for name, files in (("records (held out)", pick), ("riddim (seeds 5000+)", ours)):
         extra = ([("MP3 192k", ["-b:a", "192k"])] if name.startswith("riddim") else
                  [("WAV copy", ["-c:a", "pcm_s16le"]), ("MP3 128k again", ["-b:a", "128k"])])
@@ -285,7 +435,7 @@ def cmd_check(a) -> int:
                 else:
                     g = f
                 ps.append(score_files({"mix": g}, os.path.join(tmp, "_c"))["mix"])
-            lines.append(f"| {name} | {edit} | {np.median(ps):.3f} |")
+            lines.append(f"| {name} | {edit} | {np.median(ps):+.2f} |")
             print(lines[-1], flush=True)
     with open(os.path.join(CRIT, "check.md"), "w") as f:
         f.write("# Critic shortcut checks\n\n" + "\n".join(lines) + "\n")
@@ -294,10 +444,10 @@ def cmd_check(a) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("step", choices=("fit", "check"))
+    ap.add_argument("step", choices=("fit", "critic", "check"))
     ap.add_argument("--n", type=int, default=40, help="check: records and songs to test")
     a = ap.parse_args(argv)
-    return {"fit": cmd_fit, "check": cmd_check}[a.step](a)
+    return {"fit": cmd_fit, "critic": cmd_critic, "check": cmd_check}[a.step](a)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ judge.embed_many, so a re-run embeds only what is new.
 from __future__ import annotations
 
 import os
+import random
 import subprocess
 import sys
 
@@ -59,9 +60,33 @@ def _model(name: str):
     return _MODELS[name]
 
 
-def windows(path: str, n: int = WINDOWS) -> list[np.ndarray]:
-    """Up to `n` evenly spaced 10 s windows of the loudness-normalised track."""
+def augment(x: np.ndarray, key: str) -> np.ndarray:
+    """Tone and mastering, randomised per `key`, so a critic trained on both
+    real and riddim's copies cannot lean on them: a tilt of up to 4 dB from
+    the sub to the air (on riddim's five tone bands), a low and a high shelf
+    of up to 3 dB each, and, half the time, mild compression. Loudness is set
+    back to judge.NORM_DB after. Tone is judged elsewhere, against the
+    records' measured band shares."""
+    from riddim.render import audio
+    rng = random.Random(key + ":aug")
+    tilt = rng.uniform(-4.0, 4.0)
+    gains = {n: tilt * w for n, w in zip(audio._TONE_NAMES, (-0.5, -0.25, 0.0, 0.25, 0.5))}
+    gains["sub"] += rng.uniform(-3.0, 3.0)
+    gains["air"] += rng.uniform(-3.0, 3.0)
+    y = audio._tone(x.astype(np.float32), gains)
+    if rng.random() < 0.5:
+        peak_db = 20 * np.log10(np.percentile(np.abs(y), 99.5) + 1e-9)
+        y = audio._compress(y, peak_db - rng.uniform(2.0, 8.0), rng.uniform(1.5, 3.0))
+    rms = float(np.sqrt(np.mean(y.astype(np.float64) ** 2))) or 1.0
+    return (y * (10 ** (judge.NORM_DB / 20) / rms)).astype(np.float32)
+
+
+def windows(path: str, n: int = WINDOWS, augment_key: str | None = None) -> list[np.ndarray]:
+    """Up to `n` evenly spaced 10 s windows of the loudness-normalised track
+    (augmented, if `augment_key` is given)."""
     x = judge.decode(path, SR, norm=True)
+    if augment_key is not None and len(x):
+        x = augment(x, augment_key)
     w = int(WIN * SR)
     edge = int(len(x) * 0.05) if len(x) > 6 * w else 0
     x = x[edge:len(x) - edge] if edge else x
@@ -94,7 +119,8 @@ def embed_windows(name: str, ws: list[np.ndarray], batch: int = 8) -> np.ndarray
     return np.concatenate(out)
 
 
-def embed_files(paths: list[str], cache_dir: str, name: str, backbones=BACKBONES) -> dict[str, dict]:
+def embed_files(paths: list[str], cache_dir: str, name: str, backbones=BACKBONES,
+                augmented: bool = False) -> dict[str, dict]:
     """{backbone: {path: (windows, dim)}} for `paths`, through the caches
     <cache_dir>/<backbone>/<name>.npz."""
     caches, files = {}, {}
@@ -109,7 +135,7 @@ def embed_files(paths: list[str], cache_dir: str, name: str, backbones=BACKBONES
         need = [b for b in backbones if key not in caches[b]]
         if need:
             try:
-                ws = windows(p)
+                ws = windows(p, augment_key=key if augmented else None)
             except subprocess.CalledProcessError:
                 ws = []
             for b in need:

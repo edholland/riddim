@@ -4,6 +4,8 @@ records, embedded the way ml/critic/embed.py does, mix and stems.
     python ml/critic/dataset.py ours --per-profile 300     # render + embed riddim's songs
     python ml/critic/dataset.py stems                      # embed the records' stems
     python ml/critic/dataset.py demucs --per-profile 100   # ours split by Demucs, as the records were
+    python ml/critic/dataset.py records_aug                # the records, tone and mastering randomised
+    python ml/critic/dataset.py ours_aug --per-profile 100 # ours likewise (after `ours`)
 
 **Ours.** (Each mix goes through a record's codec first - lossy() - before
 it is embedded or split.) For each profile, songs from seed 1000. Each is rendered with every
@@ -226,6 +228,53 @@ def cmd_demucs(a) -> int:
     return 0
 
 
+def cmd_records_aug(a) -> int:
+    """Every reference record again, augmented (embed.augment), AST only:
+    references/critic/aug/ast/<family>.npz."""
+    import bakeoff
+    for fam, paths in bakeoff.reference_paths().items():
+        print(f"{fam}: {len(paths)} records, augmented", flush=True)
+        embed.embed_files(paths, os.path.join(REFS, "critic", "aug"), fam, ("ast",), augmented=True)
+    return 0
+
+
+def cmd_ours_aug(a) -> int:
+    """`ours`'s first songs again (same knobs, same codec), the mix
+    augmented: references/critic/train_aug/ast/<profile>.npz, "<seed>/mix"."""
+    from riddim.compose import compose
+    from riddim.render import audio
+    out_dir = os.path.join(REFS, "critic", "train_aug", "ast")
+    os.makedirs(out_dir, exist_ok=True)
+    logged = {(r["profile"], r["seed"]): r["old"]
+              for r in (json.loads(line) for line in open(os.path.join(TRAIN, "songs.jsonl")))}
+    tmp = tempfile.mkdtemp(prefix="critic_aug_")
+    try:
+        for prof in PROFILES:
+            kn = knobs(prof)
+            f = os.path.join(out_dir, prof + ".npz")
+            store = dict(np.load(f, allow_pickle=True)) if os.path.exists(f) else {}
+            for seed in range(a.seed, a.seed + a.per_profile):
+                if f"{seed}/mix" in store or (prof, seed) not in logged:
+                    continue
+                with patched([c for k in logged[(prof, seed)] for c in kn[k]]):
+                    mix = audio.render(compose(prof, seed=seed))
+                wav = os.path.join(tmp, "mix.wav")
+                _write(wav, mix / max(1.0, float(np.max(np.abs(mix))) / 0.98), audio.SR)
+                enc = lossy(wav, f"{prof}:{seed}")
+                emb = embed.embed_files([enc], os.path.join(tmp, "_c"), "m", ("ast",), augmented=True)
+                store[f"{seed}/mix"] = emb["ast"][enc]
+                shutil.rmtree(os.path.join(tmp, "_c"), ignore_errors=True)
+                os.remove(wav)
+                os.remove(enc)
+                if len(store) % 10 == 0:
+                    np.savez(f, **store)
+                print(f"  {prof} {seed} augmented", flush=True)
+            np.savez(f, **store)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return 0
+
+
 def cmd_stems(a) -> int:
     cells = os.path.join(REFS, "stats", "_cells")
     fam_of = {json.loads(line)["id"]: json.loads(line)["family"]
@@ -244,11 +293,12 @@ def cmd_stems(a) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("step", choices=("ours", "stems", "demucs"))
+    ap.add_argument("step", choices=("ours", "stems", "demucs", "records_aug", "ours_aug"))
     ap.add_argument("--per-profile", type=int, default=300)
     ap.add_argument("--seed", type=int, default=1000)
     a = ap.parse_args(argv)
-    return {"ours": cmd_ours, "stems": cmd_stems, "demucs": cmd_demucs}[a.step](a)
+    return {"ours": cmd_ours, "stems": cmd_stems, "demucs": cmd_demucs, "records_aug": cmd_records_aug,
+            "ours_aug": cmd_ours_aug}[a.step](a)
 
 
 if __name__ == "__main__":
