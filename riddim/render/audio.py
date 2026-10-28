@@ -263,12 +263,12 @@ def _tone(x: np.ndarray, gains: dict[str, float]) -> np.ndarray:
 
 # Per-family trims on GAIN, multiplied in: each family's balance measured
 # against its own records (Demucs stems, `claude/loop-rounds.md`).
-# Dub's kit sat ~4 dB over its records in the stems; down 2 dB it wins the
-# goal panel (dub FAD 0.313 -> 0.306, real 0.96 -> 0.94). Down 4 dB cost
-# real 0.09, so not further.
+# Dub's kit sat ~4 dB over its records in the stems, and 2 dB down won the
+# goal panel (dub FAD 0.313 -> 0.306, real 0.96 -> 0.94), but Ed preferred
+# it at full level in the blind A/B (so did the clip judge): left as it was.
 # Garage's chords down 4.4 dB, with uk_garage's shorter stabs (profile
 # skank_length): they read as horns and melodica held up front.
-FAMILY_GAIN: dict[str, dict[str, float]] = {"dub": {"drums": 0.8}, "garage": {"chords": 0.6}}
+FAMILY_GAIN: dict[str, dict[str, float]] = {"garage": {"chords": 0.6}}
 
 
 def parse_gains(text: str) -> dict[str, dict[str, float]]:

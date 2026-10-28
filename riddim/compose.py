@@ -925,7 +925,9 @@ HAT, SHAKER = 38, 41
 # 0.54 against 0.72); on the goal panel (8 seeds, against 6349062) this moved
 # ours to 0.69, FAD 0.341 -> 0.336, closeness 0.820 -> 0.822, real 0.92 ->
 # 0.91. (Rockers on the every-fourth-bar variant alone did less.)
-ROCKERS_BLOCKS: set[str] = {"roots_dub"}
+# Off by ear: Ed preferred roots without them in the blind A/B (the judge's
+# gain was FAD 0.341 -> 0.336, inside its noise). The machinery stays.
+ROCKERS_BLOCKS: set[str] = set()
 
 
 def _layers(params: SongParams, sections: list[Section]) -> list:

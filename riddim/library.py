@@ -438,11 +438,10 @@ PICKS: dict[str, dict[str, list[str]]] = {
         "siren": [r"alarm-siren-samples/140bpm/AaS_(Echo|Verb|Filter)Proc"],
     },
     "garage": {
-        # The m9 Rhodes the profile is written for, not the organ: on the goal
-        # panel (8 seeds) real 0.60 -> 0.81, the biggest garage gain yet, for
-        # FAD 0.357 -> 0.366, inside the panel's noise. (The probes' "organ
-        # stabs" and "horns" did not move: those come from elsewhere.)
-        "organ": [r"Soulful Keys/Multisamples/ElPiano0[12345]/"],
+        # The organ, by ear: the Rhodes scored real 0.60 -> 0.81 for FAD
+        # 0.357 -> 0.366 on the goal panel, but Ed preferred the organ in the
+        # blind A/B, and so did the judge's own clip closeness.
+        "organ": [r"Soulful Keys/Multisamples/Organ0[1234]/"],
         "hat": [r"Hats/Drum machine/Closed hat", r"Nu Garage/Drum_hits/Hat"],
         "hat_open": [r"Hats/Drum machine/Open hat"],
         "shaker": [r"Drum Kits/Kit . Hits/UK_DHit.-Shaker"],
