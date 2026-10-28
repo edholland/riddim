@@ -109,6 +109,9 @@ class Profile:
     # How often a walking bassline takes its rhythm from the cells mined
     # from this profile's records (theory/cells.py) instead of the generator.
     mined_bass: float = 0.5
+    # Whether breakdowns keep the kit (arrange.structure.StructureParams),
+    # where the profile's records ride more than its family's arrangement.
+    hold_kit: bool = False
     # Whether the sub may sit on the in-between sixteenths (compose._on_eighths).
     sub_sixteenths: bool = False
     note: str = ""
@@ -263,6 +266,9 @@ UK_GARAGE = Profile(
     lead_styles=("hook", "hook", "riff", "riff", "call_response"),
     # The judge hears reggae in our garage (horns +1.8 sd against the records):
     # the siren is dub's, not garage's.
+    # Energy-curve spread 15.9 dB against the records' 3.2: a near-silent
+    # breakdown and a slam, where garage records ride and switch the bass out.
+    hold_kit=True,
     sirens=0.0,
     family="garage",
     bars_per_chord=2.0,
