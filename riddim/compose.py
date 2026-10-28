@@ -78,6 +78,7 @@ class Material:
     # The theme and the conversation around it.
     hook: hook_mod.Hook | None = None
     lines: dict = field(default_factory=dict)       # section start_bar -> Line
+    drum_rockers: list = field(default_factory=list)   # [R, R'] - see ROCKERS_BLOCKS
     interplay: InterplayParams = InterplayParams()
     dynamics: DynamicsParams = DynamicsParams()
     lead_shift: int = 0                             # semitones: hook -> lead window
@@ -622,6 +623,15 @@ def _resolve_material(
     drum_rng = random.Random(params.seed_for("drums"))
     bar_a = groove.drums(params.drums, drum_rng)
     bar_b = groove.drums(groove.vary(params.drums, drum_rng, 0.1), drum_rng)
+    # A one-drop drummer who plays rockers now and then: the riddim's own
+    # snare, hats and rim, the kick on one and three (groove.ROCKERS's anchors).
+    rockers = []
+    if prof.name in ROCKERS_BLOCKS and 0 not in params.drums.kick_anchors:
+        rspec = replace(params.drums, kick_anchors=groove.ROCKERS.kick_anchors,
+                        kick_density=groove.ROCKERS.kick_density,
+                        kick_syncopation=groove.ROCKERS.kick_syncopation)
+        rrng = random.Random(f"{params.seed}:rockers")
+        rockers = [{**bar, "kick": groove.drums(rspec, rrng)["kick"]} for bar in (bar_a, bar_b)]
 
     # Stabs.
     feel = prof.feel
@@ -714,7 +724,7 @@ def _resolve_material(
 
     return Material(
         scale=scale, plan=plan, voiced=voiced, motif=motif,
-        drums=params.drums, drum_bars=[bar_a, bar_b], stab=stab,
+        drums=params.drums, drum_bars=[bar_a, bar_b], drum_rockers=rockers, stab=stab,
         bass=params.bass, bass_cells=cells, bass_pitch_seed=bass_rng.random(),
         lead_style=params.lead_style, lead=params.lead, swing=0.0,
         progressions=tuple(progs),
@@ -909,6 +919,13 @@ def _theme(params: SongParams, prof: Profile, scale: Scale,
 
 
 HAT, SHAKER = 38, 41
+# Profiles whose one-drop drummer slips into rockers: every other four-bar
+# block of a section that is not a peak plays the riddim with the kick on one
+# and three. Roots records' four bars repeat far less than ours (drum_feel
+# 0.54 against 0.72); on the goal panel (8 seeds, against 6349062) this moved
+# ours to 0.69, FAD 0.341 -> 0.336, closeness 0.820 -> 0.822, real 0.92 ->
+# 0.91. (Rockers on the every-fourth-bar variant alone did less.)
+ROCKERS_BLOCKS: set[str] = {"roots_dub"}
 
 
 def _layers(params: SongParams, sections: list[Section]) -> list:
@@ -1203,6 +1220,11 @@ def _build_drums(part, section, prof, m: Material, rng):
         bank = m.drum_bars
         if peak and m.drum_peak:
             bank = m.drum_peak[2:4] if (later_peak and len(m.drum_peak) >= 4) else m.drum_peak[:2]
+        # A one-drop drummer's rockers block: its kick is the rockers anchors,
+        # so it is not locked to the one-drop's.
+        rock = bool(m.drum_rockers) and not peak and (bar // 4) % 2 == 1
+        if rock:
+            bank = m.drum_rockers
         voices = bank[1] if (bar % 4 == 3) else bank[0]
         bars_left = section.bars - bar
         rolling = bars_left <= roll_n
@@ -1228,7 +1250,7 @@ def _build_drums(part, section, prof, m: Material, rng):
                 continue  # the fill owns this bar
             if rolling and voice in ("snare", "rim"):
                 continue  # the roll owns these
-            if voice == "kick" and sub is not None:
+            if voice == "kick" and sub is not None and not rock:
                 pattern = _lock_kick(pattern, sub_cell, m)
             # One stream per voice for the whole section: at a given density
             # the same hits survive every bar, so the groove repeats instead of
