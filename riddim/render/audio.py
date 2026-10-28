@@ -103,6 +103,12 @@ PAD_LEVEL = 0.5
 # The organ bubble (profile.pad_style "bubble"): its level against the pad's,
 # and its place - opposite the skank, as the keys sit on a reggae desk.
 BUBBLE_LEVEL = 1.0
+# Per profile, multiplied in. Roots' bubble 4 dB down won the goal panel
+# (roots_dub 8 seeds against 1bf1ba1: FAD 0.336 -> 0.332, closeness 0.822 ->
+# 0.823, real 0.91 -> 0.95, still heard as steppers); a drawbar organ
+# multisample (Broken Beat Kit04) and the synth organ both lost, and the skank
+# +2 dB on top added nothing (FAD 0.331, real 0.95).
+BUBBLE_TRIM: dict[str, float] = {"roots_dub": 0.63}
 BUBBLE_PAN = 0.25
 # Dub's kit through a 70s desk - rolled-off top, a little tape - and its
 # backbeat into the spring. Measured on five dub drops: the desk tone takes
@@ -976,7 +982,7 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     for r, hp in (("chords", 220), ("pad", 160), ("lead", 200), ("perc", 120), ("bass", 70)):
         stems[r] = _hp(stems[r], hp)
     stems["lead"] = stems["lead"] * (LEAD_LEVEL_DUB if family == "dub" else LEAD_LEVEL)
-    stems["pad"] = stems["pad"] * (BUBBLE_LEVEL if bubble else PAD_LEVEL)
+    stems["pad"] = stems["pad"] * (BUBBLE_LEVEL * BUBBLE_TRIM.get(prof or "", 1.0) if bubble else PAD_LEVEL)
     sends = dict(SENDS)
     if TREAT_LEAD:
         stems["lead"] = _sat(_lp(_hp(stems["lead"], 380, order=4), 3000, order=4) * 1.6, 1.8) * 0.45
