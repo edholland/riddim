@@ -223,7 +223,11 @@ GAIN = {"sub": 0.45, "bass": 0.42, "drums": 0.75, "perc": 0.5, "chords": 0.5, "p
 # came out ~95% below 250 Hz, against 75-85% for the records - the judge heard
 # nearly all of them as steppers, the darkest references.
 TONE: dict[str, dict[str, float]] = {
-    "roots_dub": {"sub": -11.5, "low_mid": 3.3, "high_mid": 5.0, "air": 6.5},
+    # Roots' sub a further 2 dB down won the goal panel (8 seeds against
+    # 08b30d3: FAD 0.327 -> 0.324, closeness 0.826 -> 0.827, real 0.97); a
+    # 70s colour on the master - top -3 dB, 40% width, wow, more tape - lost
+    # (FAD 0.333 to 0.343), and a mono kit did nothing.
+    "roots_dub": {"sub": -13.5, "low_mid": 3.3, "high_mid": 5.0, "air": 6.5},
     "steppers_dub": {"sub": -8.0, "low_mid": 2.2, "high_mid": 1.2, "air": 5.0},
     "dubstep_140": {"bass": -1.5, "low_mid": 2.7, "high_mid": 10.0, "air": 8.0},
     "dark_garage": {"sub": -3.0, "low_mid": -1.3, "high_mid": 9.5, "air": 7.0},
