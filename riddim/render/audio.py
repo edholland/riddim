@@ -132,8 +132,13 @@ MASTER = {"thresh": -14.0, "ratio": 2.0, "makeup": 2.0, "clip": 1.0}
 # a third of their "real" score.
 DRIVE: dict[str, float] = {"roots_dub": 2.4, "steppers_dub": 3.5, "dubstep_140": 5.5,
                             "dark_garage": 2.5, "uk_garage": 4.8}
-# The reverb and delay returns per profile, multiplied in.
-SPACE: dict[str, float] = {}
+# The reverb and delay returns per profile, multiplied in. The judge's text
+# probes heard our garage and 140 as "a dry close mix" (+1.7-1.8 sd against
+# the records). uk_garage x2.5 won the goal panel (garage FAD 0.392 -> 0.370,
+# real 0.59 -> 0.64; x4 was worse). dark_garage x2.5 scored a little better
+# but stopped being heard as dark garage (2/4 -> 0/4), and dubstep_140 x1.6
+# lost, so those stay dry; roots x0.6 lost on both counts.
+SPACE: dict[str, float] = {"uk_garage": 2.5}
 
 
 def _swing_ticks(tick: float, amount: int) -> float:
