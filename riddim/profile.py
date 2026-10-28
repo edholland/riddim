@@ -151,7 +151,11 @@ ROOTS_DUB = Profile(
     # 300 roots dub records, felt tempo: the sub pulled ~0.6 times per 32 bars.
     bass_drops=(0.3, 0.9),
     drummer=0.6,
-    drummer_blocks=0.5,
+    # Hat-figure blocks (52bc0cf) lost on the goal panel, 8 seeds against
+    # df646bc: FAD 0.342 -> 0.348, real 0.92 -> 0.88, still 0/8 heard as
+    # roots, and the audio's four-bar repeat barely moved (0.72 -> 0.71). The
+    # lay-back (render DRUMMER_LEAN_MS) is kept: FAD 0.341, real 0.92.
+    drummer_blocks=0.0,
     # 80 roots records (ml/mine_cells.py, the one from beat_this) strike the a
     # of 1 and of 3 (steps 3, 11) about as often as the off-eighths - the
     # "x..x" figure; the transcriber puts no such notes into riddim's own
