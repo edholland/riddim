@@ -20,7 +20,8 @@ references/critic/models/<part>.pkl.
 - band-limited to 11 kHz
 - one second of silence at the start
 - 10 dB quieter
-- (riddim's only) MP3-encoded at 192 kb/s, as the records are
+- riddim's: MP3-encoded at 192 kb/s, as the records are; the records': a
+  lossless WAV copy, and a second MP3 pass at 128 kb/s
 
 A critic that has learned real music should hardly move on any of these. One
 that leans on a shortcut (bandwidth, codec, level, a silent start) will.
@@ -272,10 +273,12 @@ def cmd_check(a) -> int:
     }
     lines = ["| set | edit | median P(real) |", "|---|---|---|"]
     for name, files in (("records (held out)", pick), ("riddim (seeds 5000+)", ours)):
-        for edit, args in list(edits.items()) + ([("MP3 192k", ["-b:a", "192k"])] if name.startswith("riddim") else []):
+        extra = ([("MP3 192k", ["-b:a", "192k"])] if name.startswith("riddim") else
+                 [("WAV copy", ["-c:a", "pcm_s16le"]), ("MP3 128k again", ["-b:a", "128k"])])
+        for edit, args in list(edits.items()) + extra:
             ps = []
             for j, f in enumerate(files):
-                ext = ".mp3" if edit == "MP3 192k" else ".wav"
+                ext = ".mp3" if edit.startswith("MP3") else ".wav"
                 g = os.path.join(tmp, f"d{j}_{abs(hash(edit)) % 10**6}{ext}")
                 if args:
                     _ffmpeg(f, g, *args)

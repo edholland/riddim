@@ -5,7 +5,8 @@ records, embedded the way ml/critic/embed.py does, mix and stems.
     python ml/critic/dataset.py stems                      # embed the records' stems
     python ml/critic/dataset.py demucs --per-profile 100   # ours split by Demucs, as the records were
 
-**Ours.** For each profile, songs from seed 1000. Each is rendered with every
+**Ours.** (Each mix goes through a record's codec first - lossy() - before
+it is embedded or split.) For each profile, songs from seed 1000. Each is rendered with every
 knob we have tuned as the branch has it, except that each knob is put back
 to its old setting with probability OLD (0.2), independently. So the critic
 sees today's songs and their near-misses, and cannot learn "riddim = this one
@@ -30,6 +31,7 @@ import json
 import os
 import random
 import shutil
+import subprocess
 import sys
 import tempfile
 import wave
@@ -77,6 +79,21 @@ def knobs(prof: str) -> dict[str, list[tuple]]:
         "mined_bass_off": [("profile", prof, {"mined_bass": 0.0})],
         "old_master": [("attr", audio, "MASTER", {"thresh": -14.0, "ratio": 2.5, "makeup": 4.0, "clip": 1.3})],
     }
+
+
+def lossy(path: str, key: str) -> str:
+    """The mix through the codec a record would have come through: the
+    references are 86% MP3 and 11% AAC (median 200 kb/s, 128-320), so a
+    critic shown clean WAVs against them could learn the codec instead of the
+    music. Drawn per song from `key`; returns the encoded file."""
+    rng = random.Random(key + ":codec")
+    if rng.random() < 0.12:
+        out, args = path[:-4] + ".m4a", ["-c:a", "aac", "-b:a", "192k"]
+    else:
+        kbps = rng.choices((128, 160, 192, 224, 256, 320), (14, 10, 26, 10, 15, 25))[0]
+        out, args = path[:-4] + ".mp3", ["-c:a", "libmp3lame", "-b:a", f"{kbps}k"]
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", path, *args, out], check=True)
+    return out
 
 
 def _write(path: str, x: np.ndarray, sr: int) -> None:
@@ -130,6 +147,9 @@ def cmd_ours(a) -> int:
                     peak = float(np.max(np.abs(x))) or 1.0
                     p = os.path.join(tmp, f"{prof}_{seed}_{part}.wav")
                     _write(p, x / max(1.0, peak / 0.98), audio.SR)
+                    if part == "mix":
+                        wav, p = p, lossy(p, f"{prof}:{seed}")
+                        os.remove(wav)
                     paths.append((part, p))
                 emb = embed.embed_files([p for _, p in paths], os.path.join(tmp, "_cache"), f"{prof}_{seed}", USE)
                 for b, d in emb.items():
@@ -183,8 +203,10 @@ def cmd_demucs(a) -> int:
                     mix = audio.render(compose(prof, seed=seed))
                 wav = os.path.join(tmp, "mix.wav")
                 _write(wav, mix, audio.SR)
+                enc = lossy(wav, f"{prof}:{seed}")     # the same codec as the mix set's copy
                 folder = os.path.join(tmp, "stems")
-                mine_cells.split(wav, folder)
+                mine_cells.split(enc, folder)
+                os.remove(enc)
                 paths = [os.path.join(folder, st + ".wav") for st in ("drums", "bass", "other")]
                 emb = embed.embed_files(paths, os.path.join(tmp, "_cache"), "s", USE)
                 for b, d in emb.items():
