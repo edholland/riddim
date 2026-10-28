@@ -196,7 +196,10 @@ def _tone(x: np.ndarray, gains: dict[str, float]) -> np.ndarray:
 
 # Per-family trims on GAIN, multiplied in: each family's balance measured
 # against its own records (Demucs stems, `claude/loop-rounds.md`).
-FAMILY_GAIN: dict[str, dict[str, float]] = {}
+# Dub's kit sat ~4 dB over its records in the stems; down 2 dB it wins the
+# goal panel (dub FAD 0.313 -> 0.306, real 0.96 -> 0.94). Down 4 dB cost
+# real 0.09, so not further.
+FAMILY_GAIN: dict[str, dict[str, float]] = {"dub": {"drums": 0.8}}
 
 
 def parse_gains(text: str) -> dict[str, dict[str, float]]:
