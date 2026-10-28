@@ -562,10 +562,20 @@ def test_the_groove_repeats_bar_to_bar():
                     common, top = Counter(bars).most_common(1)[0]
                     if get_profile(profile).drummer:
                         # A drummer's touches sit on top of the riddim: a
-                        # bar is the pattern plus a hit or two, never a
-                        # different one.
-                        assert all(len(set(b) ^ set(common)) <= 2 for b in bars), \
-                            (profile, seed, sec.name, row)
+                        # bar is its block's pattern plus a hit or two.
+                        blocks = {}
+                        for b in range(sec.start_bar, sec.end_bar - 1):
+                            if (b - sec.start_bar) % 4 == 3 or (b - sec.start_bar + 1) % 8 == 0:
+                                continue
+                            hits = tuple(sorted(
+                                n.start % TICKS_PER_BAR for n in drums.notes if n.midi == row
+                                and b * TICKS_PER_BAR <= n.start < (b + 1) * TICKS_PER_BAR))
+                            if hits:
+                                blocks.setdefault((b - sec.start_bar) // 8, []).append(hits)
+                        for block in blocks.values():
+                            base = Counter(block).most_common(1)[0][0]
+                            assert all(len(set(b) ^ set(base)) <= 2 for b in block), \
+                                (profile, seed, sec.name, row)
                     else:
                         assert top == len(bars), (profile, seed, sec.name, row)
 

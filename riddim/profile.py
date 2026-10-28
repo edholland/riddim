@@ -112,6 +112,12 @@ class Profile:
     # machine loop" (+2.0 sd against the records) whatever samples it plays,
     # so the programming is the gap, not the sound.
     drummer: float = 0.0
+    # ... and the bigger changes a player makes between eight-bar blocks: the
+    # chance a block plays another hat figure (a rung busier, only the
+    # offbeat eighths, or the hats out for its first four bars). Roots records
+    # repeat least of any (consecutive 4-bar Jaccard 0.54, steppers 0.82); the
+    # touches alone, too soft to move that, left ours at 0.72.
+    drummer_blocks: float = 0.0
     # How often a walking bassline takes its rhythm from the cells mined
     # from this profile's records (theory/cells.py) instead of the generator.
     mined_bass: float = 0.5
@@ -145,6 +151,7 @@ ROOTS_DUB = Profile(
     # 300 roots dub records, felt tempo: the sub pulled ~0.6 times per 32 bars.
     bass_drops=(0.3, 0.9),
     drummer=0.6,
+    drummer_blocks=0.5,
     # 80 roots records (ml/mine_cells.py, the one from beat_this) strike the a
     # of 1 and of 3 (steps 3, 11) about as often as the off-eighths - the
     # "x..x" figure; the transcriber puts no such notes into riddim's own

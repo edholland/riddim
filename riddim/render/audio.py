@@ -146,6 +146,9 @@ SPACE: dict[str, float] = {"uk_garage": 2.5}
 # against our 11.0 (the detector's own floor on a grid-tight kit), so ~8.5 ms
 # more, added in quadrature, lands on the records' figure.
 DRUMMER_MS: dict[str, float] = {"roots_dub": 8.5}
+# ... and where it sits against the beat: roots records lean -0.4 ms, ours
+# -3.7, so the kit lays back by the difference.
+DRUMMER_LEAN_MS: dict[str, float] = {"roots_dub": 3.3}
 
 
 def _swing_ticks(tick: float, amount: int) -> float:
@@ -877,6 +880,7 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
     beat = 60.0 / song.bpm
     # Its own stream, so the hits' timing moves nothing else.
     feel_ms = DRUMMER_MS.get(prof or "", 0.0)
+    lean_ms = DRUMMER_LEAN_MS.get(prof or "", 0.0)
     trng = np.random.default_rng((song.seed or 0) + 7919)
 
     for part in song.parts:
@@ -899,8 +903,8 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                 _add(buf, start, _pan(x, p + rnd.jitter(0.05)))
                 continue
             if part.output == "kit":
-                if feel_ms:
-                    start = max(0, start + int(trng.normal(0.0, feel_ms / 1000.0) * SR))
+                if feel_ms or lean_ms:
+                    start = max(0, start + int((lean_ms + trng.normal(0.0, feel_ms)) / 1000.0 * SR))
                 x = kit(note.midi, dur, note.velocity)
                 if note.midi == KICK and any(a <= note.start < b for a, b in thin):
                     x = _hp(x, PULL_KICK_HP, order=4)

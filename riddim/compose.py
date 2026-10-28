@@ -1243,6 +1243,10 @@ def _build_drums(part, section, prof, m: Material, rng):
                 # with the roll, and the drop's downbeat releases it.
                 climb = 1 if bars_left > 2 else 2
                 pattern, keep = groove.hat_pattern(m.drums, climb), 1.0
+            if voice == "hat" and not climb and prof.drummer_blocks:
+                pattern = _hat_block(pattern, m, prof, voice_seed, bar)
+                if pattern is None:
+                    continue
             p = rhythm.thin(pattern, keep, vrng)
             if rolling and bars_left == 1 and voice in ("kick", "hat"):
                 # The floor goes out from under the last bar of the roll.
@@ -1298,6 +1302,22 @@ def _build_drums(part, section, prof, m: Material, rng):
         if span is not None:
             start, length = span
             part.add(Note(KIT_ROWS["riser"], start, length, int(80 + 40 * dyn.riser)))
+
+
+def _hat_block(pattern, m: Material, prof: Profile, voice_seed: float, bar: int):
+    """The hat figure for this bar's eight-bar block: the riddim's, or - by
+    `drummer_blocks` - a rung busier, only the offbeat eighths, or nothing
+    for the block's first four bars (None). Its own stream per block."""
+    brng = random.Random(f"{voice_seed}:hatblock:{bar // 8}")
+    if brng.random() >= prof.drummer_blocks:
+        return pattern
+    kind = brng.choice(("busier", "offbeats", "out"))
+    if kind == "busier":
+        return groove.hat_pattern(m.drums, 1)
+    if kind == "offbeats":
+        return rhythm.mask(pattern, lambda st: st % 4 == 2) if any(
+            h.step % 4 == 2 for h in pattern.hits) else pattern
+    return None if bar % 8 < 4 else pattern
 
 
 def _drummer_touch(part: Part, voices: dict, bar_tick: int, vel_scale: float, rng) -> None:
