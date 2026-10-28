@@ -369,9 +369,8 @@ def _make_live(params: SongParams) -> SongParams:
         return params
     params = params.copy()
     prof = profile_mod.get(params.profile)
-    base = params.structure or replace(structure.params_for_family(
-        prof.family, random.Random(params.seed_for("structure")), params.bpm or prof.bpm),
-        hold_kit=prof.hold_kit)
+    base = params.structure or structure.params_for_family(
+        prof.family, random.Random(params.seed_for("structure")), params.bpm or prof.bpm)
     params.structure = replace(base, live=True)
     params.sections = None
     return params
@@ -489,9 +488,7 @@ def _resolve_structure(params: SongParams, prof: Profile, rng: random.Random) ->
     # like a part.
     srng = random.Random(params.seed_for("structure"))
     if params.structure is None:
-        params.structure = replace(
-            structure.params_for_family(prof.family, srng, params.bpm or prof.bpm),
-            hold_kit=prof.hold_kit)
+        params.structure = structure.params_for_family(prof.family, srng, params.bpm or prof.bpm)
     arrangement = structure.generate(params.structure, srng, name=prof.family)
     params.sections = [_section_spec(s) for s in arrangement.sections]
     return arrangement
