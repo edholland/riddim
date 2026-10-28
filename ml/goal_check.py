@@ -73,6 +73,8 @@ def main(argv=None) -> int:
     ap.add_argument("--seed", type=int, default=301)
     ap.add_argument("--refs", default=ls.REFS)
     ap.add_argument("--no-stems", action="store_true", help="skip Demucs (genre only)")
+    ap.add_argument("--critic", action="store_true",
+                    help="the trained critic's log-odds per profile, mix and Demucs stems (ml/critic)")
     ap.add_argument("--instrumental", action="store_true",
                     help="genre against centroids of instrumental records only (ml/instrumental.py)")
     a = ap.parse_args(argv)
@@ -154,6 +156,24 @@ def main(argv=None) -> int:
         lines.append(f"| {prof} | {fam} | {res['fad']:.3f} ({ci['fad'][0]:.3f}-{ci['fad'][1]:.3f}) | "
                      f"{c:.3f} ({ci['closeness'][0]:.3f}-{ci['closeness'][1]:.3f}) | "
                      f"{r:.2f} ({ci['real'][0]:.2f}-{ci['real'][1]:.2f}) |")
+
+    if a.critic:
+        sys.path.insert(0, os.path.join(HERE, "critic"))
+        import score as critic
+        sc = critic.song_scores([p for _, p in songs], os.path.join(a.out, "_critic"), stems=not a.no_stems)
+        parts = ("mix",) + (() if a.no_stems else critic.STEMS)
+        lines += ["", "## The critic (log-odds against the records; higher is more like a record; mean and "
+                  "95% interval over songs)", "",
+                  "| profile | " + " | ".join(parts) + " | weakest stem |", "|---" * (len(parts) + 2) + "|"]
+        for prof in PROFILES:
+            vals = {pt: [sc[p][pt] for q, p in songs if q == prof and pt in sc.get(p, {})] for pt in parts}
+            cells = []
+            for pt in parts:
+                m, lo, hi = critic.interval(np.array(vals[pt])) if len(vals[pt]) >= 2 else (float("nan"),) * 3
+                cells.append(f"{m:+.2f} ({lo:+.2f} to {hi:+.2f})")
+            stems = {pt: np.mean(vals[pt]) for pt in parts if pt != "mix" and vals[pt]}
+            weakest = min(stems, key=stems.get) if stems else "-"
+            lines.append(f"| {prof} | " + " | ".join(cells) + f" | {weakest} |")
 
     # Loudness, its own target now that the judge is loudness-blind.
     from riddim import listen
