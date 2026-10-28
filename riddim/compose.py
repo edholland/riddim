@@ -211,6 +211,8 @@ def compose(
                 builders[role](part, section, prof, material, part_rng)
         _apply_silences(part, material.silences)
         _apply_mutes(part, material.mutes)
+        if part.output == "kit" and role == "drums":
+            _thin_kick_in_pulls(part, material.mutes)
         # The lead is a sung line whatever synth it lands on: one note at a
         # time, so an ornament can never stack onto the note it decorates.
         if part.monophonic:
@@ -965,6 +967,20 @@ def _layers(params: SongParams, sections: list[Section]) -> list:
             out.append((sec.start_tick + 2 * block, sec.start_tick + 3 * block,
                         {("chords", None), ("pad", None)}))
     return out
+
+
+# A pull takes the room's low end, not only the sub's notes: on the desk the
+# engineer's low cut thins the kick too. Measured on the renders, muting the
+# sub alone left 25-70 Hz only 2-3 dB down (our 140 kick carries it) where the
+# records drop 12 dB, so the kick row is high-passed for the pulled bar.
+PULL_KICK_HPF = 0.35
+
+
+def _thin_kick_in_pulls(part: Part, mutes) -> None:
+    for a, b, who in mutes:
+        if who == {("sub", None)}:
+            part.automation.append(Automation("hpf", a, b - a, PULL_KICK_HPF, PULL_KICK_HPF,
+                                              row=KIT_ROWS["kick"]))
 
 
 def _apply_mutes(part: Part, mutes) -> None:

@@ -111,6 +111,8 @@ BUBBLE_PAN = 0.25
 # damped kick (`_dub_kick`) reads more "reggae" (0.05 -> 0.16) but its sine
 # body reads as MIDI (real 0.94 -> 0.60): off until it has a recorded body.
 DUB_KICK = False
+# Where a pull thins the kick: the sub band goes with the bass.
+PULL_KICK_HP = 90.0
 DUB_KIT_TONE = True
 DUB_SPRING_KIT = 0.25
 # Dub's backbeat on a cross-stick (the one-drop's rimshot), not a snare.
@@ -871,6 +873,10 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
         role = part.role
         buf = stems.setdefault(role, np.zeros((n, 2), dtype=np.float32))
         prev = None
+        # The desk's pulls: kick hits under a held high-pass on the kick row
+        # lose their sub (compose._thin_kick_in_pulls).
+        thin = [(a.start, a.start + a.length) for a in part.automation
+                if a.param == "hpf" and a.row == KICK and a.end_value == a.start_value]
         for note in song.notes_with_coda(part):
             if window is not None and not (w0 <= note.start < window[1]):
                 continue
@@ -884,6 +890,8 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                 continue
             if part.output == "kit":
                 x = kit(note.midi, dur, note.velocity)
+                if note.midi == KICK and any(a <= note.start < b for a, b in thin):
+                    x = _hp(x, PULL_KICK_HP, order=4)
                 p = DRUM_PAN.get(note.midi, 0.0)
                 if note.midi == HAT:
                     p += rnd.jitter(0.08)

@@ -171,9 +171,9 @@ def test_skank_is_one_stab_cut_from_the_loop(with_library):
 
 
 def test_picks_can_be_set_from_the_environment(with_library, monkeypatch):
-    assert "Organ" in with_library.organ("garage", 0).name
-    monkeypatch.setenv("RIDDIM_PICKS", "garage.organ=Soulful Keys/Multisamples/ElPiano0[12345]/")
     assert "ElPiano" in with_library.organ("garage", 0).name
+    monkeypatch.setenv("RIDDIM_PICKS", "garage.organ=Soulful Keys/Multisamples/Organ0[234]/")
+    assert "Organ" in with_library.organ("garage", 0).name
     assert "Organ" in with_library.organ("dub", 0).name
 
 
