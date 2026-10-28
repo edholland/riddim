@@ -132,6 +132,8 @@ MASTER = {"thresh": -14.0, "ratio": 2.0, "makeup": 2.0, "clip": 1.0}
 # a third of their "real" score.
 DRIVE: dict[str, float] = {"roots_dub": 2.4, "steppers_dub": 3.5, "dubstep_140": 5.5,
                             "dark_garage": 2.5, "uk_garage": 4.8}
+# The reverb and delay returns per profile, multiplied in.
+SPACE: dict[str, float] = {}
 
 
 def _swing_ticks(tick: float, amount: int) -> float:
@@ -347,20 +349,6 @@ def _wobble(midi, dur, vel, rnd, rate_hz):
     y = np.where(lfo < 0.5, dark + (mid - dark) * (lfo * 2), mid + (bright - mid) * (lfo * 2 - 1))
     y = _sat(y * 1.4, 2.0)
     return (_hp(y, 70) * _env(n, 0.006, 0.04) * _vel(vel)).astype(np.float32)
-
-
-def _organ_bass(midi, dur, vel, rnd):
-    """UK garage's mid-bass: the M1 organ-bass kind of tone - a square and
-    its octave through a low-pass that snaps shut, so each note bounces off
-    the 2-step kick instead of growling under it as the 140 wobble does."""
-    n = int((dur + 0.03) * SR)
-    f = _f(midi) * 2
-    ph = _phase(f, n, rnd.jitter(0.5))
-    x = 0.6 * _sq(ph, 0.5) + 0.35 * _sq(_phase(f * 2, n, rnd.jitter(0.5)), 0.5)
-    t = np.arange(n) / SR
-    open_, shut = _lp(x, 1400, order=4), _lp(x, 220, order=4)
-    y = shut + (open_ - shut) * np.exp(-t / 0.06)
-    return (_hp(y, 70) * _env(n, 0.003, 0.03, decay=0.6) * _vel(vel) * 0.9).astype(np.float32)
 
 
 def _pluck(midi, dur, vel, rnd):
@@ -907,12 +895,13 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
                     x = _sub(note.midi, dur, note.velocity, rnd)
                 _add(buf, start, _pan(x, 0.0))
                 # The bass's mid: a growl at 140, a pluck in dub.
-                if prof == "uk_garage":
-                    mb = _organ_bass(note.midi, dur, note.velocity, rnd)
-                elif is140:
+                # (An M1 organ-bass pluck for uk_garage lost the goal panel
+                # badly - garage FAD 0.391 -> 0.414, real 0.58 -> 0.17 - so
+                # garage keeps the growl.)
+                if is140:
                     rate = 2.0 / beat if note.length * spt > beat else 1.0 / beat
                     mb = _wobble(note.midi, dur, note.velocity, rnd, rate)
-                    if garage:
+                    if prof == "dark_garage":
                         # Dark garage is the deep sub with a little growl over
                         # it; the judge heard a dubstep wobble in it (+1.5 sd).
                         mb = mb * 0.5
@@ -1047,7 +1036,8 @@ def render(song: Song, window: tuple[int, int] | None = None) -> np.ndarray:
             **parse_gains(__import__("os").environ.get("RIDDIM_FAMILY_GAIN", "")).get(family, {})}
     for role, x in stems.items():
         music += x * GAIN.get(role, 0.2) * trim.get(role, 1.0)
-    music += plate * 0.18 + spring * 0.12 + hall * 0.2 + echo * 0.32
+    space = SPACE.get(prof or "", 1.0)
+    music += (plate * 0.18 + spring * 0.12 + hall * 0.2 + echo * 0.32) * space
 
     # The build's sweep thins everything but the riser and the sub's absence.
     if sweep.any() and SWEEP:
