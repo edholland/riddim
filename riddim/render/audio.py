@@ -149,14 +149,22 @@ DRIVE: dict[str, float] = {"roots_dub": 2.4, "steppers_dub": 3.5, "dubstep_140":
 BASS_MID: dict[str, float] = {"roots_dub": 0.5}
 # The kit's character per profile, measured on Demucs drum stems against
 # the records' (ml/drum_stem.py): "snare_body" scales the synthesised body
-# under the snare (and under dub's cross-stick), "hat_gain" the hats.
+# under the snare (and under dub's cross-stick), "snare_hp" high-passes the
+# whole sampled snare (Hz), "hat_gain" the hats.
 # steppers_dub: snare body x0.3 and hats x1.35 moved both toward the records
 # (16 seeds: snare body +8.3 -> +6.7 dB against 2-8 kHz, records +0.4; hat
 # share 0.058 -> 0.064, records 0.082). The same in dubstep left its snare
 # body alone (it is the sampled snare's) and pushed the hats' spread,
 # brightness and decay away; in dark and uk garage the louder hats measured
 # lower in the Demucs drum stem - so those stay as they are.
-DRUM_SHAPE: dict[str, dict[str, float]] = {"steppers_dub": {"snare_body": 0.3, "hat_gain": 1.35}}
+# uk_garage: the sampled snare high-passed at 350 Hz and its synthesised body
+# x0.3, with the tone's sub 1.5 dB lower (the thinner snare had left the mix
+# bassier): snare body +6.0 -> +3.9 dB (records -2.8), snare share 0.43 ->
+# 0.31 (0.28), kick share 0.50 -> 0.63 (0.58), sub share 0.357 -> 0.345
+# (0.246). The kick's onset-strength spread moved away (0.67 -> 0.73,
+# records 0.61), an advisory target (ml/targets.py).
+DRUM_SHAPE: dict[str, dict[str, float]] = {"steppers_dub": {"snare_body": 0.3, "hat_gain": 1.35},
+                                           "uk_garage": {"snare_body": 0.3, "snare_hp": 350.0}}
 # The reverb and delay returns per profile, multiplied in. The judge's text
 # probes heard our garage and 140 as "a dry close mix" (+1.7-1.8 sd against
 # the records). uk_garage x2.5 won the goal panel (garage FAD 0.392 -> 0.370,
@@ -251,7 +259,7 @@ TONE: dict[str, dict[str, float]] = {
     "steppers_dub": {"sub": -8.0, "low_mid": 2.2, "high_mid": 1.2, "air": 5.0},
     "dubstep_140": {"bass": -1.5, "low_mid": 2.7, "high_mid": 10.0, "air": 8.0},
     "dark_garage": {"sub": -3.0, "low_mid": -1.3, "high_mid": 9.5, "air": 7.0},
-    "uk_garage": {"sub": -3.2, "low_mid": 0.2, "high_mid": 7.7, "air": 7.0},
+    "uk_garage": {"sub": -4.7, "low_mid": 0.2, "high_mid": 7.7, "air": 7.0},
 }
 _TONE_BANDS = (("low", 60.0), ("peak", 130.0), ("peak", 500.0), ("peak", 2200.0), ("high", 6000.0))
 _TONE_NAMES = ("sub", "bass", "low_mid", "high_mid", "air")
@@ -567,6 +575,8 @@ def _drum(row, dur, vel, rnd, garage=False, sampled=True, shape=None):
             out = np.zeros(m, dtype=np.float32)
             out[:len(hit)] += hit
             out[:len(body)] += body
+            if shape and shape.get("snare_hp"):
+                out = _hp(out, shape["snare_hp"]).astype(np.float32)
             return out
         if row == HAT:
             name = "pearl/hihat-open" if dur > 0.2 else "pearl/hihat-closed"

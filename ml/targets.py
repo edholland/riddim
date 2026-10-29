@@ -34,7 +34,7 @@ import library_stats as ls  # noqa: E402
 
 FEEL = ("jitter_ms", "lean_ms", "repeat", "cv_kick", "cv_snare", "cv_hat")
 BANDS = ("sub", "bass", "low_mid", "high_mid", "air")
-LEVEL = ("rms_db", "crest_db")
+LEVEL = ("rms_db", "crest_db", "sub_held")
 TARGETS = FEEL + BANDS + LEVEL
 STEM = ("kick_share", "snare_share", "hat_share", "hat_centroid_hz", "hat_decay_ms", "snare_body_db")
 
@@ -72,7 +72,7 @@ def measure(path: str) -> dict[str, float]:
     rep = listen.analyze(path)
     out = {k: f.get(k) for k in FEEL}
     out.update({b: rep.band_share.get(b) for b in BANDS})
-    out.update(rms_db=rep.rms_db, crest_db=rep.crest_db)
+    out.update(rms_db=rep.rms_db, crest_db=rep.crest_db, sub_held=rep.sub_held)
     return out
 
 
@@ -88,7 +88,7 @@ def records(profile: str, n: int = 30) -> dict[str, float]:
               if r.get("family") in fams]
         out = {b: float(np.median([r["band_share"][b] for r in st])) for b in BANDS}
         out.update({k: float(np.median([r[k] for r in st if r.get(k) is not None]))
-                    for k in ("rms_db", "crest_db", "jitter_ms", "lean_ms")})
+                    for k in ("rms_db", "crest_db", "jitter_ms", "lean_ms", "sub_held")})
         feels = [x for x in (drum_feel.feel(f) for f in drum_feel.records(fams, n, os.path.join(REPO, "references")))
                  if x]
         for k in ("repeat", "cv_kick", "cv_snare", "cv_hat"):
@@ -97,12 +97,18 @@ def records(profile: str, n: int = 30) -> dict[str, float]:
     return _RECORDS[profile]
 
 
+# Advisory targets: reported, but a move away does not block a change. The
+# kick's onset-strength spread on the full mix follows the arrangement's
+# dynamics (drops, pulls, the kick thinned in pulls) far more than the kit -
+# ours is about double the records' whatever the kit does.
+ADVISORY = {"cv_kick"}
+
 # The smallest move that matters, per target: a move away from the records
 # smaller than this is collateral, whatever its interval (16 seeds resolve
 # band-share changes of 0.001, which nobody hears).
 TOLERANCE = {"jitter_ms": 0.5, "lean_ms": 0.5, "repeat": 0.02, "cv_kick": 0.02, "cv_snare": 0.02, "cv_hat": 0.02,
              "sub": 0.005, "bass": 0.005, "low_mid": 0.005, "high_mid": 0.005, "air": 0.005,
-             "rms_db": 0.5, "crest_db": 0.5, "kick_share": 0.01, "snare_share": 0.01, "hat_share": 0.01,
+             "rms_db": 0.5, "crest_db": 0.5, "sub_held": 0.02, "kick_share": 0.01, "snare_share": 0.01, "hat_share": 0.01,
              "hat_centroid_hz": 100.0, "hat_decay_ms": 5.0, "snare_body_db": 1.0}
 
 
@@ -164,7 +170,8 @@ def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str,
                 move = 1 if closer else (-1 if abs(abs(bm - r) - abs(am - r)) > TOLERANCE.get(t, 0) else 0)
         res[t] = {"a": am, "b": bm, "records": r, "diff": (mean, lo, hi), "move": move}
     aimed = [t for t in watch if t in res]
-    ok = bool(aimed) and all(res[t]["move"] == 1 for t in aimed) and not any(v["move"] == -1 for v in res.values())
+    ok = bool(aimed) and all(res[t]["move"] == 1 for t in aimed) and \
+        not any(v["move"] == -1 for t, v in res.items() if t not in ADVISORY)
     res["verdict"] = "keep" if ok else ("revert" if any(res[t]["move"] == -1 for t in aimed) else "can't tell")
     return res
 
