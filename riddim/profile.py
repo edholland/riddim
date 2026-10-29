@@ -150,6 +150,10 @@ ROOTS_DUB = Profile(
     bars_per_chord_choices=(1.0, 2.0, 2.0, 4.0),
     # 300 roots dub records, felt tempo: the sub pulled ~0.6 times per 32 bars.
     bass_drops=(0.3, 0.9),
+    # The sub held too long against the records (sub_held, the share of time
+    # it sounds; ml/targets.py, 16 seeds): roots 0.751 -> 0.737 (records 0.694), bass band 0.566 -> 0.558 (0.548). At 0.6 roots' high mids
+    # moved away; dark garage's did not move, dubstep and uk garage's barely.
+    bass_note_length=0.8,
     drummer=0.6,
     # Hat-figure blocks (52bc0cf) lost on the goal panel, 8 seeds against
     # df646bc: FAD 0.342 -> 0.348, real 0.92 -> 0.88, still 0/8 heard as
@@ -195,6 +199,10 @@ STEPPERS_DUB = Profile(
     mined_bass=1.0,
     sub_sixteenths=True,
     deluge_swing=52,
+    # The sub held too long against the records (sub_held, the share of time
+    # it sounds; ml/targets.py, 16 seeds): steppers 0.780 -> 0.768 (records 0.691), bass band 0.541 -> 0.533 (0.500). At 0.6 roots' high mids
+    # moved away; dark garage's did not move, dubstep and uk garage's barely.
+    bass_note_length=0.8,
     sirens=0.6,
     family="dub",
     bars_per_chord=2.0,
