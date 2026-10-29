@@ -398,9 +398,12 @@ def cmd_check(a) -> int:
     degraded."""
     from riddim.compose import compose
     from riddim.render import audio
-    plan = [json.loads(line) for line in open(os.path.join(REFS, "stats", "plan.jsonl"))]
+    import library_stats as ls
     rng = np.random.default_rng(1)
-    recs = [os.path.join(REFS, p["file"]) for p in plan if p["kind"] == "record"]
+    # Records the critic never saw: the library's other tracks in the same
+    # families (the plan's records were all used in training).
+    recs = [os.path.join(REFS, r["file"]) for r in ls.manifest()
+            if ls.family_of(r) in ls.FAMILIES and ls.kind_of(r) == "record"]
     seen = set()
     for f in os.listdir(CRIT):
         if f in ("ast", "clap"):
