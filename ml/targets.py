@@ -36,6 +36,34 @@ FEEL = ("jitter_ms", "lean_ms", "repeat", "cv_kick", "cv_snare", "cv_hat")
 BANDS = ("sub", "bass", "low_mid", "high_mid", "air")
 LEVEL = ("rms_db", "crest_db")
 TARGETS = FEEL + BANDS + LEVEL
+STEM = ("kick_share", "snare_share", "hat_share", "hat_centroid_hz", "hat_decay_ms", "snare_body_db")
+
+
+def stem_measure(path: str) -> dict[str, float]:
+    """The drum stem's character (ml/drum_stem.py), split as the records'
+    were; cached beside the render."""
+    import shutil
+    import tempfile
+    import drum_stem
+    import mine_cells
+    cache = path[:-4] + ".drumstem.json"
+    if os.path.exists(cache):
+        return json.load(open(cache))
+    tmp = tempfile.mkdtemp(prefix="tstem_")
+    try:
+        mine_cells.split(path, os.path.join(tmp, "s"))
+        m = drum_stem.metrics(os.path.join(tmp, "s", "drums.wav"))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    json.dump(m, open(cache, "w"))
+    return m
+
+
+def stem_records(profile: str) -> dict[str, float]:
+    import goal_check as gc
+    rec = json.load(open(os.path.join(REPO, "references", "stats", "drum_stem_records.json")))
+    fams = [f for f in gc.families_for(profile) if f in rec]
+    return {k: float(np.mean([rec[f][k] for f in fams])) for k in STEM}
 
 
 def measure(path: str) -> dict[str, float]:
@@ -80,7 +108,7 @@ def interval(v: np.ndarray, draws: int = 2000, seed: int = 0) -> tuple[float, fl
 
 
 def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str,
-       watch: tuple[str, ...] = ()) -> dict:
+       watch: tuple[str, ...] = (), stems: bool = False) -> dict:
     """B against A on `seeds`: per target, A's and B's means, the records',
     the paired difference with its interval, and whether B moved toward the
     records (+1), away (-1) or neither (0) beyond the interval. `watch`
@@ -101,13 +129,17 @@ def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str,
                     audio.write(compose(profile, seed=s), f)
             cache = f[:-4] + ".targets.json"
             if os.path.exists(cache):
-                m[side].append(json.load(open(cache)))
+                x = json.load(open(cache))
             else:
                 x = measure(f)
                 json.dump(x, open(cache, "w"))
-                m[side].append(x)
+            if stems:
+                x = {**x, **stem_measure(f)}
+            m[side].append(x)
+    if stems:
+        rec = {**rec, **stem_records(profile)}
     res = {}
-    for t in TARGETS:
+    for t in TARGETS + (STEM if stems else ()):
         a = np.array([x.get(t) if x.get(t) is not None else np.nan for x in m["a"]], float)
         b = np.array([x.get(t) if x.get(t) is not None else np.nan for x in m["b"]], float)
         d = b - a
@@ -128,7 +160,7 @@ def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str,
 
 def table(res: dict) -> str:
     lines = ["| target | A | B | records | B - A (95% CI) | toward records |", "|---|---|---|---|---|---|"]
-    for t in TARGETS:
+    for t in TARGETS + tuple(k for k in STEM if k in res):
         r = res[t]
         rec = f"{r['records']:.3f}" if r["records"] is not None else "-"
         d = r["diff"]

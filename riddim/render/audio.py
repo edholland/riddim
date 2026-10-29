@@ -147,6 +147,10 @@ DRIVE: dict[str, float] = {"roots_dub": 2.4, "steppers_dub": 3.5, "dubstep_140":
 # lower 0.336 0.822 0.97. None of them is heard as roots yet, and the probes'
 # "a piano" hardly moves (+1.7 to +1.8 sd): it is not the bass guitar.
 BASS_MID: dict[str, float] = {"roots_dub": 0.5}
+# The kit's character per profile, measured on Demucs drum stems against
+# the records' (ml/drum_stem.py): "snare_body" scales the synthesised body
+# under the snare (and under dub's cross-stick), "hat_gain" the hats.
+DRUM_SHAPE: dict[str, dict[str, float]] = {}
 # The reverb and delay returns per profile, multiplied in. The judge's text
 # probes heard our garage and 140 as "a dry close mix" (+1.7-1.8 sd against
 # the records). uk_garage x2.5 won the goal panel (garage FAD 0.392 -> 0.370,
@@ -523,7 +527,7 @@ def _dub_kick(dur, vel, rnd):
     return (_sat(out, 1.3) * v).astype(np.float32)
 
 
-def _drum(row, dur, vel, rnd, garage=False, sampled=True):
+def _drum(row, dur, vel, rnd, garage=False, sampled=True, shape=None):
     """A kit voice. With `sampled`, the recorded Pearl kit does the work -
     a different snare take each hit, every hit a hair off in pitch, as a
     sampler with round-robin and a drummer give - with the synthesised
@@ -542,7 +546,7 @@ def _drum(row, dur, vel, rnd, garage=False, sampled=True):
         if row == SNARE:
             take = ("pearl/snare-01", "pearl/snare-02", "pearl/snare-03")[int(rnd.rng.integers(0, 3))]
             hit = _play(take, rate * 0.94) * 1.7 * v
-            body = _drum(SNARE, dur, vel, rnd, garage, sampled=False) * 0.35
+            body = _drum(SNARE, dur, vel, rnd, garage, sampled=False) * 0.35 * (shape or {}).get("snare_body", 1.0)
             m = max(len(hit), len(body))
             out = np.zeros(m, dtype=np.float32)
             out[:len(hit)] += hit
@@ -820,7 +824,8 @@ def instruments(family: str, seed: int, bpm: float, is140: bool, garage: bool) -
     return out
 
 
-def kit_hit(inst: dict, row: int, dur: float, vel: int, rnd, garage: bool = False) -> np.ndarray:
+def kit_hit(inst: dict, row: int, dur: float, vel: int, rnd, garage: bool = False,
+            shape: dict | None = None) -> np.ndarray:
     """A kit voice, recorded where the library has it (garage's hats and
     shaker, the siren), else as `_drum` makes it."""
     if row == SIREN:
@@ -838,7 +843,7 @@ def kit_hit(inst: dict, row: int, dur: float, vel: int, rnd, garage: bool = Fals
     if row == SHAKER and inst.get("shaker") is not None:
         x = inst["shaker"].play(rnd.rng, vel, 0.12)
         return (_hp(x.mean(axis=1), 300) * inst["shaker_k"]).astype(np.float32)
-    return _drum(row, dur, vel, rnd, garage)
+    return _drum(row, dur, vel, rnd, garage, shape=shape)
 
 
 def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | None = None) -> np.ndarray:
@@ -875,6 +880,7 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
     except Exception:      # noqa: BLE001
         bubble = False
     inst = instruments(family, song.seed or 0, song.bpm, is140, garage)
+    shape = DRUM_SHAPE.get(prof or "", {})
 
     def kit(midi, dur, vel):
         """A kit hit as this genre plays it: in dub the one-drop's backbeat
@@ -883,7 +889,7 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
             name = "hands/stick_m" if midi == SNARE else "hands/stick_h"
             x = _play(name, 1.0 + rnd.jitter(0.02), 2.2 * _vel(vel))
             if midi == SNARE:
-                body = _drum(SNARE, dur, vel, rnd, False) * 0.3
+                body = _drum(SNARE, dur, vel, rnd, False) * 0.3 * shape.get("snare_body", 1.0)
                 m = max(len(x), len(body))
                 out = np.zeros(m, dtype=np.float32)
                 out[:len(x)] += x
@@ -892,7 +898,7 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
             return x
         if cross and midi == KICK and DUB_KICK:
             return _dub_kick(dur, vel, rnd)
-        return kit_hit(inst, midi, dur, vel, rnd, garage)
+        return kit_hit(inst, midi, dur, vel, rnd, garage, shape)
 
     def at(tick):
         """Sample index of a tick, swung as the Deluge would play it."""
@@ -956,6 +962,8 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
                 if feel_ms or lean_ms:
                     start = max(0, start + int((lean_ms + trng.normal(0.0, feel_ms)) / 1000.0 * SR))
                 x = kit(note.midi, dur, note.velocity)
+                if note.midi == HAT and shape.get("hat_gain"):
+                    x = x * shape["hat_gain"]
                 if note.midi == KICK and any(a <= note.start < b for a, b in thin):
                     x = _hp(x, PULL_KICK_HP, order=4)
                 p = DRUM_PAN.get(note.midi, 0.0)
