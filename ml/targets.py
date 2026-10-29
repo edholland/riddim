@@ -36,7 +36,8 @@ FEEL = ("jitter_ms", "lean_ms", "repeat", "cv_kick", "cv_snare", "cv_hat")
 BANDS = ("sub", "bass", "low_mid", "high_mid", "air")
 LEVEL = ("rms_db", "crest_db", "sub_held")
 TARGETS = FEEL + BANDS + LEVEL
-STEM = ("kick_share", "snare_share", "hat_share", "hat_centroid_hz", "hat_decay_ms", "snare_body_db")
+STEM = ("kick_share", "snare_share", "hat_share", "hat_centroid_hz", "hat_decay_ms", "snare_body_db",
+        "bass_sub", "bass_low", "bass_mid", "bass_upper", "bass_held", "bass_cv")
 
 
 def stem_measure(path: str) -> dict[str, float]:
@@ -46,13 +47,14 @@ def stem_measure(path: str) -> dict[str, float]:
     import tempfile
     import drum_stem
     import mine_cells
-    cache = path[:-4] + ".drumstem.json"
+    cache = path[:-4] + ".stems.json"
     if os.path.exists(cache):
         return json.load(open(cache))
     tmp = tempfile.mkdtemp(prefix="tstem_")
     try:
         mine_cells.split(path, os.path.join(tmp, "s"))
-        m = drum_stem.metrics(os.path.join(tmp, "s", "drums.wav"))
+        m = {**drum_stem.metrics(os.path.join(tmp, "s", "drums.wav")),
+             **drum_stem.bass_metrics(os.path.join(tmp, "s", "bass.wav"))}
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     json.dump(m, open(cache, "w"))
@@ -63,7 +65,7 @@ def stem_records(profile: str) -> dict[str, float]:
     import goal_check as gc
     rec = json.load(open(os.path.join(REPO, "references", "stats", "drum_stem_records.json")))
     fams = [f for f in gc.families_for(profile) if f in rec]
-    return {k: float(np.mean([rec[f][k] for f in fams])) for k in STEM}
+    return {k: float(np.mean([rec[f][k] for f in fams])) for k in STEM if all(k in rec[f] for f in fams)}
 
 
 def measure(path: str) -> dict[str, float]:
@@ -109,7 +111,9 @@ ADVISORY = {"cv_kick"}
 TOLERANCE = {"jitter_ms": 0.5, "lean_ms": 0.5, "repeat": 0.02, "cv_kick": 0.02, "cv_snare": 0.02, "cv_hat": 0.02,
              "sub": 0.005, "bass": 0.005, "low_mid": 0.005, "high_mid": 0.005, "air": 0.005,
              "rms_db": 0.5, "crest_db": 0.5, "sub_held": 0.02, "kick_share": 0.01, "snare_share": 0.01, "hat_share": 0.01,
-             "hat_centroid_hz": 100.0, "hat_decay_ms": 5.0, "snare_body_db": 1.0}
+             "hat_centroid_hz": 100.0, "hat_decay_ms": 5.0, "snare_body_db": 1.0,
+             "bass_sub": 0.01, "bass_low": 0.01, "bass_mid": 0.01, "bass_upper": 0.01, "bass_held": 0.02,
+             "bass_cv": 0.02}
 
 
 def interval(v: np.ndarray, draws: int = 2000, seed: int = 0) -> tuple[float, float, float]:
@@ -123,7 +127,7 @@ def interval(v: np.ndarray, draws: int = 2000, seed: int = 0) -> tuple[float, fl
 
 
 def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str,
-       watch: tuple[str, ...] = (), stems: bool = False) -> dict:
+       watch: tuple[str, ...] = (), stems: bool = False, keep_audio: bool = True) -> dict:
     """B against A on `seeds`: per target, A's and B's means, the records',
     the paired difference with its interval, and whether B moved toward the
     records (+1), away (-1) or neither (0) beyond the interval. `watch`
@@ -151,6 +155,8 @@ def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str,
             if stems:
                 x = {**x, **stem_measure(f)}
             m[side].append(x)
+            if not keep_audio and side == "b":
+                os.remove(f)          # measured and cached: the disk is small
     if stems:
         rec = {**rec, **stem_records(profile)}
     res = {}
