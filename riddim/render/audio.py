@@ -162,10 +162,20 @@ SPACE: dict[str, float] = {"uk_garage": 2.5}
 # spread of this many ms. Roots records measure 14.3 ms of onset jitter
 # against our 11.0 (the detector's own floor on a grid-tight kit), so ~8.5 ms
 # more, added in quadrature, lands on the records' figure.
-DRUMMER_MS: dict[str, float] = {"roots_dub": 8.5}
+# The others, from the same gap measured on the head panel (16 seeds,
+# ml/targets.py; jitter ms ours -> with this, records): steppers 10.8 -> 11.3
+# (13.0), dubstep 9.5 -> 11.6 (13.9), dark garage 8.8 -> 11.1 (13.6), uk
+# garage 11.9 -> 12.5 (13.7); no other target moved away beyond tolerance.
+DRUMMER_MS: dict[str, float] = {"roots_dub": 8.5, "steppers_dub": 7.4, "dubstep_140": 10.2,
+                                "dark_garage": 10.4, "uk_garage": 7.2}
 # ... and where it sits against the beat: roots records lean -0.4 ms, ours
 # -3.7, so the kit lays back by the difference.
-DRUMMER_LEAN_MS: dict[str, float] = {"roots_dub": 3.3}
+# Lean ms, ours -> with this (records): steppers -6.9 -> -5.2 (-4.1), dubstep
+# -8.6 -> -6.1 (-1.8), dark garage -9.6 -> -7.1 (-2.6), uk garage -6.2 -> -4.4
+# (-2.6). The detector counts every onset, not only the kit's, so a lay-back
+# shows at about a third of its size.
+DRUMMER_LEAN_MS: dict[str, float] = {"roots_dub": 3.3, "steppers_dub": 3.9, "dubstep_140": 6.9,
+                                     "dark_garage": 7.2, "uk_garage": 3.8}
 
 
 # The engineer's hand on the master fader, per profile: how much of each

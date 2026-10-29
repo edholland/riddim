@@ -97,6 +97,15 @@ def records(profile: str, n: int = 30) -> dict[str, float]:
     return _RECORDS[profile]
 
 
+# The smallest move that matters, per target: a move away from the records
+# smaller than this is collateral, whatever its interval (16 seeds resolve
+# band-share changes of 0.001, which nobody hears).
+TOLERANCE = {"jitter_ms": 0.5, "lean_ms": 0.5, "repeat": 0.02, "cv_kick": 0.02, "cv_snare": 0.02, "cv_hat": 0.02,
+             "sub": 0.005, "bass": 0.005, "low_mid": 0.005, "high_mid": 0.005, "air": 0.005,
+             "rms_db": 0.5, "crest_db": 0.5, "kick_share": 0.01, "snare_share": 0.01, "hat_share": 0.01,
+             "hat_centroid_hz": 100.0, "hat_decay_ms": 5.0, "snare_body_db": 1.0}
+
+
 def interval(v: np.ndarray, draws: int = 2000, seed: int = 0) -> tuple[float, float, float]:
     rng = np.random.default_rng(seed)
     v = np.asarray(v, float)
@@ -150,7 +159,9 @@ def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str,
         if r is not None and not np.isnan(lo):
             sure = lo > 0 or hi < 0
             if sure:
-                move = 1 if abs(bm - r) < abs(am - r) else -1
+                closer = abs(bm - r) < abs(am - r)
+                # Away counts only beyond the target's tolerance.
+                move = 1 if closer else (-1 if abs(abs(bm - r) - abs(am - r)) > TOLERANCE.get(t, 0) else 0)
         res[t] = {"a": am, "b": bm, "records": r, "diff": (mean, lo, hi), "move": move}
     aimed = [t for t in watch if t in res]
     ok = bool(aimed) and all(res[t]["move"] == 1 for t in aimed) and not any(v["move"] == -1 for v in res.values())
