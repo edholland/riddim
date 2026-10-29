@@ -87,3 +87,66 @@ def compare(a: dict[str, dict[str, float]], b: dict[str, dict[str, float]], pair
         verdict = "can't tell"
     res["verdict"] = verdict
     return res
+
+
+# --------------------------------------------------------------------------
+# The keep-or-revert score: closeness to the family's records on AST
+# --------------------------------------------------------------------------
+# The trained critic separates records from riddim perfectly but its order
+# among riddim's songs agreed with Ed on 11 of his 19 picks; a song's
+# closeness to its family's centroid on the same loudness-blind AST
+# embeddings agreed on 14 (ml/critic/ed_agree.py, references/critic). So the
+# closeness decides, paired by seed; the critics' stem scores ride along as
+# diagnostics.
+
+_CENTROIDS: dict = {}
+
+
+def centroid(family: str) -> np.ndarray:
+    if family not in _CENTROIDS:
+        d = train._load(os.path.join(train.CRIT, "ast", family + ".npz"))
+        rows = [train._unit(v) for v in d.values() if len(v)]
+        _CENTROIDS[family] = train._unit(np.concatenate(rows).mean(0))
+    return _CENTROIDS[family]
+
+
+def closeness(paths: list[str], profile: str, cache_dir: str) -> dict[str, float]:
+    """Each song's mean window cosine to its profile's main family centroid
+    (AST, loudness-blind)."""
+    import embed
+    import goal_check as gc
+    c = centroid(gc.families_for(profile)[0])
+    emb = embed.embed_files(paths, cache_dir, "close", ("ast",))["ast"]
+    return {p: float((train._unit(e) @ c).mean()) for p, e in emb.items() if len(e)}
+
+
+def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str, stems: bool = False) -> dict:
+    """Render `profile` on `seeds` with A's changes and with B's (as
+    blind_ab.patched takes them), and judge B against A: the mean paired
+    closeness difference with its 95% interval, the verdict (keep B when the
+    interval sits above 0, revert when below, else can't tell), and, with
+    `stems`, the critics' per-part differences."""
+    from blind_ab import patched
+    from riddim.compose import compose
+    from riddim.render import audio
+    paths = {}
+    for side, changes in (("a", a_changes), ("b", b_changes)):
+        os.makedirs(os.path.join(out_dir, side), exist_ok=True)
+        paths[side] = []
+        for s in seeds:
+            f = os.path.join(out_dir, side, f"{profile}_{s}.wav")
+            if not os.path.exists(f):
+                with patched(changes):
+                    audio.write(compose(profile, seed=s), f)
+            paths[side].append(f)
+    cl = {side: closeness(paths[side], profile, os.path.join(out_dir, "_emb")) for side in paths}
+    d = np.array([cl["b"][pb] - cl["a"][pa] for pa, pb in zip(paths["a"], paths["b"])])
+    m, lo, hi = interval(d)
+    out = {"closeness": (m, lo, hi), "a": float(np.mean(list(cl["a"].values()))),
+           "b": float(np.mean(list(cl["b"].values()))),
+           "verdict": "keep" if lo > 0 else ("revert" if hi < 0 else "can't tell")}
+    if stems:
+        sa = song_scores(paths["a"], os.path.join(out_dir, "_critic"))
+        sb = song_scores(paths["b"], os.path.join(out_dir, "_critic"))
+        out["critic"] = compare(sa, sb, list(zip(paths["a"], paths["b"])))
+    return out
