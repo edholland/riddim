@@ -150,7 +150,13 @@ BASS_MID: dict[str, float] = {"roots_dub": 0.5}
 # The kit's character per profile, measured on Demucs drum stems against
 # the records' (ml/drum_stem.py): "snare_body" scales the synthesised body
 # under the snare (and under dub's cross-stick), "hat_gain" the hats.
-DRUM_SHAPE: dict[str, dict[str, float]] = {}
+# steppers_dub: snare body x0.3 and hats x1.35 moved both toward the records
+# (16 seeds: snare body +8.3 -> +6.7 dB against 2-8 kHz, records +0.4; hat
+# share 0.058 -> 0.064, records 0.082). The same in dubstep left its snare
+# body alone (it is the sampled snare's) and pushed the hats' spread,
+# brightness and decay away; in dark and uk garage the louder hats measured
+# lower in the Demucs drum stem - so those stay as they are.
+DRUM_SHAPE: dict[str, dict[str, float]] = {"steppers_dub": {"snare_body": 0.3, "hat_gain": 1.35}}
 # The reverb and delay returns per profile, multiplied in. The judge's text
 # probes heard our garage and 140 as "a dry close mix" (+1.7-1.8 sd against
 # the records). uk_garage x2.5 won the goal panel (garage FAD 0.392 -> 0.370,
