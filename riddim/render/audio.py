@@ -170,7 +170,13 @@ BASS_MID: dict[str, float] = {"roots_dub": 0.5}
 # 0.31 (0.28), kick share 0.50 -> 0.63 (0.58), sub share 0.357 -> 0.345
 # (0.246). The kick's onset-strength spread moved away (0.67 -> 0.73,
 # records 0.61), an advisory target (ml/targets.py).
-DRUM_SHAPE: dict[str, dict[str, float]] = {"steppers_dub": {"snare_body": 0.3, "hat_gain": 1.35},
+# roots_dub: the snare x0.6 (kick_gain / snare_gain), with the sub on the
+# master 1.5 dB further down (TONE), 16 seeds: the drum stem's kick share
+# 0.346 -> 0.388 (records 0.567), snare 0.541 -> 0.515 (0.276), the mix's sub
+# 0.179 -> 0.169 (0.102). The kick x1.4 moved the shares further but put sub
+# (or, high-passed at 70 Hz, bass) into the mix past the records'.
+DRUM_SHAPE: dict[str, dict[str, float]] = {"roots_dub": {"snare_gain": 0.6},
+                                           "steppers_dub": {"snare_body": 0.3, "hat_gain": 1.35},
                                            "uk_garage": {"snare_body": 0.3, "snare_hp": 350.0}}
 # A low-pass on the chords per profile (Hz), for an "other" stem brighter
 # than the records'.
@@ -291,7 +297,7 @@ TONE: dict[str, dict[str, float]] = {
     # 08b30d3: FAD 0.327 -> 0.324, closeness 0.826 -> 0.827, real 0.97); a
     # 70s colour on the master - top -3 dB, 40% width, wow, more tape - lost
     # (FAD 0.333 to 0.343), and a mono kit did nothing.
-    "roots_dub": {"sub": -13.5, "low_mid": 3.3, "high_mid": 5.0, "air": 6.5},
+    "roots_dub": {"sub": -15.0, "low_mid": 3.3, "high_mid": 5.0, "air": 6.5},
     "steppers_dub": {"sub": -8.0, "low_mid": 2.2, "high_mid": 1.2, "air": 5.0},
     "dubstep_140": {"bass": -1.5, "low_mid": 2.7, "high_mid": 10.0, "air": 8.0},
     "dark_garage": {"sub": -3.0, "low_mid": -1.3, "high_mid": 9.5, "air": 7.0},
@@ -1036,6 +1042,12 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
                 x = kit(note.midi, dur, note.velocity)
                 if note.midi == HAT and shape.get("hat_gain"):
                     x = x * shape["hat_gain"]
+                if note.midi == KICK and shape.get("kick_gain"):
+                    x = x * shape["kick_gain"]
+                if note.midi == KICK and shape.get("kick_hp"):
+                    x = _hp(x, shape["kick_hp"])
+                if note.midi == SNARE and shape.get("snare_gain"):
+                    x = x * shape["snare_gain"]
                 if note.midi == KICK and any(a <= note.start < b for a, b in thin):
                     x = _hp(x, PULL_KICK_HP, order=4)
                 p = DRUM_PAN.get(note.midi, 0.0)

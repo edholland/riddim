@@ -115,7 +115,12 @@ def records(profile: str, n: int = 30) -> dict[str, float]:
 # kick's onset-strength spread on the full mix follows the arrangement's
 # dynamics (drops, pulls, the kick thinned in pulls) far more than the kit -
 # ours is about double the records' whatever the kit does.
-ADVISORY = {"cv_kick"}
+#
+# The bass stem's onset-strength spread in the dub profiles is mostly the
+# kick's sub bleeding into Demucs' bass stem: roots seeds 301-303 measure
+# 0.54 / 0.50 / 0.47 on the clean bass bus (records 0.61), 0.38 / 0.64 / 0.87
+# split from the full mix.
+ADVISORY = {"cv_kick", "bass_cv"}
 # Advisory too when a change leaves the drums alone (the module docstring).
 DRUM_TIMING = {"lean_ms", "jitter_ms"}
 
