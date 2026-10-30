@@ -211,6 +211,10 @@ STEPPERS_DUB = Profile(
     # it sounds; ml/targets.py, 16 seeds): steppers 0.780 -> 0.768 (records 0.691), bass band 0.541 -> 0.533 (0.500). At 0.6 roots' high mids
     # moved away; dark garage's did not move, dubstep and uk garage's barely.
     bass_note_length=0.8,
+    # The bubble through every section the chords play in, the bubble back
+    # at its plain level (audio.BUBBLE_TRIM), 16 seeds: other_held 0.520 ->
+    # 0.558 (records 0.770), nothing away.
+    bubble_through=True,
     sirens=0.6,
     family="dub",
     bars_per_chord=2.0,

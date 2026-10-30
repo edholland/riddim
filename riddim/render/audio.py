@@ -112,7 +112,10 @@ BUBBLE_LEVEL = 1.0
 # records' on every measure (16 seeds, ml/targets.py): 150-500 Hz share
 # 0.316 -> 0.344 (records 0.356), 2.5-10 kHz 0.191 -> 0.174 (0.060), centroid
 # 2285 -> 2226 Hz (1869), held 0.427 -> 0.440 (0.770); nothing moved away.
-BUBBLE_TRIM: dict[str, float] = {"roots_dub": 0.63, "steppers_dub": 1.6}
+# With the bubble through every chords section (profile bubble_through) that
+# 4 dB overshot the 150-500 Hz share (0.351 -> 0.399); back at 1.0 it holds
+# it (0.346) and the held share still rises 0.520 -> 0.558.
+BUBBLE_TRIM: dict[str, float] = {"roots_dub": 0.63}
 BUBBLE_PAN = 0.25
 # Dub's kit through a 70s desk - rolled-off top, a little tape - and its
 # backbeat into the spring. Measured on five dub drops: the desk tone takes
