@@ -161,14 +161,14 @@ The largest gaps, ranked. Ours, then the records' figure in brackets:
 | rank | profile | target | ours (records) | tolerances | kind |
 |---|---|---|---|---|---|
 | 1 | dubstep_140 | bass stem under 60 Hz | 0.547 (0.898) | −35 | artifact: Demucs files our 140 sub under drums |
-| 2 | dark_garage | "other" 500–2500 / 150–500 Hz | 0.786 / 0.150 (0.448 / 0.487) | ±34 | probably artifact: the records' mid-bass and reese land in "other", ours in "bass" (see 6) |
+| 2 | dark_garage | "other" 500–2500 / 150–500 Hz | 0.786 / 0.150 (0.448 / 0.487) | ±34 | artifact: our clean "other" bus measures 0.50 / 0.47 (dark garage seed 2); Demucs on the full mix files its low mids elsewhere |
 | 3 | dubstep_140 | "other" 500–2500 Hz | 0.762 (0.459) | +30 | probably the same artifact |
 | 4 | roots_dub | drum stem snare / kick share | 0.532 / 0.360 (0.276 / 0.567) | +26 / −21 | **real: next to work on** |
 | 5 | roots_dub | bass onset-strength spread | 1.025 (0.611) | +21 | real |
 | 6 | dubstep_140 | bass stem 60–120 Hz | 0.282 (0.057) | +23 | artifact, the other side of 1 and 3 |
 | 7 | uk_garage | mix sub share | 0.345 (0.246) | +20 | real |
 | 8 | uk_garage | "other" 500–2500 Hz | 0.688 (0.502) | +19 | real: the organ (brightening it not kept) |
-| 9 | dark_garage | "other" held | 0.552 (0.902) | −18 | real |
+| 9 | dark_garage | "other" held | 0.552 (0.902) | −18 | artifact: 0.99 on the clean "other" bus; an organ held under the stabs moved nothing |
 | 10 | steppers_dub | bass stem 60–120 Hz / under 60 | 0.672 / 0.194 (0.507 / 0.346) | +16 / −15 | real |
 | 11 | dubstep_140 | snare body | +3.7 (−12.2) dB | +16 | real |
 | 12 | steppers_dub | drum stem snare share | 0.407 (0.269) | +14 | real |
