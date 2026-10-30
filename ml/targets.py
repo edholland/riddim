@@ -15,6 +15,12 @@ ab() renders a change both ways on the same seeds and gives each target's
 mean paired difference with a 95% bootstrap interval, alongside where the
 records sit. A change is kept when it moves its target toward the records
 beyond the interval and pushes no other target away beyond its own.
+
+lean_ms and jitter_ms are measured on the full mix, where sustained keys in
+the snare band shift listen's onset picking without the drums moving. For a
+change that touches neither the drum rows nor the drum render they are
+advisory (ab(..., drums_untouched=True)), but only once a drums-only-bus
+check shows the drum timing unchanged (drums_lean() on a few seeds).
 """
 
 from __future__ import annotations
@@ -110,6 +116,33 @@ def records(profile: str, n: int = 30) -> dict[str, float]:
 # dynamics (drops, pulls, the kick thinned in pulls) far more than the kit -
 # ours is about double the records' whatever the kit does.
 ADVISORY = {"cv_kick"}
+# Advisory too when a change leaves the drums alone (the module docstring).
+DRUM_TIMING = {"lean_ms", "jitter_ms"}
+
+
+def drums_lean(profile: str, a_changes: list, b_changes: list, seeds=(1, 2, 3)) -> list[tuple]:
+    """listen's lean and jitter on the drums-only bus, A and B, per seed:
+    identical when a change leaves the drums alone."""
+    import tempfile
+    import soundfile as sf
+    from blind_ab import patched
+    from riddim import listen
+    from riddim.compose import compose
+    from riddim.render import audio
+    out = []
+    f = os.path.join(tempfile.mkdtemp(prefix="dlean_"), "d.wav")
+    for s in seeds:
+        row = []
+        for changes in (a_changes, b_changes):
+            so: dict = {}
+            with patched(changes):
+                audio.render(compose(profile, seed=s), stems_out=so)
+            sf.write(f, so["drums"], audio.SR)
+            r = listen.analyze(f)
+            row.append((round(r.lean_ms, 2), round(r.jitter_ms, 2)))
+        out.append((s, *row))
+    os.remove(f)
+    return out
 
 # The smallest move that matters, per target: a move away from the records
 # smaller than this is collateral, whatever its interval (16 seeds resolve
@@ -134,7 +167,8 @@ def interval(v: np.ndarray, draws: int = 2000, seed: int = 0) -> tuple[float, fl
 
 
 def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str,
-       watch: tuple[str, ...] = (), stems: bool = False, keep_audio: bool = True) -> dict:
+       watch: tuple[str, ...] = (), stems: bool = False, keep_audio: bool = True,
+       drums_untouched: bool = False) -> dict:
     """B against A on `seeds`: per target, A's and B's means, the records',
     the paired difference with its interval, and whether B moved toward the
     records (+1), away (-1) or neither (0) beyond the interval. `watch`
@@ -183,8 +217,9 @@ def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str,
                 move = 1 if closer else (-1 if abs(abs(bm - r) - abs(am - r)) > TOLERANCE.get(t, 0) else 0)
         res[t] = {"a": am, "b": bm, "records": r, "diff": (mean, lo, hi), "move": move}
     aimed = [t for t in watch if t in res]
+    advisory = ADVISORY | (DRUM_TIMING if drums_untouched else set())
     ok = bool(aimed) and all(res[t]["move"] == 1 for t in aimed) and \
-        not any(v["move"] == -1 for t, v in res.items() if t not in ADVISORY)
+        not any(v["move"] == -1 for t, v in res.items() if t not in advisory)
     res["verdict"] = "keep" if ok else ("revert" if any(res[t]["move"] == -1 for t in aimed) else "can't tell")
     return res
 

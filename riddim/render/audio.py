@@ -177,8 +177,14 @@ DRUM_SHAPE: dict[str, dict[str, float]] = {"steppers_dub": {"snare_body": 0.3, "
 CHORDS_LP: dict[str, float] = {}
 # ... and the tone EQ's five bands on the chords alone (dB), per profile.
 # An organ holding each chord under the dub stabs, at this gain, per profile
-# (the records' keys sound far more of the time than ours).
-HELD_ORGAN: dict[str, float] = {}
+# (the records' keys sound far more of the time than ours). Roots, 16 seeds
+# (ml/targets.py): the "other" stem sounds 0.548 -> 0.708 of the time
+# (records 0.768); its 150-500 Hz share 0.237 -> 0.278 (0.384), 500-2500
+# 0.553 -> 0.529 (0.476), 2.5-10k 0.210 -> 0.193 (0.087), all toward. The
+# mix's lean moved away (-2.2 -> -3.2 ms), the drums-only bus's not at all.
+# A 150 ms swell (HELD_ORGAN_SWELL) measured the same.
+HELD_ORGAN: dict[str, float] = {"roots_dub": 1.0}
+HELD_ORGAN_SWELL = 0.0     # seconds
 # The chords' high-pass, per profile (220 Hz otherwise). uk_garage's organ at
 # 120 Hz keeps its body (16 seeds, ml/targets.py): the "other" stem's 150-500
 # Hz share 0.278 -> 0.288 (records 0.402), 500-2500 0.703 -> 0.693 (0.502),
@@ -1127,7 +1133,12 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
             if window is None or w0 <= a < window[1]:
                 dur = (end - a) * spt
                 for midi in chord:
-                    _add(hbuf, at(a), _pan(organ(midi, dur, 70), 0.0) / len(chord))
+                    x = organ(midi, dur, 70)
+                    # Swelled in on the volume pedal, not struck: the stabs
+                    # keep the attack.
+                    k = min(len(x), int(HELD_ORGAN_SWELL * SR))
+                    x[:k] = x[:k] * np.linspace(0.0, 1.0, k, dtype=np.float32)
+                    _add(hbuf, at(a), _pan(x, 0.0) / len(chord))
             i = j + 1
         stems["pad"] = stems["pad"] + _hp(hbuf, 160) * held
     sends = dict(SENDS)
