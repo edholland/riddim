@@ -176,6 +176,15 @@ DRUM_SHAPE: dict[str, dict[str, float]] = {"steppers_dub": {"snare_body": 0.3, "
 # than the records'.
 CHORDS_LP: dict[str, float] = {}
 # ... and the tone EQ's five bands on the chords alone (dB), per profile.
+# An organ holding each chord under the dub stabs, at this gain, per profile
+# (the records' keys sound far more of the time than ours).
+HELD_ORGAN: dict[str, float] = {}
+# The chords' high-pass, per profile (220 Hz otherwise). uk_garage's organ at
+# 120 Hz keeps its body (16 seeds, ml/targets.py): the "other" stem's 150-500
+# Hz share 0.278 -> 0.288 (records 0.402), 500-2500 0.703 -> 0.693 (0.502),
+# nothing away. On its own, the organ's bus already measures ~0.40 there; in
+# the mix Demucs hears less of it as "other".
+CHORDS_HP: dict[str, float] = {"uk_garage": 120.0}
 # The organ stab's top note doubled an octave up, at this gain, per profile:
 # lifts the chords' top end. Not kept for uk_garage (16 seeds, ml/targets.py):
 # at 1.0 the "other" stem's 2.5-10 kHz share rose 0.019 -> 0.039 (records
@@ -1091,7 +1100,7 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
         stems[r] *= (1.0 - depth * kick)[:, None]
 
     # Clear the mud: only the kick and the sub own the bottom.
-    for r, hp in (("chords", 220), ("pad", 160), ("lead", 200), ("perc", 120), ("bass", 70)):
+    for r, hp in (("chords", CHORDS_HP.get(prof or "", 220)), ("pad", 160), ("lead", 200), ("perc", 120), ("bass", 70)):
         stems[r] = _hp(stems[r], hp)
     if CHORDS_LP.get(prof or ""):
         stems["chords"] = _lp(stems["chords"], CHORDS_LP[prof])
@@ -1099,6 +1108,28 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
         stems["chords"] = _tone(stems["chords"], CHORDS_TONE[prof])
     stems["lead"] = stems["lead"] * (LEAD_LEVEL_DUB if family == "dub" else LEAD_LEVEL)
     stems["pad"] = stems["pad"] * (BUBBLE_LEVEL * BUBBLE_TRIM.get(prof or "", 1.0) if bubble else PAD_LEVEL)
+    held = HELD_ORGAN.get(prof or "", 0.0)
+    if held and stab_notes:
+        # The organ holding each chord under the stabs, from its first stab
+        # to the next chord (or a bar past its last stab).
+        ticks = sorted(stab_notes)
+        hbuf = np.zeros((n, 2), dtype=np.float32)
+        i = 0
+        while i < len(ticks):
+            chord = sorted(set(stab_notes[ticks[i]]))
+            j = i
+            while j + 1 < len(ticks) and sorted(set(stab_notes[ticks[j + 1]])) == chord \
+                    and ticks[j + 1] - ticks[j] <= TICKS_PER_BAR:
+                j += 1
+            nxt = ticks[j + 1] if j + 1 < len(ticks) else None
+            end = nxt if nxt is not None and nxt - ticks[j] <= TICKS_PER_BAR else ticks[j] + TICKS_PER_BAR
+            a = ticks[i]
+            if window is None or w0 <= a < window[1]:
+                dur = (end - a) * spt
+                for midi in chord:
+                    _add(hbuf, at(a), _pan(organ(midi, dur, 70), 0.0) / len(chord))
+            i = j + 1
+        stems["pad"] = stems["pad"] + _hp(hbuf, 160) * held
     sends = dict(SENDS)
     for role, k in SEND_TRIM.get(prof or "", {}).items():
         sends[role] = tuple(v * k for v in sends[role])
