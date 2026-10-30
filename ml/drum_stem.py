@@ -104,6 +104,33 @@ def bass_metrics(path: str) -> dict[str, float]:
     return out
 
 
+OTHER_KEYS = ("other_lowmid", "other_mid", "other_high", "other_centroid_hz", "other_onsets_s", "other_held")
+
+
+def other_metrics(path: str) -> dict[str, float]:
+    """The "other" stem (keys, guitars, pads, leads, effects): energy shares
+    in 150-500 Hz, 500-2500 and 2.5-10 kHz; its spectral centroid; onsets a
+    second (how busy); and the share of 50 ms frames sounding within 20 dB
+    of its loud level."""
+    sr = listen.SR
+    x = listen.load(path).mean(axis=1)
+    e = {name: float(np.mean(listen._band(x, lo, hi, sr) ** 2))
+         for name, (lo, hi) in (("lowmid", (150, 500)), ("mid", (500, 2500)), ("high", (2500, 10000)))}
+    tot = sum(e.values()) or 1.0
+    out = {f"other_{k}": v / tot for k, v in e.items()}
+    n = min(len(x), sr * 30)
+    spec = np.abs(np.fft.rfft(x[:n]))
+    freqs = np.fft.rfftfreq(n, 1 / sr)
+    band = (freqs >= 100) & (freqs <= 10000)
+    out["other_centroid_hz"] = float((spec[band] * freqs[band]).sum() / (spec[band].sum() or 1.0))
+    on, _ = listen._onsets(listen._envelope(listen._band(x, 200, 6000, sr), sr, 256), sr / 256)
+    out["other_onsets_s"] = len(on) / (len(x) / sr)
+    env = listen._envelope(x, sr, int(0.05 * sr))
+    db = 20 * np.log10(env + 1e-9)
+    out["other_held"] = float(np.mean(db > np.percentile(db, 95) - 20))
+    return out
+
+
 def records() -> dict[str, dict[str, float]]:
     cells = os.path.join(REPO, "references", "stats", "_cells")
     fam = {json.loads(line)["id"]: json.loads(line)["family"]
@@ -112,9 +139,10 @@ def records() -> dict[str, dict[str, float]]:
     for rid in sorted(os.listdir(cells)):
         f = os.path.join(cells, rid, "drums.wav")
         b = os.path.join(cells, rid, "bass.wav")
-        if rid in fam and os.path.exists(f) and os.path.exists(b):
-            by.setdefault(fam[rid], []).append({**metrics(f), **bass_metrics(b)})
-    return {f: {k: float(np.nanmedian([m[k] for m in ms])) for k in KEYS + BASS_KEYS} | {"n": len(ms)}
+        o = os.path.join(cells, rid, "other.wav")
+        if rid in fam and os.path.exists(f) and os.path.exists(b) and os.path.exists(o):
+            by.setdefault(fam[rid], []).append({**metrics(f), **bass_metrics(b), **other_metrics(o)})
+    return {f: {k: float(np.nanmedian([m[k] for m in ms])) for k in KEYS + BASS_KEYS + OTHER_KEYS} | {"n": len(ms)}
             for f, ms in by.items()}
 
 
@@ -127,18 +155,19 @@ def ours(folder: str) -> dict[str, dict[str, float]]:
     try:
         for f in sorted(glob.glob(os.path.join(folder, "*.wav"))):
             prof = os.path.basename(f).rsplit("_", 1)[0]
-            cache = f[:-4] + ".stems.json"
+            cache = f[:-4] + ".stems3.json"
             if os.path.exists(cache):
                 m = json.load(open(cache))
             else:
                 mine_cells.split(f, os.path.join(tmp, "s"))
-                m = {**metrics(os.path.join(tmp, "s", "drums.wav")), **bass_metrics(os.path.join(tmp, "s", "bass.wav"))}
+                m = {**metrics(os.path.join(tmp, "s", "drums.wav")), **bass_metrics(os.path.join(tmp, "s", "bass.wav")),
+                     **other_metrics(os.path.join(tmp, "s", "other.wav"))}
                 shutil.rmtree(os.path.join(tmp, "s"), ignore_errors=True)
                 json.dump(m, open(cache, "w"))
             by.setdefault(prof, []).append(m)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-    return {p: {k: float(np.nanmedian([m[k] for m in ms])) for k in KEYS + BASS_KEYS} | {"n": len(ms)}
+    return {p: {k: float(np.nanmedian([m[k] for m in ms])) for k in KEYS + BASS_KEYS + OTHER_KEYS} | {"n": len(ms)}
             for p, ms in by.items()}
 
 
@@ -151,7 +180,7 @@ def main(argv=None) -> int:
     out = os.path.join(REPO, "references", "stats", "drum_stem_records.json") if a.step == "records" else \
         os.path.join(a.folder, "drum_stem.json")
     json.dump(res, open(out, "w"), indent=1)
-    keys = [k for k in KEYS + BASS_KEYS if all(k in v for v in res.values())]
+    keys = [k for k in KEYS + BASS_KEYS + OTHER_KEYS if all(k in v for v in res.values())]
     print("| set | n | " + " | ".join(keys) + " |")
     for k, v in res.items():
         print(f"| {k} | {v['n']} | " + " | ".join(f"{v[x]:.3f}" for x in keys) + " |")

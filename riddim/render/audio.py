@@ -108,7 +108,11 @@ BUBBLE_LEVEL = 1.0
 # 0.823, real 0.91 -> 0.95, still heard as steppers); a drawbar organ
 # multisample (Broken Beat Kit04) and the synth organ both lost, and the skank
 # +2 dB on top added nothing (FAD 0.331, real 0.95).
-BUBBLE_TRIM: dict[str, float] = {"roots_dub": 0.63}
+# steppers_dub's bubble 4 dB up moved its Demucs "other" stem toward the
+# records' on every measure (16 seeds, ml/targets.py): 150-500 Hz share
+# 0.316 -> 0.344 (records 0.356), 2.5-10 kHz 0.191 -> 0.174 (0.060), centroid
+# 2285 -> 2226 Hz (1869), held 0.427 -> 0.440 (0.770); nothing moved away.
+BUBBLE_TRIM: dict[str, float] = {"roots_dub": 0.63, "steppers_dub": 1.6}
 BUBBLE_PAN = 0.25
 # Dub's kit through a 70s desk - rolled-off top, a little tape - and its
 # backbeat into the spring. Measured on five dub drops: the desk tone takes

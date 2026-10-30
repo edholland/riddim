@@ -37,7 +37,8 @@ BANDS = ("sub", "bass", "low_mid", "high_mid", "air")
 LEVEL = ("rms_db", "crest_db", "sub_held")
 TARGETS = FEEL + BANDS + LEVEL
 STEM = ("kick_share", "snare_share", "hat_share", "hat_centroid_hz", "hat_decay_ms", "snare_body_db",
-        "bass_sub", "bass_low", "bass_mid", "bass_upper", "bass_held", "bass_cv")
+        "bass_sub", "bass_low", "bass_mid", "bass_upper", "bass_held", "bass_cv",
+        "other_lowmid", "other_mid", "other_high", "other_centroid_hz", "other_onsets_s", "other_held")
 
 
 def stem_measure(path: str) -> dict[str, float]:
@@ -47,14 +48,15 @@ def stem_measure(path: str) -> dict[str, float]:
     import tempfile
     import drum_stem
     import mine_cells
-    cache = path[:-4] + ".stems.json"
+    cache = path[:-4] + ".stems3.json"
     if os.path.exists(cache):
         return json.load(open(cache))
     tmp = tempfile.mkdtemp(prefix="tstem_")
     try:
         mine_cells.split(path, os.path.join(tmp, "s"))
         m = {**drum_stem.metrics(os.path.join(tmp, "s", "drums.wav")),
-             **drum_stem.bass_metrics(os.path.join(tmp, "s", "bass.wav"))}
+             **drum_stem.bass_metrics(os.path.join(tmp, "s", "bass.wav")),
+             **drum_stem.other_metrics(os.path.join(tmp, "s", "other.wav"))}
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     json.dump(m, open(cache, "w"))
@@ -113,7 +115,8 @@ TOLERANCE = {"jitter_ms": 0.5, "lean_ms": 0.5, "repeat": 0.02, "cv_kick": 0.02, 
              "rms_db": 0.5, "crest_db": 0.5, "sub_held": 0.02, "kick_share": 0.01, "snare_share": 0.01, "hat_share": 0.01,
              "hat_centroid_hz": 100.0, "hat_decay_ms": 5.0, "snare_body_db": 1.0,
              "bass_sub": 0.01, "bass_low": 0.01, "bass_mid": 0.01, "bass_upper": 0.01, "bass_held": 0.02,
-             "bass_cv": 0.02}
+             "bass_cv": 0.02, "other_lowmid": 0.01, "other_mid": 0.01, "other_high": 0.01,
+             "other_centroid_hz": 100.0, "other_onsets_s": 0.2, "other_held": 0.02}
 
 
 def interval(v: np.ndarray, draws: int = 2000, seed: int = 0) -> tuple[float, float, float]:
