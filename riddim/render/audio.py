@@ -321,8 +321,11 @@ SENDS = {"drums": (0.0, 0.0, 0.05, 0.0), "chords": (0.0, 0.35, 0.1, 0.5),
 # dub and 140 profiles - stabs with gaps between. steppers_dub's chords
 # sends x2 (16 seeds, ml/targets.py): held 0.438 -> 0.473 (records 0.770),
 # centroid 2230 -> 2196 Hz (1869); nothing moved away. (All the returns x1.6
-# also lifted it, but put the snare's tail in the drum stem.)
-SEND_TRIM: dict[str, dict[str, float]] = {"steppers_dub": {"chords": 2.0}}
+# also lifted it, but put the snare's tail in the drum stem.) The same for
+# roots (held 0.394 -> 0.436, records 0.768), dubstep (0.436 -> 0.519, 0.747)
+# and dark garage (0.438 -> 0.554, 0.902), nothing away in any.
+SEND_TRIM: dict[str, dict[str, float]] = {p: {"chords": 2.0} for p in
+                                          ("steppers_dub", "roots_dub", "dubstep_140", "dark_garage")}
 
 
 class _Rand:
