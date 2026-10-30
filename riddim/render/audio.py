@@ -316,6 +316,13 @@ def parse_gains(text: str) -> dict[str, dict[str, float]]:
 SENDS = {"drums": (0.0, 0.0, 0.05, 0.0), "chords": (0.0, 0.35, 0.1, 0.5),
          "pad": (0.0, 0.0, 0.45, 0.0), "lead": (0.0, 0.0, 0.3, 0.3),
          "perc": (0.0, 0.08, 0.2, 0.06), "bass": (0.0, 0.0, 0.0, 0.0), "sub": (0.0, 0.0, 0.0, 0.0)}
+# Per profile, multiplying a role's sends. The records' "other" stem (Demucs:
+# keys, guitars, their tails) sounds 72-92% of the time, ours 39-43% in the
+# dub and 140 profiles - stabs with gaps between. steppers_dub's chords
+# sends x2 (16 seeds, ml/targets.py): held 0.438 -> 0.473 (records 0.770),
+# centroid 2230 -> 2196 Hz (1869); nothing moved away. (All the returns x1.6
+# also lifted it, but put the snare's tail in the drum stem.)
+SEND_TRIM: dict[str, dict[str, float]] = {"steppers_dub": {"chords": 2.0}}
 
 
 class _Rand:
@@ -1066,6 +1073,8 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
     stems["lead"] = stems["lead"] * (LEAD_LEVEL_DUB if family == "dub" else LEAD_LEVEL)
     stems["pad"] = stems["pad"] * (BUBBLE_LEVEL * BUBBLE_TRIM.get(prof or "", 1.0) if bubble else PAD_LEVEL)
     sends = dict(SENDS)
+    for role, k in SEND_TRIM.get(prof or "", {}).items():
+        sends[role] = tuple(v * k for v in sends[role])
     if TREAT_LEAD:
         stems["lead"] = _sat(_lp(_hp(stems["lead"], 380, order=4), 3000, order=4) * 1.6, 1.8) * 0.45
         sends["lead"] = (0.0, 0.12, 0.35, 0.6)
