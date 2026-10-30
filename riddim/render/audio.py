@@ -176,6 +176,13 @@ DRUM_SHAPE: dict[str, dict[str, float]] = {"steppers_dub": {"snare_body": 0.3, "
 # than the records'.
 CHORDS_LP: dict[str, float] = {}
 # ... and the tone EQ's five bands on the chords alone (dB), per profile.
+# The organ stab's top note doubled an octave up, at this gain, per profile:
+# lifts the chords' top end. Not kept for uk_garage (16 seeds, ml/targets.py):
+# at 1.0 the "other" stem's 2.5-10 kHz share rose 0.019 -> 0.039 (records
+# 0.061) but its 150-500 Hz share fell 0.278 -> 0.244 (0.402), and +4 dB at
+# 500 Hz on the chords made that worse; 0.5 moved nothing. Voicing the chords
+# up a fifth or an octave thinned the body the same way.
+CHORDS_TOP_OCTAVE: dict[str, float] = {}
 CHORDS_TONE: dict[str, dict[str, float]] = {}
 # The reverb and delay returns per profile, multiplied in. The judge's text
 # probes heard our garage and 140 as "a dry close mix" (+1.7-1.8 sd against
@@ -1047,6 +1054,11 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
             if role == "chords":
                 if (garage or is140):
                     x = organ(note.midi, dur, note.velocity)
+                    top = CHORDS_TOP_OCTAVE.get(prof or "", 0.0)
+                    if top and note.midi == max(stab_notes.get(note.start, [note.midi])):
+                        up = organ(note.midi + 12, dur, note.velocity) * top
+                        m = max(len(x), len(up))
+                        x = np.pad(x, (0, m - len(x))) + np.pad(up, (0, m - len(up)))
                 elif inst.get("skank") is not None:
                     # The guitar plays the whole stab at once: one chop per
                     # chord, the stab's other notes are in it.
