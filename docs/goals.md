@@ -183,6 +183,13 @@ Each entry gives the commit, what changed, and the effect as before → after
     → 0.554 (0.902)
   - These are the most likely to read as "more wash" by ear. The judge
     disliked more reverb before (dubstep space ×1.6, dark garage ×2.5).
+- **44a5ebc, 85eee4c: the organ bubble through every section the chords
+  play in, roots and steppers; steppers' bubble back at its plain level (the
+  +4 dB of b8ea49a removed).**
+  - how often the "other" stem sounds: roots 0.534 → 0.550 (0.768), steppers
+    0.520 → 0.558 (0.770)
+  - steppers' "other" 150–500 Hz share: 0.351 → 0.346 (0.356); with the
+    +4 dB kept it overshot to 0.399
 
 Tried and not kept:
 
@@ -195,3 +202,7 @@ Tried and not kept:
 - a bigger bubble
 - chords low-passed at 3 kHz in roots (brightness right, the mids away)
 - longer skank notes (no measurable move)
+- uk garage's dull "other" stem: the garage chords trim off; the organ
+  voiced a fifth or an octave up; its top note doubled an octave up, with or
+  without a 500 Hz lift. Each brightened it toward the records but thinned
+  its 150–500 Hz share away from them.
