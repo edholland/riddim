@@ -172,6 +172,8 @@ DRUM_SHAPE: dict[str, dict[str, float]] = {"steppers_dub": {"snare_body": 0.3, "
 # A low-pass on the chords per profile (Hz), for an "other" stem brighter
 # than the records'.
 CHORDS_LP: dict[str, float] = {}
+# ... and the tone EQ's five bands on the chords alone (dB), per profile.
+CHORDS_TONE: dict[str, dict[str, float]] = {}
 # The reverb and delay returns per profile, multiplied in. The judge's text
 # probes heard our garage and 140 as "a dry close mix" (+1.7-1.8 sd against
 # the records). uk_garage x2.5 won the goal panel (garage FAD 0.392 -> 0.370,
@@ -1078,6 +1080,8 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
         stems[r] = _hp(stems[r], hp)
     if CHORDS_LP.get(prof or ""):
         stems["chords"] = _lp(stems["chords"], CHORDS_LP[prof])
+    if CHORDS_TONE.get(prof or ""):
+        stems["chords"] = _tone(stems["chords"], CHORDS_TONE[prof])
     stems["lead"] = stems["lead"] * (LEAD_LEVEL_DUB if family == "dub" else LEAD_LEVEL)
     stems["pad"] = stems["pad"] * (BUBBLE_LEVEL * BUBBLE_TRIM.get(prof or "", 1.0) if bubble else PAD_LEVEL)
     sends = dict(SENDS)
