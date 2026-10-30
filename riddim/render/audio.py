@@ -182,8 +182,10 @@ CHORDS_LP: dict[str, float] = {}
 # (records 0.768); its 150-500 Hz share 0.237 -> 0.278 (0.384), 500-2500
 # 0.553 -> 0.529 (0.476), 2.5-10k 0.210 -> 0.193 (0.087), all toward. The
 # mix's lean moved away (-2.2 -> -3.2 ms), the drums-only bus's not at all.
-# A 150 ms swell (HELD_ORGAN_SWELL) measured the same.
-HELD_ORGAN: dict[str, float] = {"roots_dub": 1.0}
+# A 150 ms swell (HELD_ORGAN_SWELL) measured the same. Steppers at 0.5: held
+# 0.560 -> 0.599 (0.770), 150-500 Hz 0.345 -> 0.355 (0.356), nothing away; at
+# 1.0 its low mids overshot (0.391) over the bubble it already has.
+HELD_ORGAN: dict[str, float] = {"roots_dub": 1.0, "steppers_dub": 0.5}
 HELD_ORGAN_SWELL = 0.0     # seconds
 # The chords' high-pass, per profile (220 Hz otherwise). uk_garage's organ at
 # 120 Hz keeps its body (16 seeds, ml/targets.py): the "other" stem's 150-500

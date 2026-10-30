@@ -183,12 +183,13 @@ Each entry gives the commit, what changed, and the effect as before → after
     → 0.554 (0.902)
   - These are the most likely to read as "more wash" by ear. The judge
     disliked more reverb before (dubstep space ×1.6, dark garage ×2.5).
-- **Listen to this one first, the biggest audible change today: roots'
-  held organ.** An organ holds each chord under the stabs, from its first
+- **Listen to this one first, the biggest audible change today: the
+  held organ, roots and steppers.** An organ holds each chord under the stabs, from its first
   stab to the next chord (audio.HELD_ORGAN). It's a new sound in the
   song, not a level change, so it's the one most likely to be wrong to the
   ear.
-  - how often the "other" stem sounds: 0.548 → 0.708 (0.768)
+  - how often the "other" stem sounds: 0.548 → 0.708 (0.768); steppers, at
+    half the level, 0.560 → 0.599 (0.770)
   - its 150–500 Hz share 0.237 → 0.278 (0.384), 500–2500 Hz 0.553 → 0.529
     (0.476), 2.5–10 kHz 0.210 → 0.193 (0.087)
   - The mix's drum lean moved away, −2.2 → −3.2 ms. The drums-only bus's
