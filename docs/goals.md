@@ -142,6 +142,43 @@ What follows:
   judge is right on the big calls at least: 12 pairs can only show a strong
   agreement, not a weak one.
 
+## Checkpoint at f40ffac (30 October): the gaps that are left
+
+`goal_check --instrumental --seeds 16` (renders in goals6/), then
+`ml/gaps.py goals6`: every measured target's mean over the 16 songs against
+the records', in units of its tolerance (ml/targets.py).
+
+| profile | own family | FAD | closeness | real |
+|---|---|---|---|---|
+| roots_dub | 8/16 | 0.326 | 0.798 | 0.98 |
+| steppers_dub | 12/16 | 0.327 | 0.844 | 0.99 |
+| dubstep_140 | 2/16 | 0.376 | 0.790 | 0.87 |
+| dark_garage | 0/16 | 0.425 | 0.764 | 0.55 |
+| uk_garage | 8/16 | 0.387 | 0.768 | 0.61 |
+
+The largest gaps, ranked. Ours, then the records' figure in brackets:
+
+| rank | profile | target | ours (records) | tolerances | kind |
+|---|---|---|---|---|---|
+| 1 | dubstep_140 | bass stem under 60 Hz | 0.547 (0.898) | −35 | artifact: Demucs files our 140 sub under drums |
+| 2 | dark_garage | "other" 500–2500 / 150–500 Hz | 0.786 / 0.150 (0.448 / 0.487) | ±34 | probably artifact: the records' mid-bass and reese land in "other", ours in "bass" (see 6) |
+| 3 | dubstep_140 | "other" 500–2500 Hz | 0.762 (0.459) | +30 | probably the same artifact |
+| 4 | roots_dub | drum stem snare / kick share | 0.532 / 0.360 (0.276 / 0.567) | +26 / −21 | **real: next to work on** |
+| 5 | roots_dub | bass onset-strength spread | 1.025 (0.611) | +21 | real |
+| 6 | dubstep_140 | bass stem 60–120 Hz | 0.282 (0.057) | +23 | artifact, the other side of 1 and 3 |
+| 7 | uk_garage | mix sub share | 0.345 (0.246) | +20 | real |
+| 8 | uk_garage | "other" 500–2500 Hz | 0.688 (0.502) | +19 | real: the organ (brightening it not kept) |
+| 9 | dark_garage | "other" held | 0.552 (0.902) | −18 | real |
+| 10 | steppers_dub | bass stem 60–120 Hz / under 60 | 0.672 / 0.194 (0.507 / 0.346) | +16 / −15 | real |
+| 11 | dubstep_140 | snare body | +3.7 (−12.2) dB | +16 | real |
+| 12 | steppers_dub | drum stem snare share | 0.407 (0.269) | +14 | real |
+
+Blocked on voice: the vocals stem sits 22–31 dB under the records' in every
+profile. In probe_gaps, "chopped and pitched vocal samples" is the widest
+word gap in dubstep and dark garage. probe_gaps' other words are loose: "a
+big drop" and "a drum machine loop" are over in most profiles, and "a piano"
+is over in roots (+2.3 sd).
+
 ## Kept on measured targets (29-30 October), to audition
 
 After the judges failed the blind test, changes were kept only when they
