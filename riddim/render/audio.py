@@ -154,6 +154,14 @@ DRIVE: dict[str, float] = {"roots_dub": 2.4, "steppers_dub": 3.5, "dubstep_140":
 # lower 0.336 0.822 0.97. None of them is heard as roots yet, and the probes'
 # "a piano" hardly moves (+1.7 to +1.8 sd): it is not the bass guitar.
 BASS_MID: dict[str, float] = {"roots_dub": 0.5}
+# The growl over the sub at 140 and in garage, per profile, multiplied in.
+# uk_garage's mix carries too much sub (0.360, records 0.246), 88% of it the
+# kick's. Not kept, 16 seeds each: the kick high-passed at 45 Hz brought the
+# sub to 0.288 but the low mids rose past the records (0.143 -> 0.164,
+# records 0.116); with the master's low mids 1.5 dB down the organ thinned
+# in the "other" stem; at 35 Hz the low mids still rose; with this growl at
+# 0.6 the level, the bass stem's 60-120 Hz and the snare share moved away.
+GROWL: dict[str, float] = {}
 # The kit's character per profile, measured on Demucs drum stems against
 # the records' (ml/drum_stem.py): "snare_body" scales the synthesised body
 # under the snare (and under dub's cross-stick), "snare_hp" high-passes the
@@ -1076,6 +1084,7 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
                         # Dark garage is the deep sub with a little growl over
                         # it; the judge heard a dubstep wobble in it (+1.5 sd).
                         mb = mb * 0.5
+                    mb = mb * GROWL.get(prof or "", 1.0)
                 else:
                     mb = _bass_guitar(note.midi + 12, dur, note.velocity, rnd) * BASS_MID.get(prof or "", 1.0)
                 _add(stems["bass"], start, _pan(mb, 0.0))
