@@ -169,6 +169,9 @@ BASS_MID: dict[str, float] = {"roots_dub": 0.5}
 # records 0.61), an advisory target (ml/targets.py).
 DRUM_SHAPE: dict[str, dict[str, float]] = {"steppers_dub": {"snare_body": 0.3, "hat_gain": 1.35},
                                            "uk_garage": {"snare_body": 0.3, "snare_hp": 350.0}}
+# A low-pass on the chords per profile (Hz), for an "other" stem brighter
+# than the records'.
+CHORDS_LP: dict[str, float] = {}
 # The reverb and delay returns per profile, multiplied in. The judge's text
 # probes heard our garage and 140 as "a dry close mix" (+1.7-1.8 sd against
 # the records). uk_garage x2.5 won the goal panel (garage FAD 0.392 -> 0.370,
@@ -1073,6 +1076,8 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
     # Clear the mud: only the kick and the sub own the bottom.
     for r, hp in (("chords", 220), ("pad", 160), ("lead", 200), ("perc", 120), ("bass", 70)):
         stems[r] = _hp(stems[r], hp)
+    if CHORDS_LP.get(prof or ""):
+        stems["chords"] = _lp(stems["chords"], CHORDS_LP[prof])
     stems["lead"] = stems["lead"] * (LEAD_LEVEL_DUB if family == "dub" else LEAD_LEVEL)
     stems["pad"] = stems["pad"] * (BUBBLE_LEVEL * BUBBLE_TRIM.get(prof or "", 1.0) if bubble else PAD_LEVEL)
     sends = dict(SENDS)

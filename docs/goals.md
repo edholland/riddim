@@ -141,3 +141,57 @@ What follows:
 - A bigger blind set, with more of the clear-win kind, would say whether the
   judge is right on the big calls at least: 12 pairs can only show a strong
   agreement, not a weak one.
+
+## Kept on measured targets (29-30 October), to audition
+
+After the judges failed the blind test, changes were kept only when they
+moved a measured target toward the records. The method:
+
+- ml/targets.py, 16 seeds paired
+- a 95% interval on each target, with a tolerance for collateral moves
+- drums, bass and "other" measured on Demucs stems split the same way as
+  the records' (ml/drum_stem.py)
+
+Each entry gives the commit, what changed, and the effect as before → after
+(records).
+
+- **c6ee02f: a drummer's timing for steppers, dubstep, dark and uk garage.**
+  Each kit hit is a few ms off the grid and laid back.
+  - jitter: steppers 10.8 → 11.3 ms (13.0), dubstep 9.5 → 11.6 (13.9), dark
+    garage 8.8 → 11.1 (13.6), uk garage 11.9 → 12.5 (13.7)
+  - lean: steppers −6.9 → −5.2 ms (−4.1), dubstep −8.6 → −6.1 (−1.8), dark
+    garage −9.6 → −7.1 (−2.6), uk garage −6.2 → −4.4 (−2.6)
+- **339c461: steppers' snare body ×0.3 and hats ×1.35.**
+  - snare body against its crack: +8.3 → +6.7 dB (+0.4)
+  - hat share of the drum stem: 0.058 → 0.064 (0.082)
+- **4bc7c07: uk garage's snare high-passed at 350 Hz, body ×0.3, tone sub
+  −1.5 dB.**
+  - snare body: +6.0 → +3.9 dB (−2.8)
+  - snare share: 0.43 → 0.31 (0.28)
+  - kick share: 0.50 → 0.63 (0.58)
+- **6f0f982: roots and steppers bass notes 0.8 as long.**
+  - how often the sub sounds: roots 0.751 → 0.737 (0.694), steppers 0.780 →
+    0.768 (0.691)
+- **b8ea49a: steppers' organ bubble +4 dB.**
+  - "other" stem 2.5–10 kHz share: 0.191 → 0.174 (0.060)
+  - its 150–500 Hz share: 0.316 → 0.344 (0.356)
+  - how often it sounds: 0.427 → 0.440 (0.770)
+- **87b96bf, 59fbbd0: chords' reverb and delay sends ×2 in roots, steppers,
+  dubstep and dark garage.**
+  - how often the "other" stem sounds: roots 0.394 → 0.436 (0.768), steppers
+    0.438 → 0.473 (0.770), dubstep 0.436 → 0.519 (0.747), dark garage 0.438
+    → 0.554 (0.902)
+  - These are the most likely to read as "more wash" by ear. The judge
+    disliked more reverb before (dubstep space ×1.6, dark garage ×2.5).
+
+Tried and not kept:
+
+- louder hats elsewhere
+- the snare change in dubstep
+- bass registers lowered (the bass stem moved toward the records, but the
+  mix's sub moved away)
+- shorter bass in the 140 profiles (no measurable move)
+- every reverb return ×1.6
+- a bigger bubble
+- chords low-passed at 3 kHz in roots (brightness right, the mids away)
+- longer skank notes (no measurable move)
