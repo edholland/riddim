@@ -509,6 +509,10 @@ def _resolve_structure(params: SongParams, prof: Profile, rng: random.Random) ->
     if params.structure is None:
         params.structure = structure.params_for_family(prof.family, srng, params.bpm or prof.bpm)
     arrangement = structure.generate(params.structure, srng, name=prof.family)
+    if prof.bubble_through and prof.pad_style == "bubble":
+        for sec in arrangement.sections:
+            if "chords" in sec.active and "pad" not in sec.active:
+                sec.active = tuple(sec.active) + ("pad",)
     params.sections = [_section_spec(s) for s in arrangement.sections]
     return arrangement
 

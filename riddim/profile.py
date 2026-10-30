@@ -112,6 +112,11 @@ class Profile:
     # machine loop" (+2.0 sd against the records) whatever samples it plays,
     # so the programming is the gap, not the sound.
     drummer: float = 0.0
+    # The organ bubble through every section the chords play in (bubble pad
+    # profiles), the song's own leaving-out of the pad notwithstanding: dub's
+    # keys sustain by bubbling, and the records' "other" stem sounds far more
+    # of the time than ours.
+    bubble_through: bool = False
     # ... and the bigger changes a player makes between eight-bar blocks: the
     # chance a block plays another hat figure (a rung busier, only the
     # offbeat eighths, or the hats out for its first four bars). Roots records
@@ -154,6 +159,9 @@ ROOTS_DUB = Profile(
     # it sounds; ml/targets.py, 16 seeds): roots 0.751 -> 0.737 (records 0.694), bass band 0.566 -> 0.558 (0.548). At 0.6 roots' high mids
     # moved away; dark garage's did not move, dubstep and uk garage's barely.
     bass_note_length=0.8,
+    # The bubble through every section the chords play in, 16 seeds:
+    # other_held 0.534 -> 0.550 (records 0.768), other_high toward, nothing away.
+    bubble_through=True,
     drummer=0.6,
     # Hat-figure blocks (52bc0cf) lost on the goal panel, 8 seeds against
     # df646bc: FAD 0.342 -> 0.348, real 0.92 -> 0.88, still 0/8 heard as

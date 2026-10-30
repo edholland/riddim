@@ -53,7 +53,11 @@ def stem_measure(path: str) -> dict[str, float]:
         return json.load(open(cache))
     tmp = tempfile.mkdtemp(prefix="tstem_")
     try:
-        mine_cells.split(path, os.path.join(tmp, "s"))
+        try:
+            mine_cells.split(path, os.path.join(tmp, "s"))
+        except Exception:     # Demucs fails now and then (the Mac asleep): once more
+            shutil.rmtree(os.path.join(tmp, "s"), ignore_errors=True)
+            mine_cells.split(path, os.path.join(tmp, "s"))
         m = {**drum_stem.metrics(os.path.join(tmp, "s", "drums.wav")),
              **drum_stem.bass_metrics(os.path.join(tmp, "s", "bass.wav")),
              **drum_stem.other_metrics(os.path.join(tmp, "s", "other.wav"))}
