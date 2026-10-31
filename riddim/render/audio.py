@@ -205,7 +205,8 @@ HELD_ORGAN_SWELL = 0.0     # seconds
 # reverb, as on the old dub desks. Roots at 3.5 kHz, 16 seeds: the "other"
 # stem's 2.5-10 kHz share 0.193 -> 0.189 (records 0.087), centroid -14 Hz,
 # nothing away; a small move - the brightness is mostly the skank itself.
-RETURNS_LP: dict[str, float] = {"roots_dub": 3500.0}
+# Steppers the same: 0.184 -> 0.179 (0.060), other_mid toward.
+RETURNS_LP: dict[str, float] = {"roots_dub": 3500.0, "steppers_dub": 3500.0}
 # The chords' high-pass, per profile (220 Hz otherwise). uk_garage's organ at
 # 120 Hz keeps its body (16 seeds, ml/targets.py): the "other" stem's 150-500
 # Hz share 0.278 -> 0.288 (records 0.402), 500-2500 0.703 -> 0.693 (0.502),
