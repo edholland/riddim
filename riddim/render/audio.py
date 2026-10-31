@@ -201,6 +201,11 @@ CHORDS_LP: dict[str, float] = {}
 # 1.0 its low mids overshot (0.391) over the bubble it already has.
 HELD_ORGAN: dict[str, float] = {"roots_dub": 1.0, "steppers_dub": 0.5}
 HELD_ORGAN_SWELL = 0.0     # seconds
+# The plate and spring returns low-passed, per profile (Hz): darker
+# reverb, as on the old dub desks. Roots at 3.5 kHz, 16 seeds: the "other"
+# stem's 2.5-10 kHz share 0.193 -> 0.189 (records 0.087), centroid -14 Hz,
+# nothing away; a small move - the brightness is mostly the skank itself.
+RETURNS_LP: dict[str, float] = {"roots_dub": 3500.0}
 # The chords' high-pass, per profile (220 Hz otherwise). uk_garage's organ at
 # 120 Hz keeps its body (16 seeds, ml/targets.py): the "other" stem's 150-500
 # Hz share 0.278 -> 0.288 (records 0.402), 500-2500 0.703 -> 0.693 (0.502),
@@ -1237,6 +1242,8 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
 
     plate = _convolve(_hp(plate_send, 300), _norm_ir(_sample("ir/emt_140_dark_2")))
     spring = _convolve(spring_send, _spring_ir(17))
+    if RETURNS_LP.get(prof or ""):
+        plate, spring = _lp(plate, RETURNS_LP[prof]), _lp(spring, RETURNS_LP[prof])
     hall = _convolve(_hp(hall_send, 250), _norm_ir(_sample("ir/large_long_echo_hall")))
     # The kit in a room: a little of a real drum room on every hit.
     stems["drums"] = stems["drums"] + 0.22 * _convolve(
