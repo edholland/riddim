@@ -234,6 +234,13 @@ Each entry gives the commit, what changed, and the effect as before → after
     picking, not the drums. Lean and jitter are advisory for changes that
     leave the drums alone, once a drums-only-bus check shows them unchanged
     (ml/targets.py).
+- **Roots' skank darker and fuller** (5 kHz low-pass, −3 dB at 2.2 kHz, +3 dB
+  at 500 Hz), and darker plate and spring returns in roots and steppers
+  (3.5 kHz). A tone change you'll hear on every offbeat.
+  - roots' "other" stem 2.5–10 kHz share 0.189 → 0.114 (0.087), 150–500 Hz
+    0.281 → 0.385 (0.384), centroid 2275 → 2018 Hz (1884)
+- **eda2fb9: roots' snare ×0.6 in the kit, sub 1.5 dB lower.** Drum stem
+  kick share 0.346 → 0.388 (0.567), snare 0.541 → 0.515 (0.276).
 - **44a5ebc, 85eee4c: the organ bubble through every section the chords
   play in, roots and steppers; steppers' bubble back at its plain level (the
   +4 dB of b8ea49a removed).**

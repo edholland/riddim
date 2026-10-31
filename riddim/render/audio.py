@@ -187,8 +187,13 @@ DRUM_SHAPE: dict[str, dict[str, float]] = {"roots_dub": {"snare_gain": 0.6},
                                            "steppers_dub": {"snare_body": 0.3, "hat_gain": 1.35},
                                            "uk_garage": {"snare_body": 0.3, "snare_hp": 350.0}}
 # A low-pass on the chords per profile (Hz), for an "other" stem brighter
-# than the records'.
-CHORDS_LP: dict[str, float] = {}
+# than the records'. Roots' skank, at 5 kHz with CHORDS_TONE's dip at 2.2 kHz
+# and lift at 500 Hz - a darker, fuller guitar - 16 seeds: the "other" stem's
+# 150-500 Hz share 0.281 -> 0.385 (records 0.384), 500-2500 0.530 -> 0.501
+# (0.476), 2.5-10k 0.189 -> 0.114 (0.087), centroid 2275 -> 2018 Hz (1884);
+# the mix's low and high mids toward. The low-pass alone (or at 3 kHz) put
+# the mids away; with a +2 dB lift, the mix's bass band.
+CHORDS_LP: dict[str, float] = {"roots_dub": 5000.0}
 # ... and the tone EQ's five bands on the chords alone (dB), per profile.
 # An organ holding each chord under the dub stabs, at this gain, per profile
 # (the records' keys sound far more of the time than ours). Roots, 16 seeds
@@ -220,7 +225,7 @@ CHORDS_HP: dict[str, float] = {"uk_garage": 120.0}
 # 500 Hz on the chords made that worse; 0.5 moved nothing. Voicing the chords
 # up a fifth or an octave thinned the body the same way.
 CHORDS_TOP_OCTAVE: dict[str, float] = {}
-CHORDS_TONE: dict[str, dict[str, float]] = {}
+CHORDS_TONE: dict[str, dict[str, float]] = {"roots_dub": {"high_mid": -3.0, "low_mid": 3.0}}
 # The reverb and delay returns per profile, multiplied in. The judge's text
 # probes heard our garage and 140 as "a dry close mix" (+1.7-1.8 sd against
 # the records). uk_garage x2.5 won the goal panel (garage FAD 0.392 -> 0.370,
