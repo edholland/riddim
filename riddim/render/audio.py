@@ -192,8 +192,11 @@ DRUM_SHAPE: dict[str, dict[str, float]] = {"roots_dub": {"snare_gain": 0.6},
 # 150-500 Hz share 0.281 -> 0.385 (records 0.384), 500-2500 0.530 -> 0.501
 # (0.476), 2.5-10k 0.189 -> 0.114 (0.087), centroid 2275 -> 2018 Hz (1884);
 # the mix's low and high mids toward. The low-pass alone (or at 3 kHz) put
-# the mids away; with a +2 dB lift, the mix's bass band.
-CHORDS_LP: dict[str, float] = {"roots_dub": 5000.0}
+# the mids away; with a +2 dB lift, the mix's bass band. Steppers at 5 kHz
+# alone (its low mids already at the records'; with roots' tone they
+# overshot, 0.356 -> 0.462): 2.5-10k 0.178 -> 0.160 (0.060), 500-2500
+# 0.463 -> 0.474 (0.535), centroid -85 Hz, nothing away.
+CHORDS_LP: dict[str, float] = {"roots_dub": 5000.0, "steppers_dub": 5000.0}
 # ... and the tone EQ's five bands on the chords alone (dB), per profile.
 # An organ holding each chord under the dub stabs, at this gain, per profile
 # (the records' keys sound far more of the time than ours). Roots, 16 seeds
