@@ -201,6 +201,15 @@ is over in roots (+2.3 sd).
   of the time, with a 2-4 kHz presence lift and the stabs and pad ducking
   up to 30% under it. Exempt from the targets rule: it moves the band and
   stem shares, and the targets don't get a vote.
+  - **Then darkened (same day):** the lifted lead had pushed the mix's 1-5 kHz
+    share far past the records' (uk 0.041 -> 0.131, records 0.069; roots
+    0.278, records 0.097). Demucs files our synth lead under "other", not
+    "vocals", so the records' "other" and "vocals" together are the
+    comparison: on that, the lead sat 0-1 dB hot in dubstep, dark garage
+    and roots and ~3 dB hot in steppers and uk. Now low-passed at 3.5 kHz
+    with no presence lift (centroid ~2.6 -> ~2.0 kHz), the dub leads 2 dB
+    down: 8-9 dB under the mix while it plays. Needs Ed's ears: if it's
+    buried again, the level comes back before the brightness does.
 
 ## The hook blind test (1 November, ml/hook_ab.py)
 

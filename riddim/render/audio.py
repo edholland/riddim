@@ -101,13 +101,21 @@ LEAD_LEVEL_DUB = 0.25
 # Ed's call (2026-11-01), over the targets and the judge: at those levels the
 # drops' lead sat 24-30 dB under the mix while it played - "I can't even hear
 # them". Lifted per profile so it sits about 6 dB under the full mix while it
-# plays (median, seed 401's drops), like a lead line or vocal on a record, with a little presence
-# (2-4 kHz) and the stabs and pad ducking a few dB under it.
-LEAD_LIFT_DB: dict[str, float] = {"roots_dub": 18.0, "steppers_dub": 23.0, "dubstep_140": 18.0,
+# plays (median, seed 401's drops), like a lead line or vocal on a record, with
+# the stabs and pad ducking a few dB under it.
+# Then darkened toward the records' voices (Demucs files a record's leads and
+# vocals in its "vocals" stem): the lifted lead pushed the mix's 1-5 kHz share
+# far past the records' (uk 0.041 -> 0.131, records 0.069; roots 0.278,
+# records 0.097). Low-passed at 3.5 kHz with no presence lift, the lead's
+# centroid falls ~2.6 -> ~2.0 kHz, nearer a voice's, and uk's 1-5 kHz to
+# 0.104; the dub leads (a reed, brightest of all) also 2 dB down. Now 8-9 dB
+# under the mix while they play (median, seed 401), not the 24-30 Ed
+# couldn't hear.
+LEAD_LIFT_DB: dict[str, float] = {"roots_dub": 16.0, "steppers_dub": 21.0, "dubstep_140": 18.0,
                                   "dark_garage": 19.5, "uk_garage": 19.0}
-LEAD_PRESENCE = 0.5          # 2-4 kHz band added back, as a share of the lead
+LEAD_PRESENCE = 0.0          # 2-4 kHz band added back, as a share of the lead
 LEAD_PRESENCE_BY: dict[str, float] = {}     # per profile, over LEAD_PRESENCE
-LEAD_LP: dict[str, float] = {}              # a low-pass on the lead per profile (Hz)
+LEAD_LP: dict[str, float] = {p: 3500.0 for p in LEAD_LIFT_DB}   # a low-pass on the lead (Hz)
 LEAD_DUCK = 0.3              # how far the stabs and pad dip under the lead
 # The pad is the "new age" in every genre: at half level it halves.
 PAD_LEVEL = 0.5
