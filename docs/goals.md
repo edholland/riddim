@@ -343,6 +343,12 @@ Each entry gives the commit, what changed, and the effect as before → after
   punchier, tighter kick. Kept over one move away - the hats' hit spread in
   the mix (0.548 -> 0.524) - that the clean drum bus shows is the detector,
   not the hats (0.538 -> 0.536).
+  - Against it: on the clean bus the drums' share of the mix's 60-150 Hz
+    went 39% -> 58% (8 seeds); the records' is 24% (from their stems).
+    Inside the drums the kick now sits nearer the records', but the drums
+    as a whole are louder in the mix than the records' (-5.1 against -8.1
+    dB). If it sounds too kick-heavy, that is why - the drums down, rather
+    than this undone, is the next thing to try.
 - **Roots' master mids refitted (low mids +1.1 dB, high mids −0.9 dB), with
   the snare ×0.55 and hats ×1.15** (ml/fit_tone.py on seeds 1–8, confirmed
   on 101–116). Low mids 0.141 → 0.159 (0.163), high mids 0.111 → 0.096
