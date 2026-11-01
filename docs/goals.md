@@ -276,6 +276,13 @@ Each entry gives the commit, what changed, and the effect as before → after
 
 Tried and not kept:
 
+- uk's kick sub decay (229 ms) fitted with the master tone (ml/fit_tone.py
+  --decay, seeds 1-8: loss 194 -> 56): reverted on 101-116, high mids
+  0.155 -> 0.258 (records 0.069). The fit ran across the lead lift (Ed's
+  call, c3b65cf), which by itself took uk's high-mid share 0.041 -> 0.155:
+  the gap table needs re-baselining with the louder lead before any more
+  band-share tuning.
+
 - The master tone fitted jointly (ml/fit_tone.py, seeds 1–8, every band
   within ±3 dB, confirmed on 101–116). Steppers and uk didn't pass, and in
   roots only the mids passed (kept above). Any sub cut on the master takes
