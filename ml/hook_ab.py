@@ -30,8 +30,8 @@ import blind_ab  # noqa: E402
 
 OUT = os.path.join(REPO, "ab-hooks")
 CLIP_SECONDS = 45.0
-PAIRS = [(p, s) for p in ("roots_dub", "steppers_dub", "dubstep_140", "dark_garage", "uk_garage")
-         for s in (401, 402)]
+PROFILES = ("roots_dub", "steppers_dub", "dubstep_140", "dark_garage", "uk_garage")
+PAIRS = [(p, s) for p in PROFILES for s in (401, 402)]
 
 
 def _lead_db(lead, sr: int) -> float:
@@ -57,7 +57,8 @@ def cmd_build(a) -> int:
     blind_ab.CLIP_SECONDS = CLIP_SECONDS
     os.makedirs(os.path.join(a.out, "clips"), exist_ok=True)
     meta = []
-    for i, (prof, seed) in enumerate(PAIRS):
+    pairs = [(p, int(x)) for p in PROFILES for x in a.seeds.split(",")] if a.seeds else PAIRS
+    for i, (prof, seed) in enumerate(pairs):
         rule = compose(prof, seed=seed)
         model = model_lead.write(compose(prof, seed=seed), take=0, style=a.style)
         span = blind_ab._span(rule)
@@ -146,6 +147,7 @@ def main(argv=None) -> int:
     ap.add_argument("--port", type=int, default=8778)
     ap.add_argument("--salt", default="hooks", help="build: varies the clip file names")
     ap.add_argument("--style", default="rhythm", choices=("rhythm", "free"))
+    ap.add_argument("--seeds", default="", help="build: seeds per profile, e.g. 403,404 (default 401,402)")
     ap.add_argument("--no-browser", action="store_true")
     a = ap.parse_args(argv)
     if a.step == "serve":
