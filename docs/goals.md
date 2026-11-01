@@ -190,6 +190,16 @@ is over in roots (+2.3 sd).
   up to 30% under it. Exempt from the targets rule: it moves the band and
   stem shares, and the targets don't get a vote.
 
+## The hook blind test (1 November, ml/hook_ab.py)
+
+Ten pairs, each one song with riddim's lead and with the base model's
+(music-medium-800k, not fine-tuned) in the drops, the leads level-matched.
+Ed preferred the model's hook in 6, riddim's in 3, and couldn't tell in 1
+(p = 0.51 by chance: not yet a result). By style: the 140 and garage
+profiles went to the model 5 of 6 (dubstep 2/2, uk 2/2, dark garage 1/2);
+the dub profiles 1 model, 2 riddim, 1 can't tell. The fine-tune (models/v3)
+gets the same test when it finishes.
+
 ## Kept on measured targets (29-30 October), to audition
 
 After the judges failed the blind test, changes were kept only when they
