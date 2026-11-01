@@ -179,6 +179,46 @@ word gap in dubstep and dark garage. probe_gaps' other words are loose: "a
 big drop" and "a drum machine loop" are over in most profiles, and "a piano"
 is over in roots (+2.3 sd).
 
+## Re-baseline with the audible lead (1 November, 8 songs a profile, seeds 301-308)
+
+The louder lead moves the full mix's band shares, and Demucs files our synth
+lead under "other" where the records' leads and vocals go to "vocals" - so
+from now on the stem targets are measured on the same song rendered with its
+lead muted (ml/targets.py write_nolead; ml/gaps.py and targets.ab do it),
+and the full-mix targets with it. Muted, the "other" stem is back where it
+was on 30 October (dubstep/dark garage 500-2500 Hz 0.74/0.75, then 0.76/
+0.79): those gaps predate the lead. The largest gaps now:
+
+| profile | target | ours | records | gap (tolerances) | note |
+|---|---|---|---|---|---|
+| dark_garage | other_lowmid | 0.153 | 0.487 | -33.5 |  |
+| dubstep_140 | bass_sub | 0.591 | 0.898 | -30.7 | artifact |
+| dark_garage | other_mid | 0.746 | 0.448 | +29.8 |  |
+| dubstep_140 | other_mid | 0.737 | 0.459 | +27.7 |  |
+| dubstep_140 | bass_low | 0.278 | 0.057 | +22.1 |  |
+| roots_dub | snare_share | 0.496 | 0.276 | +22.0 |  |
+| uk_garage | other_mid | 0.705 | 0.502 | +20.3 |  |
+| dark_garage | other_held | 0.510 | 0.902 | -19.6 |  |
+| uk_garage | bass | 0.394 | 0.487 | -18.5 |  |
+| steppers_dub | bass_low | 0.685 | 0.507 | +17.8 |  |
+| uk_garage | bass_sub | 0.241 | 0.413 | -17.2 |  |
+| dubstep_140 | snare_body_db | 4.286 | -12.156 | +16.4 |  |
+| roots_dub | bass_cv | 0.933 | 0.611 | +16.1 | advisory |
+| steppers_dub | high_mid | 0.130 | 0.050 | +16.0 |  |
+| roots_dub | cv_kick | 0.829 | 0.516 | +15.7 | advisory |
+| dubstep_140 | other_lowmid | 0.164 | 0.321 | -15.7 |  |
+| uk_garage | bass_cv | 1.044 | 0.747 | +14.9 | advisory |
+| steppers_dub | other_high | 0.207 | 0.060 | +14.7 |  |
+| roots_dub | high_mid | 0.169 | 0.097 | +14.4 |  |
+| steppers_dub | other_held | 0.484 | 0.770 | -14.3 |  |
+
+
+Kept changes to recheck under the audible lead (they were judged on full-mix
+band shares when the lead was 24-30 dB down): roots' master mids refit and
+kit trims (b04e813); the dub snare and sub trims (eda2fb9). The skank and
+returns low-passes (8f26d52, 362c2b0, fd175b6) were judged on the "other"
+stem, which the lead-muted split keeps comparable.
+
 ## Ed's calls (over the targets)
 
 - **The trained model writes the drops' hooks by default (1 November),

@@ -47,23 +47,38 @@ STEM = ("kick_share", "snare_share", "hat_share", "hat_centroid_hz", "hat_decay_
         "other_lowmid", "other_mid", "other_high", "other_centroid_hz", "other_onsets_s", "other_held")
 
 
-def stem_measure(path: str) -> dict[str, float]:
+def write_nolead(song, path: str) -> str:
+    """The song rendered with its lead muted, beside `path`, for the stem
+    split: Demucs files a record's leads and vocals under "vocals" but our
+    synth lead under "other", so the records' "other" is matched by ours
+    without the lead (docs/goals.md, 1 November)."""
+    from blind_ab import patched
+    from riddim.render import audio
+    out = path[:-4] + ".nolead.wav"
+    with patched([("attr", audio, "LEAD_LEVEL", 0.0), ("attr", audio, "LEAD_LEVEL_DUB", 0.0)]):
+        audio.write(song, out)
+    return out
+
+
+def stem_measure(path: str, song=None) -> dict[str, float]:
     """The drum stem's character (ml/drum_stem.py), split as the records'
-    were; cached beside the render."""
+    were; cached beside the render. With `song`, the split is of the song
+    rendered without its lead (write_nolead)."""
     import shutil
     import tempfile
     import drum_stem
     import mine_cells
-    cache = path[:-4] + ".stems3.json"
+    cache = path[:-4] + (".stems3nl.json" if song is not None else ".stems3.json")
     if os.path.exists(cache):
         return json.load(open(cache))
     tmp = tempfile.mkdtemp(prefix="tstem_")
+    src = write_nolead(song, os.path.join(tmp, "mix.wav")) if song is not None else path
     try:
         try:
-            mine_cells.split(path, os.path.join(tmp, "s"))
+            mine_cells.split(src, os.path.join(tmp, "s"))
         except Exception:     # Demucs fails now and then (the Mac asleep): once more
             shutil.rmtree(os.path.join(tmp, "s"), ignore_errors=True)
-            mine_cells.split(path, os.path.join(tmp, "s"))
+            mine_cells.split(src, os.path.join(tmp, "s"))
         m = {**drum_stem.metrics(os.path.join(tmp, "s", "drums.wav")),
              **drum_stem.bass_metrics(os.path.join(tmp, "s", "bass.wav")),
              **drum_stem.other_metrics(os.path.join(tmp, "s", "other.wav"))}
@@ -189,9 +204,10 @@ def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str,
         m[side] = []
         for s in seeds:
             f = os.path.join(out_dir, side, f"{profile}_{s}.wav")
-            if not os.path.exists(f):
-                with patched(changes):
-                    audio.write(compose(profile, seed=s), f)
+            with patched(changes):
+                song = compose(profile, seed=s)
+                if not os.path.exists(f):
+                    audio.write(song, f)
             cache = f[:-4] + ".targets.json"
             if os.path.exists(cache):
                 x = json.load(open(cache))
@@ -199,7 +215,8 @@ def ab(profile: str, a_changes: list, b_changes: list, seeds, out_dir: str,
                 x = measure(f)
                 json.dump(x, open(cache, "w"))
             if stems:
-                x = {**x, **stem_measure(f)}
+                with patched(changes):
+                    x = {**x, **stem_measure(f, song)}
             m[side].append(x)
             if not keep_audio and side == "b":
                 os.remove(f)          # measured and cached: the disk is small

@@ -40,7 +40,9 @@ def measure(folder: str, profile: str) -> dict[str, float]:
         else:
             x = targets.measure(f)
             json.dump(x, open(cache, "w"))
-        rows.append({**x, **targets.stem_measure(f)})
+        from riddim.compose import compose
+        seed = int(os.path.basename(f)[len(profile) + 1:-4])
+        rows.append({**x, **targets.stem_measure(f, compose(profile, seed=seed))})
     keys = targets.TARGETS + targets.STEM
     return {k: float(np.nanmean([r[k] if r.get(k) is not None else np.nan for r in rows])) for k in keys} | \
         {"n": len(rows)}
