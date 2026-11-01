@@ -368,6 +368,14 @@ Tried and not kept:
   toward, but the sub band held longer (0.789 -> 0.815, records 0.669) and
   the bass stem's notes shorter: can't tell. The closest candidate yet for
   uk's bottom end - one to hear rather than measure further.
+- The same deeper sub in steppers (Register 24-45): reverted. Its bass stem
+  lands on the records' too (sub share 0.170 -> 0.382, records 0.346; 60-150
+  0.642 -> 0.494, 0.507), but the mix's sub band 0.270 -> 0.339 (0.264), its
+  60-250 band 0.471 -> 0.378 (0.500) and the sub held longer. In both, the
+  records keep a deep bass stem and a full 60-250 band at once: the 60-250
+  energy our mixes lack when the sub goes deep must come from somewhere else
+  in the records' band (the kick's body, the drums) - the next thing to
+  measure, not the sub.
 
 - uk's kick sub decay (229 ms) fitted with the master tone (ml/fit_tone.py
   --decay, seeds 1-8: loss 194 -> 56): reverted on 101-116, high mids
