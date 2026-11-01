@@ -37,6 +37,7 @@ BANDS = targets.BANDS
 DRUMS = ("kick_share", "snare_share", "hat_share")
 SPAN = 3.0
 HP = (30.0, 60.0)
+DECAY = (60.0, 800.0)   # kick_sub_decay_ms, with --decay
 
 
 def shares(x: np.ndarray, sr: int) -> dict[str, float]:
@@ -55,6 +56,8 @@ def evaluate(profile: str, songs: list, base_tone: dict, base_shape: dict, v: np
     hp = float(v[5])
     shape = {**base_shape, **({"kick_hp": hp} if hp > HP[0] + 1 else {})}
     shape.pop("kick_hp", None) if hp <= HP[0] + 1 else None
+    if len(v) > 6:
+        shape["kick_sub_decay_ms"] = float(v[6])
     rows = []
     f = os.path.join(tempfile.gettempdir(), f"fit_{profile}_drums.wav")
     old_t, old_s = audio.TONE.get(profile), audio.DRUM_SHAPE.get(profile)
@@ -84,6 +87,8 @@ def main(argv=None) -> int:
     ap.add_argument("profile")
     ap.add_argument("--seeds", type=int, default=8)
     ap.add_argument("--evals", type=int, default=40)
+    ap.add_argument("--decay", type=float, default=0.0,
+                    help="also fit the kick's sub decay (DRUM_SHAPE kick_sub_decay_ms), from this many ms")
     a = ap.parse_args(argv)
     p = a.profile
     rec = {**targets.records(p), **targets.stem_records(p)}
@@ -92,8 +97,8 @@ def main(argv=None) -> int:
     base_shape = dict(audio.DRUM_SHAPE.get(p, {}))
     hp0 = base_shape.get("kick_hp", HP[0])
     log = os.path.join(REPO, "references", "stats", f"fit_tone_{p}.jsonl")
-    lo = np.array([-SPAN] * 5 + [HP[0]])
-    hi = np.array([SPAN] * 5 + [HP[1]])
+    lo = np.array([-SPAN] * 5 + [HP[0]] + ([DECAY[0]] if a.decay else []))
+    hi = np.array([SPAN] * 5 + [HP[1]] + ([DECAY[1]] if a.decay else []))
     best = {"loss": np.inf}
 
     def loss(v):
@@ -112,14 +117,16 @@ def main(argv=None) -> int:
                "gaps": {k: round(g, 2) for k, g in gaps.items()}, "tone": m["tone"], "shape": m["shape"]}
         with open(log, "a") as fh:
             fh.write(json.dumps(row) + "\n")
-        print(f"{L:9.1f}  " + " ".join(f"{x:+.2f}" for x in v[:5]) + f"  hp {v[5]:.0f}  " +
+        print(f"{L:9.1f}  " + " ".join(f"{x:+.2f}" for x in v[:5]) + f"  hp {v[5]:.0f}" + (f" decay {v[6]:.0f}" if len(v) > 6 else "") + "  " +
               " ".join(f"{k} {g:+.1f}" for k, g in gaps.items()), flush=True)
         if L < best["loss"]:
             best.update(loss=L, row=row)
         return L
 
-    x0 = np.array([0.0] * 5 + [hp0])
-    simplex = [x0] + [x0 + np.eye(6)[i] * (1.5 if i < 5 else 10.0) for i in range(6)]
+    x0 = np.array([0.0] * 5 + [hp0] + ([a.decay] if a.decay else []))
+    n = len(x0)
+    step = [1.5] * 5 + [10.0] + [0.4 * (a.decay or 0)]
+    simplex = [x0] + [x0 + np.eye(n)[i] * step[i] for i in range(n)]
     minimize(loss, x0, method="Nelder-Mead",
              options={"maxfev": a.evals, "initial_simplex": np.array(simplex), "xatol": 0.1, "fatol": 1.0})
     print("BEST", json.dumps(best["row"]), flush=True)

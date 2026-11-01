@@ -1076,7 +1076,7 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
                 if note.midi == KICK and shape.get("kick_sub_decay_ms"):
                     # The kick's sub tail shortened, its punch kept: the part
                     # under 60 Hz decays on its own envelope.
-                    lo = sosfiltfilt(_sos("lp", 60.0, order=2), x, axis=0)
+                    lo = sosfiltfilt(_sos("lp", shape.get("kick_sub_split", 60.0), order=2), x, axis=0)
                     t = np.arange(len(x), dtype=np.float32) / SR
                     x = (x - lo) + lo * np.exp(-t * 1000.0 / shape["kick_sub_decay_ms"]).astype(np.float32)
                 if note.midi == SNARE and shape.get("snare_gain"):
