@@ -8,7 +8,8 @@
 Each pair is one song (one profile, one seed, the same params) rendered with
 riddim's lead and with the model's in the drops; nothing else differs. Both
 sides are cut to about 45 s from two bars before the first drop and matched
-in loudness, and the page, server and picks are ml/blind_ab.py's, so which
+in loudness, with the two leads at one level while they play (the model's
+re-rendered to the rule's), and the page, server and picks are ml/blind_ab.py's, so which
 side is which never reaches the page. RIDDIM_ML_MODEL picks the model (the
 base music-medium-800k unless a fine-tune is under ~/ml/models).
 """
@@ -33,6 +34,18 @@ PAIRS = [(p, s) for p in ("roots_dub", "steppers_dub", "dubstep_140", "dark_gara
          for s in (401, 402)]
 
 
+def _lead_db(lead, sr: int) -> float:
+    """The lead's level while it plays: RMS over the 100 ms windows within
+    30 dB of its loudest."""
+    import numpy as np
+    x = lead.mean(axis=1)
+    w = int(0.1 * sr)
+    n = len(x) // w
+    r = np.sqrt((x[: n * w].reshape(n, w) ** 2).mean(axis=1)) + 1e-12
+    on = r > r.max() * 10 ** (-30 / 20)
+    return float(20 * np.log10(np.sqrt(np.mean(r[on] ** 2))))
+
+
 def cmd_build(a) -> int:
     from riddim import model_lead
     from riddim.compose import compose
@@ -48,7 +61,24 @@ def cmd_build(a) -> int:
         rule = compose(prof, seed=seed)
         model = model_lead.write(compose(prof, seed=seed), take=0, style=a.style)
         span = blind_ab._span(rule)
-        sides = {"model": audio.render(model, span), "rule": audio.render(rule, span)}
+        sides, lead_db = {}, {}
+        for side, song in (("rule", rule), ("model", model)):
+            so: dict = {}
+            sides[side] = audio.render(song, span, stems_out=so)
+            lead_db[side] = _lead_db(so["lead"], audio.SR)
+        # The two leads at one level (while they play), so the louder hook
+        # can't win on loudness: the model's re-rendered at the rule's.
+        trim = lead_db["rule"] - lead_db["model"]
+        if abs(trim) > 0.5:
+            old = dict(audio.LEAD_LIFT_DB)
+            audio.LEAD_LIFT_DB[prof] = old.get(prof, 0.0) + trim
+            try:
+                so = {}
+                sides["model"] = audio.render(model, span, stems_out=so)
+                lead_db["model"] = _lead_db(so["lead"], audio.SR)
+            finally:
+                audio.LEAD_LIFT_DB.clear()
+                audio.LEAD_LIFT_DB.update(old)
         m, r = blind_ab._match(sides["model"], sides["rule"])
         files = {}
         for side, x in (("model", m), ("rule", r)):
@@ -57,8 +87,9 @@ def cmd_build(a) -> int:
             files[side] = name
         # The server hands the page files["kept"] and files["other"], unlabelled.
         meta.append({"id": i, "profile": prof, "seed": seed, "model": str(model_lead.default_model()),
-                     "style": a.style, "files": {"kept": files["model"], "other": files["rule"]}})
-        print(f"  {i:2d} {prof:13s} {seed}", flush=True)
+                     "style": a.style, "lead_db": {k: round(v, 2) for k, v in lead_db.items()}, "files": {"kept": files["model"], "other": files["rule"]}})
+        print(f"  {i:2d} {prof:13s} {seed}  lead rule {lead_db['rule']:.1f} model {lead_db['model']:.1f} dB",
+              flush=True)
     with open(os.path.join(a.out, "pairs.json"), "w") as f:
         json.dump(meta, f, indent=1)
     with open(os.path.join(a.out, "index.html"), "w") as f:
