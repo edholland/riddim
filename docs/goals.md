@@ -219,6 +219,12 @@ kit trims (b04e813); the dub snare and sub trims (eda2fb9). The skank and
 returns low-passes (8f26d52, 362c2b0, fd175b6) were judged on the "other"
 stem, which the lead-muted split keeps comparable.
 
+Rechecked (seeds 101-116, the change undone against head): both stay.
+Undoing b04e813 put the high mids, the hats' brightness and the "other"
+stem away; undoing eda2fb9 put the kick and snare shares, the sub, the bass
+band and the loudness away. Roots' low mids now sit a little over the
+records' (0.191, records 0.163) with the lead in them.
+
 ## Ed's calls (over the targets)
 
 - **The trained model writes the drops' hooks by default (1 November),
