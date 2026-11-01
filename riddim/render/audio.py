@@ -98,6 +98,15 @@ LEAD_LEVEL = 0.4
 # judge's real-record probability 0.48 -> 0.68). Lower again and the tune
 # stops carrying the song, whatever the judge says - this is the middle.
 LEAD_LEVEL_DUB = 0.25
+# Ed's call (2026-11-01), over the targets and the judge: at those levels the
+# drops' lead sat 24-30 dB under the mix while it played - "I can't even hear
+# them". Lifted per profile so it sits about 6 dB under the full mix while it
+# plays (median, seed 401's drops), like a lead line or vocal on a record, with a little presence
+# (2-4 kHz) and the stabs and pad ducking a few dB under it.
+LEAD_LIFT_DB: dict[str, float] = {"roots_dub": 18.0, "steppers_dub": 23.0, "dubstep_140": 18.0,
+                                  "dark_garage": 19.5, "uk_garage": 19.0}
+LEAD_PRESENCE = 0.5          # 2-4 kHz band added back, as a share of the lead
+LEAD_DUCK = 0.3              # how far the stabs and pad dip under the lead
 # The pad is the "new age" in every genre: at half level it halves.
 PAD_LEVEL = 0.5
 # The organ bubble (profile.pad_style "bubble"): its level against the pad's,
@@ -1161,6 +1170,18 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
     if CHORDS_TONE.get(prof or ""):
         stems["chords"] = _tone(stems["chords"], CHORDS_TONE[prof])
     stems["lead"] = stems["lead"] * (LEAD_LEVEL_DUB if family == "dub" else LEAD_LEVEL)
+    lift = LEAD_LIFT_DB.get(prof or "", 0.0)
+    if lift:
+        lead = stems["lead"]
+        lead = lead + _lp(_hp(lead, 2000), 4000) * LEAD_PRESENCE
+        stems["lead"] = lead * 10 ** (lift / 20)
+        # The stabs and the pad make room: an envelope off the lead (10 ms
+        # attack, 150 ms release) dips them while it plays.
+        env = np.abs(stems["lead"]).max(axis=1)
+        env = lfilter([1 - np.exp(-1 / (0.15 * SR))], [1, -np.exp(-1 / (0.15 * SR))], env)
+        env = np.clip(env / (np.percentile(env[env > 1e-5], 90) if (env > 1e-5).any() else 1.0), 0, 1)
+        for r in ("chords", "pad"):
+            stems[r] *= (1.0 - LEAD_DUCK * env)[:, None]
     stems["pad"] = stems["pad"] * (BUBBLE_LEVEL * BUBBLE_TRIM.get(prof or "", 1.0) if bubble else PAD_LEVEL)
     held = HELD_ORGAN.get(prof or "", 0.0)
     if held and stab_notes:
@@ -1300,6 +1321,9 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
             if g == "other":
                 y += (plate * 0.18 + spring * 0.12 + hall * 0.2 + echo * 0.32) * space
             stems_out[g] = _tone(y, tone)[lead_in:].astype(np.float32)
+        if "lead" in stems:     # the dry lead alone, as it sits in the mix
+            stems_out["lead"] = _tone(stems["lead"] * GAIN.get("lead", 0.2) * trim.get("lead", 1.0),
+                                      tone)[lead_in:].astype(np.float32)
 
     # The build's sweep thins everything but the riser and the sub's absence.
     if sweep.any() and SWEEP:

@@ -179,6 +179,17 @@ word gap in dubstep and dark garage. probe_gaps' other words are loose: "a
 big drop" and "a drum machine loop" are over in most profiles, and "a piano"
 is over in roots (+2.3 sd).
 
+## Ed's calls (over the targets)
+
+- **The drops' lead up 18-23 dB (1 November, `LEAD_LIFT_DB`).** Ed, on the
+  hook blind test: "the leads are too low in the mix, I can't even hear
+  them". Measured on seed 401's drops, while the lead plays: it sat 24-30 dB
+  under the full mix, more than 15 dB under it 97-100% of the time. Now
+  about 6 dB under it (median, every profile), more than 15 dB under 11-15%
+  of the time, with a 2-4 kHz presence lift and the stabs and pad ducking
+  up to 30% under it. Exempt from the targets rule: it moves the band and
+  stem shares, and the targets don't get a vote.
+
 ## Kept on measured targets (29-30 October), to audition
 
 After the judges failed the blind test, changes were kept only when they
