@@ -336,6 +336,13 @@ Each entry gives the commit, what changed, and the effect as before → after
   (3.5 kHz). A tone change you'll hear on every offbeat.
   - roots' "other" stem 2.5–10 kHz share 0.189 → 0.114 (0.087), 150–500 Hz
     0.281 → 0.385 (0.384), centroid 2275 → 2018 Hz (1884)
+- **Roots' kick 1.6x louder with its sub tail cut short (160 ms), hats
+  x1.7, drive 3.6** (1 November, seeds 101-116): the drum stem's kick share
+  0.408 -> 0.478 (records 0.567), snare 0.508 -> 0.444 (0.276), the mix's sub
+  0.140 -> 0.109 (0.102), bass 0.494 -> 0.539 (0.548). You'll hear a
+  punchier, tighter kick. Kept over one move away - the hats' hit spread in
+  the mix (0.548 -> 0.524) - that the clean drum bus shows is the detector,
+  not the hats (0.538 -> 0.536).
 - **Roots' master mids refitted (low mids +1.1 dB, high mids −0.9 dB), with
   the snare ×0.55 and hats ×1.15** (ml/fit_tone.py on seeds 1–8, confirmed
   on 101–116). Low mids 0.141 → 0.159 (0.163), high mids 0.111 → 0.096

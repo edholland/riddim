@@ -163,8 +163,9 @@ MASTER = {"thresh": -14.0, "ratio": 2.0, "makeup": 2.0, "clip": 1.0}
 # -13.0, steppers -13.2, roots -16.2). The clip normalises to its input peak,
 # so a makeup gain before it would do nothing: only the drive moves the level.
 # The judge is not gain-blind - 3 dB under the records cost dubstep and garage
-# a third of their "real" score.
-DRIVE: dict[str, float] = {"roots_dub": 2.4, "steppers_dub": 3.5, "dubstep_140": 5.5,
+# a third of their "real" score. Roots 2.4 -> 3.6 with its louder kick (the
+# kit's comment, DRUM_SHAPE), which the limiter otherwise takes 1 dB back for.
+DRIVE: dict[str, float] = {"roots_dub": 3.6, "steppers_dub": 3.5, "dubstep_140": 5.5,
                             "dark_garage": 2.5, "uk_garage": 4.8}
 # The bass guitar's mid an octave over the sub, per profile (dub only; the
 # 140 profiles growl instead), multiplied in. Roots' at half won the goal
@@ -201,8 +202,15 @@ GROWL: dict[str, float] = {}
 # master 1.5 dB further down (TONE), 16 seeds: the drum stem's kick share
 # 0.346 -> 0.388 (records 0.567), snare 0.541 -> 0.515 (0.276), the mix's sub
 # 0.179 -> 0.169 (0.102). The kick x1.4 moved the shares further but put sub
-# (or, high-passed at 70 Hz, bass) into the mix past the records'.
-DRUM_SHAPE: dict[str, dict[str, float]] = {"roots_dub": {"snare_gain": 0.55, "hat_gain": 1.15},
+# (or, high-passed at 70 Hz, bass) into the mix past the records'. Then
+# (1 November, the lead audible) the kick x1.6 with its sub tail cut short
+# (160 ms) and the hats x1.7, the drive up to hold the loudness, seeds
+# 101-116: kick share 0.408 -> 0.478 (0.567), snare 0.508 -> 0.444, the mix's
+# sub 0.140 -> 0.109 (0.102) and bass 0.494 -> 0.539 (0.548). The hats' hit
+# spread in the mix moved away (0.548 -> 0.524, records 0.570): the louder
+# kick masking the detector - on the clean drum bus it holds (0.538/0.536).
+DRUM_SHAPE: dict[str, dict[str, float]] = {"roots_dub": {"snare_gain": 0.55, "hat_gain": 1.7, "kick_gain": 1.6,
+                                                         "kick_sub_decay_ms": 160.0},
                                            "steppers_dub": {"snare_body": 0.3, "hat_gain": 1.35},
                                            "uk_garage": {"snare_body": 0.3, "snare_hp": 350.0}}
 # A low-pass on the chords per profile (Hz), for an "other" stem brighter
