@@ -376,6 +376,14 @@ Tried and not kept:
   energy our mixes lack when the sub goes deep must come from somewhere else
   in the records' band (the kick's body, the drums) - the next thing to
   measure, not the sub.
+  - Measured (1 November, from each stem's level against the mix and its
+    60-150 Hz share; ours from the lead-muted split): the share of the
+    mix's 60-150 Hz that the drums supply is ours 34% / records 24% in
+    roots, 49% / 30% in steppers, 93% / 81% in dubstep, 91% / 57% in dark
+    garage, 64% / 59% in uk. The records' 60-150 comes more from the bass,
+    and our dubstep and dark garage carry 3-5 dB more of it than the
+    records', nearly all kick: the kick wants thinning there, and a deeper
+    sub then wants the bass's 60-150 back.
 - Dubstep's snare high-passed (900 Hz; 700 Hz with the snare x1.4), hats
   x1.3, seeds 101-116: the snare's body +3.7 -> -4.9 dB (records -12.2), low
   mids and hats toward - but its 150-2500 Hz share past the records' (0.328
