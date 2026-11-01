@@ -20,6 +20,11 @@ LMD=http://hog.ee.columbia.edu/craffel/lmd/lmd_full.tar.gz
 [ -f models/music-medium-800k/config.json ] || "$py" -c "
 from huggingface_hub import snapshot_download
 snapshot_download('stanford-crfm/music-medium-800k', local_dir='models/music-medium-800k')"
+# ... as safetensors, which the MLX trainer loads (the hub has only a .bin)
+[ -f models/music-medium-800k/model.safetensors ] || "$py" -c "
+from transformers import AutoModelForCausalLM
+AutoModelForCausalLM.from_pretrained('models/music-medium-800k').save_pretrained(
+    'models/music-medium-800k', safe_serialization=True)" && rm -f models/music-medium-800k/pytorch_model.bin
 
 # 2. Data: Lakh MIDI, full (CC-BY 4.0), fetched as parallel ranges
 if [ ! -f data/lmd_full/extract.done ]; then
