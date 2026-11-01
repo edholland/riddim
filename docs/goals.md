@@ -359,6 +359,16 @@ Each entry gives the commit, what changed, and the effect as before → after
 
 Tried and not kept:
 
+- uk's sub an octave's worth deeper (Register 24-45, as dubstep's; it sat
+  at a median 73 Hz, its fundamental in the 60-150 band), with the kick's
+  sub cut short (250 ms), the sub x1.4, the kick x1.2, drive 5.3 and the
+  master's mids 0.6 dB down - six rounds on seeds 101-116. The bass stem
+  lands on the records' (sub share 0.232 -> 0.425, records 0.413; 60-150
+  0.465 -> 0.430, 0.415; 150-500 0.240 -> 0.112, 0.110) and the mix's mids
+  toward, but the sub band held longer (0.789 -> 0.815, records 0.669) and
+  the bass stem's notes shorter: can't tell. The closest candidate yet for
+  uk's bottom end - one to hear rather than measure further.
+
 - uk's kick sub decay (229 ms) fitted with the master tone (ml/fit_tone.py
   --decay, seeds 1-8: loss 194 -> 56): reverted on 101-116, high mids
   0.155 -> 0.258 (records 0.069). The fit ran across the lead lift (Ed's
