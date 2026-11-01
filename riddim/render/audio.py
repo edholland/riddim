@@ -209,10 +209,17 @@ GROWL: dict[str, float] = {}
 # sub 0.140 -> 0.109 (0.102) and bass 0.494 -> 0.539 (0.548). The hats' hit
 # spread in the mix moved away (0.548 -> 0.524, records 0.570): the louder
 # kick masking the detector - on the clean drum bus it holds (0.538/0.536).
+# dubstep_140: the kick's body (70-130 Hz) 4 dB down (1 November): the
+# records' 60-150 comes more from the bass and ours is 3-5 dB hotter, nearly
+# all kick. Seeds 101-116: the mix's 60-250 0.299 -> 0.283 (records 0.265),
+# low and high mids, loudness and crest toward; only the bass stem's sub
+# share away, a Demucs artifact in the 140 profiles (ml/gaps.py). Dark
+# garage the same: its mix sub share and bass stem away - not kept.
 DRUM_SHAPE: dict[str, dict[str, float]] = {"roots_dub": {"snare_gain": 0.55, "hat_gain": 1.7, "kick_gain": 1.6,
                                                          "kick_sub_decay_ms": 160.0},
                                            "steppers_dub": {"snare_body": 0.3, "hat_gain": 1.35},
-                                           "uk_garage": {"snare_body": 0.3, "snare_hp": 350.0}}
+                                           "uk_garage": {"snare_body": 0.3, "snare_hp": 350.0},
+                                           "dubstep_140": {"kick_body_db": -4.0}}
 # A low-pass on the chords per profile (Hz), for an "other" stem brighter
 # than the records'. Roots' skank, at 5 kHz with CHORDS_TONE's dip at 2.2 kHz
 # and lift at 500 Hz - a darker, fuller guitar - 16 seeds: the "other" stem's
@@ -1121,6 +1128,10 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
                     lo = sosfiltfilt(_sos("lp", shape.get("kick_sub_split", 60.0), order=2), x, axis=0)
                     t = np.arange(len(x), dtype=np.float32) / SR
                     x = (x - lo) + lo * np.exp(-t * 1000.0 / shape["kick_sub_decay_ms"]).astype(np.float32)
+                if note.midi == KICK and shape.get("kick_body_db"):
+                    # The kick's body (70-130 Hz) up or down, its click and sub kept.
+                    body = sosfiltfilt(_sos("lp", 130.0, order=2), _hp(x, 70.0), axis=0)
+                    x = x + body * (10 ** (shape["kick_body_db"] / 20) - 1)
                 if note.midi == SNARE and shape.get("snare_gain"):
                     x = x * shape["snare_gain"]
                 if note.midi == KICK and any(a <= note.start < b for a, b in thin):

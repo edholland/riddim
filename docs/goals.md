@@ -336,6 +336,10 @@ Each entry gives the commit, what changed, and the effect as before → after
   (3.5 kHz). A tone change you'll hear on every offbeat.
   - roots' "other" stem 2.5–10 kHz share 0.189 → 0.114 (0.087), 150–500 Hz
     0.281 → 0.385 (0.384), centroid 2275 → 2018 Hz (1884)
+- **Dubstep's kick body (70-130 Hz) 4 dB down** (1 November, seeds 101-116):
+  the mix's 60-250 0.299 -> 0.283 (records 0.265), mids, loudness and crest
+  toward; the one move away is the bass stem's sub share, a Demucs artifact
+  in the 140 profiles. A leaner kick under the sub.
 - **Needs Ed's ears. Roots' kick 1.6x louder with its sub tail cut short (160 ms), hats
   x1.7, drive 3.6** (1 November, seeds 101-116): the drum stem's kick share
   0.408 -> 0.478 (records 0.567), snare 0.508 -> 0.444 (0.276), the mix's sub
