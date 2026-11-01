@@ -183,7 +183,7 @@ GROWL: dict[str, float] = {}
 # 0.346 -> 0.388 (records 0.567), snare 0.541 -> 0.515 (0.276), the mix's sub
 # 0.179 -> 0.169 (0.102). The kick x1.4 moved the shares further but put sub
 # (or, high-passed at 70 Hz, bass) into the mix past the records'.
-DRUM_SHAPE: dict[str, dict[str, float]] = {"roots_dub": {"snare_gain": 0.6},
+DRUM_SHAPE: dict[str, dict[str, float]] = {"roots_dub": {"snare_gain": 0.55, "hat_gain": 1.15},
                                            "steppers_dub": {"snare_body": 0.3, "hat_gain": 1.35},
                                            "uk_garage": {"snare_body": 0.3, "snare_hp": 350.0}}
 # A low-pass on the chords per profile (Hz), for an "other" stem brighter
@@ -319,7 +319,12 @@ TONE: dict[str, dict[str, float]] = {
     # 08b30d3: FAD 0.327 -> 0.324, closeness 0.826 -> 0.827, real 0.97); a
     # 70s colour on the master - top -3 dB, 40% width, wow, more tape - lost
     # (FAD 0.333 to 0.343), and a mono kit did nothing.
-    "roots_dub": {"sub": -15.0, "low_mid": 3.3, "high_mid": 5.0, "air": 6.5},
+    # Roots' mids from a joint fit (ml/fit_tone.py, seeds 1-8), with the snare
+    # x0.55 and hats x1.15 so the 500 Hz lift doesn't tip the kit; on seeds
+    # 101-116 every band moved toward the records (low mids 0.141 -> 0.159,
+    # records 0.163; high mids 0.111 -> 0.096, 0.097) and nothing away. The
+    # fit's sub cuts also took the kick's 60-150 Hz with them: not kept.
+    "roots_dub": {"sub": -15.0, "low_mid": 4.4, "high_mid": 4.1, "air": 6.5},
     "steppers_dub": {"sub": -8.0, "low_mid": 2.2, "high_mid": 1.2, "air": 5.0},
     "dubstep_140": {"bass": -1.5, "low_mid": 2.7, "high_mid": 10.0, "air": 8.0},
     "dark_garage": {"sub": -3.0, "low_mid": -1.3, "high_mid": 9.5, "air": 7.0},

@@ -239,6 +239,10 @@ Each entry gives the commit, what changed, and the effect as before → after
   (3.5 kHz). A tone change you'll hear on every offbeat.
   - roots' "other" stem 2.5–10 kHz share 0.189 → 0.114 (0.087), 150–500 Hz
     0.281 → 0.385 (0.384), centroid 2275 → 2018 Hz (1884)
+- **Roots' master mids refitted (low mids +1.1 dB, high mids −0.9 dB), with
+  the snare ×0.55 and hats ×1.15** (ml/fit_tone.py on seeds 1–8, confirmed
+  on 101–116). Low mids 0.141 → 0.159 (0.163), high mids 0.111 → 0.096
+  (0.097); the "other" stem's band shares all toward.
 - **eda2fb9: roots' snare ×0.6 in the kit, sub 1.5 dB lower.** Drum stem
   kick share 0.346 → 0.388 (0.567), snare 0.541 → 0.515 (0.276).
 - **44a5ebc, 85eee4c: the organ bubble through every section the chords
