@@ -200,6 +200,15 @@ profiles went to the model 5 of 6 (dubstep 2/2, uk 2/2, dark garage 1/2);
 the dub profiles 1 model, 2 riddim, 1 can't tell. The fine-tune (models/v3)
 gets the same test when it finishes.
 
+The fine-tune (models/v3, best at step 6,000: Lakh's matched set filtered
+for the DMZ sound plus riddim's band parts; stopped at 9,000 when its lead
+loss turned up) on fresh seeds 405-406: Ed picked 8 of 10 pairs - model 3,
+riddim 3, can't tell 2. By style it reversed the base model's pattern: the
+model won roots, steppers and dubstep (1 each; dubstep's other can't
+tell), riddim won dark garage 1 (1 can't tell) and uk 2. The data it was
+tuned on is dub and half-time 140, so better there and worse in garage is
+what you'd expect; with this few pairs neither pattern is a result yet.
+
 ## Kept on measured targets (29-30 October), to audition
 
 After the judges failed the blind test, changes were kept only when they
