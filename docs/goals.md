@@ -376,6 +376,13 @@ Tried and not kept:
   energy our mixes lack when the sub goes deep must come from somewhere else
   in the records' band (the kick's body, the drums) - the next thing to
   measure, not the sub.
+- Dubstep's snare high-passed (900 Hz; 700 Hz with the snare x1.4), hats
+  x1.3, seeds 101-116: the snare's body +3.7 -> -4.9 dB (records -12.2), low
+  mids and hats toward - but its 150-2500 Hz share past the records' (0.328
+  -> 0.236/0.258, records 0.306) and the "other" stem's held share down
+  (0.48 -> 0.43, records 0.75), the cut taking out what Demucs had filed as
+  "other". The records' snares are thin and still fill 150-2500: a brighter,
+  crackier snare sample, not a filter, is the likely fix.
 
 - uk's kick sub decay (229 ms) fitted with the master tone (ml/fit_tone.py
   --decay, seeds 1-8: loss 194 -> 56): reverted on 101-116, high mids
