@@ -255,6 +255,17 @@ Each entry gives the commit, what changed, and the effect as before → after
 
 Tried and not kept:
 
+- The master tone fitted jointly (ml/fit_tone.py, seeds 1–8, every band
+  within ±3 dB, confirmed on 101–116). Steppers and uk didn't pass, and in
+  roots only the mids passed (kept above). Any sub cut on the master takes
+  the kick's 60–150 Hz with it. uk's fit brought its sub to the records'
+  (0.348 → 0.249, records 0.246), its top end near them (high mids 0.041 →
+  0.082, records 0.069; air 0.010 → 0.021, 0.023) and its hats too, but the
+  bass band, the loudness (−1.8 dB) and the organ's body moved away, and it
+  needed +10.7 dB at 2.2 kHz and +9.2 dB of air on the master. uk's dull top
+  end is the sources' (the organ, the hats), not something master EQ should
+  fix.
+
 - louder hats elsewhere
 - the snare change in dubstep
 - bass registers lowered (the bass stem moved toward the records, but the

@@ -44,7 +44,7 @@ import bisect
 import wave
 
 import numpy as np
-from scipy.signal import butter, lfilter, oaconvolve, sosfilt
+from scipy.signal import sosfiltfilt, butter, lfilter, oaconvolve, sosfilt
 
 from .. import library as _library
 from ..song import Song
@@ -1073,6 +1073,12 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
                     x = x * shape["kick_gain"]
                 if note.midi == KICK and shape.get("kick_hp"):
                     x = _hp(x, shape["kick_hp"])
+                if note.midi == KICK and shape.get("kick_sub_decay_ms"):
+                    # The kick's sub tail shortened, its punch kept: the part
+                    # under 60 Hz decays on its own envelope.
+                    lo = sosfiltfilt(_sos("lp", 60.0, order=2), x, axis=0)
+                    t = np.arange(len(x), dtype=np.float32) / SR
+                    x = (x - lo) + lo * np.exp(-t * 1000.0 / shape["kick_sub_decay_ms"]).astype(np.float32)
                 if note.midi == SNARE and shape.get("snare_gain"):
                     x = x * shape["snare_gain"]
                 if note.midi == KICK and any(a <= note.start < b for a, b in thin):
