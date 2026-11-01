@@ -950,11 +950,12 @@ def instruments(family: str, seed: int, bpm: float, is140: bool, garage: bool) -
                 out[voice] = sh
                 out[voice + "_k"] = _level(ref, _hp(take.mean(axis=1), 300))
     # A recorded snare, where the picks name one (none do yet: RIDDIM_PICKS
-    # "dubstep.snare=..." auditions one, ml/snare_pick.py).
+    # "dubstep.snare=..." auditions one, ml/audition_ab.py).
     sn = lib.shots(family, "snare", seed)
     if sn is not None:
         out["snare"] = sn
-        out["snare_k"] = _level(_drum(SNARE, 0.2, 100, r, garage),
+        out["snare_rng"] = np.random.default_rng(seed)
+        out["snare_k"] = _level(_drum(SNARE, 0.2, 100, _Rand(seed + 1), garage),
                                 sn.play(np.random.default_rng(0), 100, 0.3).mean(axis=1))
     siren = lib.siren(family, seed)
     if siren is not None:
@@ -980,11 +981,12 @@ def kit_hit(inst: dict, row: int, dur: float, vel: int, rnd, garage: bool = Fals
         x = inst[voice].play(rnd.rng, vel, min(dur, 0.45) if voice == "hat_open" else 0.12)
         return (_hp(x.mean(axis=1), 300) * inst[voice + "_k"]).astype(np.float32)
     if row == SNARE and inst.get("snare") is not None:
-        x = inst["snare"].play(rnd.rng, vel, min(max(dur, 0.15), 0.4))
-        x = x.mean(axis=1) * inst["snare_k"]
-        if shape and shape.get("snare_gain"):
-            x = x * shape["snare_gain"]
-        return x.astype(np.float32)
+        # The synth snare's draws are still taken (and the hit thrown away),
+        # so the song's random stream - every later hat take and timing
+        # nudge - is the same as with the synth: only the snare changes.
+        _drum(row, dur, vel, rnd, garage, shape=shape)
+        x = inst["snare"].play(inst["snare_rng"], vel, min(max(dur, 0.15), 0.4))
+        return (x.mean(axis=1) * inst["snare_k"]).astype(np.float32)
     if row == SHAKER and inst.get("shaker") is not None:
         x = inst["shaker"].play(rnd.rng, vel, 0.12)
         return (_hp(x.mean(axis=1), 300) * inst["shaker_k"]).astype(np.float32)
