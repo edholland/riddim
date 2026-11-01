@@ -106,6 +106,8 @@ LEAD_LEVEL_DUB = 0.25
 LEAD_LIFT_DB: dict[str, float] = {"roots_dub": 18.0, "steppers_dub": 23.0, "dubstep_140": 18.0,
                                   "dark_garage": 19.5, "uk_garage": 19.0}
 LEAD_PRESENCE = 0.5          # 2-4 kHz band added back, as a share of the lead
+LEAD_PRESENCE_BY: dict[str, float] = {}     # per profile, over LEAD_PRESENCE
+LEAD_LP: dict[str, float] = {}              # a low-pass on the lead per profile (Hz)
 LEAD_DUCK = 0.3              # how far the stabs and pad dip under the lead
 # The pad is the "new age" in every genre: at half level it halves.
 PAD_LEVEL = 0.5
@@ -1173,7 +1175,9 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
     lift = LEAD_LIFT_DB.get(prof or "", 0.0)
     if lift:
         lead = stems["lead"]
-        lead = lead + _lp(_hp(lead, 2000), 4000) * LEAD_PRESENCE
+        if LEAD_LP.get(prof or ""):
+            lead = _lp(lead, LEAD_LP[prof])
+        lead = lead + _lp(_hp(lead, 2000), 4000) * LEAD_PRESENCE_BY.get(prof or "", LEAD_PRESENCE)
         stems["lead"] = lead * 10 ** (lift / 20)
         # The stabs and the pad make room: an envelope off the lead (10 ms
         # attack, 150 ms release) dips them while it plays.

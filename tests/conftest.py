@@ -15,6 +15,8 @@ os.environ["RIDDIM_LIBRARY"] = "off"
 # Nor may the bass rhythms mined from the references (riddim/theory/cells.json):
 # the critic's stories are found on the generator. test_transcribe.py fakes its own.
 os.environ["RIDDIM_CELLS"] = "off"
+# Nor the trained model's leads, the CLI's default where it is installed.
+os.environ["RIDDIM_MODEL_LEAD"] = "off"
 
 
 @lru_cache(maxsize=None)

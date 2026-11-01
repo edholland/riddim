@@ -181,6 +181,18 @@ is over in roots (+2.3 sd).
 
 ## Ed's calls (over the targets)
 
+- **The trained model writes the drops' hooks by default (1 November),
+  routed by profile** from Ed's two hook blind tests: the dub fine-tune
+  (models/v3/best) for roots, steppers, dubstep and dubby half-time, which
+  won the dub and dubstep pairs 3-0 once tuned; the base music-medium-800k
+  for dark and uk garage, which won garage 3-1 before tuning and lost it
+  0-3 after. Pooled, the model 9, riddim 6, 3 can't tell (p = 0.61): a
+  lean, not a result, so it is one flag to undo - `--rule-lead` or
+  RIDDIM_MODEL_LEAD=off - and riddim's own lead comes back by itself when
+  ~/ml or the model is missing. The CLI only; the UI keeps its "model
+  lead" button (a model take per press costs ~15 s, too slow for every
+  twist).
+
 - **The drops' lead up 18-23 dB (1 November, `LEAD_LIFT_DB`).** Ed, on the
   hook blind test: "the leads are too low in the mix, I can't even hear
   them". Measured on seed 401's drops, while the lead plays: it sat 24-30 dB

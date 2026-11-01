@@ -166,7 +166,7 @@ def test_ui_model_lead_is_a_step_undo_brings_riddim_back(monkeypatch):
 
     fake = FakeWriter()
     monkeypatch.setattr(ml, "unavailable", lambda: None)
-    monkeypatch.setattr(ml, "shared", lambda: fake)
+    monkeypatch.setattr(ml, "shared", lambda model=None: fake)
     st = State(compose(profile="dubstep_140", seed=11, live=True).params, live=True)
     riddim_lead = list(st.song.part("lead").notes)
     st.model_lead("rhythm")

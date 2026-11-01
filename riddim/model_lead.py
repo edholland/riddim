@@ -66,6 +66,23 @@ def default_model() -> Path:
     return ML_HOME / "models" / "music-medium-800k"
 
 
+# Which model writes each profile's hooks, from Ed's blind tests (docs/
+# goals.md, 1 November): the dub fine-tune for the dub and half-time
+# profiles, the base model for garage. RIDDIM_ML_MODEL overrides them all.
+MODEL_FOR = {"roots_dub": "v3/best", "steppers_dub": "v3/best", "dubstep_140": "v3/best",
+             "dubby_halftime": "v3/best", "dark_garage": "music-medium-800k",
+             "uk_garage": "music-medium-800k"}
+
+
+def model_for(profile: str | None) -> Path:
+    if os.environ.get("RIDDIM_ML_MODEL"):
+        return Path(os.environ["RIDDIM_ML_MODEL"])
+    name = MODEL_FOR.get(profile or "")
+    if name and (ML_HOME / "models" / name / "config.json").exists():
+        return ML_HOME / "models" / name
+    return default_model()
+
+
 def unavailable() -> str | None:
     """Why the model can't run here, or None if it can."""
     if not default_python().exists():
@@ -143,16 +160,17 @@ class Writer:
         return reply
 
 
-_shared: Writer | None = None
+_shared: dict[Path, Writer] = {}
 
 
-def shared() -> Writer:
-    """One worker per process (the UI keeps it warm between presses)."""
-    global _shared
-    if _shared is None:
-        _shared = Writer()
-        atexit.register(_shared.close)
-    return _shared
+def shared(model: Path | None = None) -> Writer:
+    """One worker per model per process (the UI keeps them warm between
+    presses)."""
+    model = model or default_model()
+    if model not in _shared:
+        _shared[model] = Writer(model=model)
+        atexit.register(_shared[model].close)
+    return _shared[model]
 
 
 # -- song <-> the model's events ---------------------------------------------
@@ -363,7 +381,7 @@ def write(song: Song, writer: Writer | None = None, take: int = 0, top_p: float 
     snapped to the sixteenths)."""
     if style not in STYLES:
         raise ValueError(f"style must be one of {STYLES}")
-    writer = writer or shared()
+    writer = writer or shared(model_for(getattr(song.params, "profile", None)))
     lead = song.part("lead")
     targets = drops(song)
     if lead is None or not targets:

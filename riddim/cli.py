@@ -62,25 +62,41 @@ def _add_compose_args(parser: argparse.ArgumentParser) -> None:
 def _add_model_lead_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--model-lead", nargs="?", const="rhythm", default=None,
                         choices=("rhythm", "free"), metavar="STYLE",
-                        help="the lead in the drops written by the trained model (see ml/): "
-                             "'rhythm' (default) - its pitches on riddim's rhythm; 'free' - "
-                             "its rhythm too")
+                        help="the lead in the drops written by the trained model (see ml/) - the "
+                             "default when the model is installed: 'rhythm' - its pitches on "
+                             "riddim's rhythm; 'free' - its rhythm too")
+    parser.add_argument("--rule-lead", action="store_true",
+                        help="riddim's own lead in the drops, not the model's "
+                             "(also RIDDIM_MODEL_LEAD=off)")
     parser.add_argument("--take", type=int, default=0,
-                        help="with --model-lead: which of the model's takes")
+                        help="with the model's lead: which of its takes")
 
 
 def _model_lead(args, song):
-    """Hand the drops' lead to the model, if asked."""
-    style = getattr(args, "model_lead", None)
-    if not style:
+    """Hand the drops' lead to the model: by default when it is installed
+    (Ed's blind tests, docs/goals.md), always with --model-lead, never with
+    --rule-lead or RIDDIM_MODEL_LEAD=off."""
+    asked = getattr(args, "model_lead", None)
+    if not hasattr(args, "rule_lead"):       # a command without the lead flags
+        return song
+    if args.rule_lead or (
+            not asked and os.environ.get("RIDDIM_MODEL_LEAD", "").lower() in ("off", "0", "no", "rule")):
         return song
     from . import model_lead
 
     why = model_lead.unavailable()
     if why:
-        raise SystemExit(f"error: --model-lead: {why}")
-    return model_lead.write(song, take=args.take, style=style,
-                            progress=lambda m: print(m, file=sys.stderr))
+        if asked:
+            raise SystemExit(f"error: --model-lead: {why}")
+        return song                  # no model here: riddim's own lead, quietly
+    try:
+        return model_lead.write(song, take=getattr(args, "take", 0), style=asked or "rhythm",
+                                progress=lambda m: print(m, file=sys.stderr))
+    except model_lead.ModelError as e:
+        if asked:
+            raise SystemExit(f"error: --model-lead: {e}")
+        print(f"model lead unavailable ({e}): riddim's lead", file=sys.stderr)
+        return song
 
 
 def _build(args):
