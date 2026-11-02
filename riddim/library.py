@@ -435,6 +435,12 @@ PICKS: dict[str, dict[str, list[str]]] = {
         # 0.75). The voice keeps its name; it plays the chords.
         "organ": [r"Soulful Keys/Multisamples/ElPiano0[12345]/"],
         "sub": [r"Sub Bass Weight/Multis/(Soft Sub|Solid Sub|Firm Sub|Juno Sub|SH101 Sub)/"],
+        # The snare, by ear (2 November, ml/audition_ab.py snares): Ed picked
+        # all four thin library snares over the synth's, Tape Treated's
+        # Cassette Snare 05 and Nu Garage's Snare11 2-0 each; the cassette
+        # one's body sits nearest the records' (-12.0 dB against -12.2).
+        # Dubstep only (render's SAMPLED_SNARE): dark garage's wasn't heard.
+        "snare": [r"Tape Treated/Cassette Drum Hits/Snare 05"],
         "siren": [r"alarm-siren-samples/140bpm/AaS_(Echo|Verb|Filter)Proc"],
     },
     "garage": {

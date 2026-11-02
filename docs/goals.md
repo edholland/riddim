@@ -227,6 +227,19 @@ records' (0.191, records 0.163) with the lead in them.
 
 ## Ed's calls (over the targets)
 
+- **2 November, the audition pages** (ml/audition_ab.py, ml/hook_ab.py):
+  - Roots' louder, shorter kick (dc59172): Ed picked it 2-0 - stays.
+  - uk's deeper sub (candidate): the old one once, can't tell once - not taken.
+  - The darker lead (8e2744b): no picks - stays as measured.
+  - Dubstep's snare: Ed picked a thin library snare over the synth's in 6
+    of 8 pairs; Tape Treated's Cassette Snare 05 and Nu Garage's Snare11
+    2-0 each. Dubstep now plays the cassette snare (its body nearest the
+    records'); dark garage keeps its own, unheard.
+  - Garage hooks, the garage fine-tune (models/g1) against the base model:
+    4-5 - the base stays the garage hook writer.
+  - Not yet picked: the steppers bass voices (:8782), the step-3000 hooks
+    (:8778).
+
 - **The trained model writes the drops' hooks by default (1 November),
   routed by profile** from Ed's two hook blind tests: the dub fine-tune
   (models/v3/best) for roots, steppers, dubstep and dubby half-time, which

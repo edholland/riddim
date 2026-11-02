@@ -41,6 +41,7 @@ Needs numpy and scipy (`pip install numpy scipy`).
 from __future__ import annotations
 
 import bisect
+import os
 import wave
 
 import numpy as np
@@ -248,6 +249,9 @@ CHORDS_LP: dict[str, float] = {"roots_dub": 5000.0, "steppers_dub": 5000.0}
 # "other" bus already holds like the records'; the gap is Demucs's.
 HELD_ORGAN: dict[str, float] = {"roots_dub": 1.6, "steppers_dub": 0.5}
 HELD_ORGAN_SWELL = 0.0     # seconds
+# The profiles that play their family's library snare (library.PICKS), by
+# Ed's ear: dubstep's (ml/audition_ab.py snares, 2 November).
+SAMPLED_SNARE = {"dubstep_140"}
 HELD_ORGAN_HP: dict[str, float] = {"roots_dub": 220.0}   # its high-pass per profile (Hz), else 160
 # The plate and spring returns low-passed, per profile (Hz): darker
 # reverb, as on the old dub desks. Roots at 3.5 kHz, 16 seeds: the "other"
@@ -1043,6 +1047,8 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
     except Exception:      # noqa: BLE001
         bubble = False
     inst = instruments(family, song.seed or 0, song.bpm, is140, garage)
+    if prof not in SAMPLED_SNARE and "snare=" not in os.environ.get("RIDDIM_PICKS", ""):
+        inst.pop("snare", None)       # the family's snare pick is for these profiles only
     shape = DRUM_SHAPE.get(prof or "", {})
 
     def kit(midi, dur, vel):
