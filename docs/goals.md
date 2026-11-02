@@ -352,7 +352,11 @@ Each entry gives the commit, what changed, and the effect as before → after
     Inside the drums the kick now sits nearer the records', but the drums
     as a whole are louder in the mix than the records' (-5.1 against -8.1
     dB). If it sounds too kick-heavy, that is why - the drums down, rather
-    than this undone, is the next thing to try.
+    than this undone, is the next thing to try. (Not the drums' level: Ed
+    kept the dub drums at full level. Nor the kick's body: at -2 dB, seeds
+    101-116, the mix's 60-250 went under the records' (0.539 -> 0.531,
+    records 0.548) and the sub and kick share away - reverted; roots' mix
+    bands are already on the records' with the kick as it is.)
 - **Roots' master mids refitted (low mids +1.1 dB, high mids −0.9 dB), with
   the snare ×0.55 and hats ×1.15** (ml/fit_tone.py on seeds 1–8, confirmed
   on 101–116). Low mids 0.141 → 0.159 (0.163), high mids 0.111 → 0.096
