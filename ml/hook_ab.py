@@ -21,6 +21,7 @@ import json
 import os
 import random
 import sys
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -57,9 +58,14 @@ def cmd_build(a) -> int:
     blind_ab.CLIP_SECONDS = CLIP_SECONDS
     os.makedirs(os.path.join(a.out, "clips"), exist_ok=True)
     meta = []
-    pairs = [(p, int(x)) for p in PROFILES for x in a.seeds.split(",")] if a.seeds else PAIRS
+    profiles = a.profiles.split(",") if a.profiles else PROFILES
+    pairs = [(p, int(x)) for p in profiles for x in (a.seeds or "401,402").split(",")]
+    # --against: the other side is a second model's hook, not riddim's.
+    other = model_lead.Writer(model=Path(a.against)) if a.against else None
     for i, (prof, seed) in enumerate(pairs):
         rule = compose(prof, seed=seed)
+        if other is not None:
+            rule = model_lead.write(rule, writer=other, take=0, style=a.style)
         model = model_lead.write(compose(prof, seed=seed), take=0, style=a.style)
         span = blind_ab._span(rule)
         sides, lead_db = {}, {}
@@ -88,7 +94,7 @@ def cmd_build(a) -> int:
             files[side] = name
         # The server hands the page files["kept"] and files["other"], unlabelled.
         meta.append({"id": i, "profile": prof, "seed": seed, "model": str(model_lead.default_model()),
-                     "style": a.style, "lead_db": {k: round(v, 2) for k, v in lead_db.items()}, "files": {"kept": files["model"], "other": files["rule"]}})
+                     "style": a.style, "against": a.against or "riddim", "lead_db": {k: round(v, 2) for k, v in lead_db.items()}, "files": {"kept": files["model"], "other": files["rule"]}})
         print(f"  {i:2d} {prof:13s} {seed}  lead rule {lead_db['rule']:.1f} model {lead_db['model']:.1f} dB",
               flush=True)
     with open(os.path.join(a.out, "pairs.json"), "w") as f:
@@ -148,6 +154,9 @@ def main(argv=None) -> int:
     ap.add_argument("--salt", default="hooks", help="build: varies the clip file names")
     ap.add_argument("--style", default="rhythm", choices=("rhythm", "free"))
     ap.add_argument("--seeds", default="", help="build: seeds per profile, e.g. 403,404 (default 401,402)")
+    ap.add_argument("--profiles", default="", help="build: comma-separated (default all five)")
+    ap.add_argument("--against", default="", help="build: a model dir whose hooks are the other side, "
+                                                  "instead of riddim's (RIDDIM_ML_MODEL picks the first)")
     ap.add_argument("--no-browser", action="store_true")
     a = ap.parse_args(argv)
     if a.step == "serve":
