@@ -392,7 +392,10 @@ Tried and not kept:
   measure, not the sub. With the kick's sub cut short as well (300 ms):
   reverted - the mix's sub held, but its 60-250 went further under (0.471 ->
   0.417, records 0.500), its mids and the sub's hold away. A deeper sub in
-  steppers needs the 60-250 the records' bass guitar supplies.
+  steppers needs the 60-250 the records' bass guitar supplies. With the
+  bass guitar x1.5 too: reverted, the 60-250 barely moved (0.417 -> 0.420)
+  - our bass guitar is too quiet a part to carry it. Steppers' bottom end
+  wants a fuller bass voice (a sampled bass guitar, say) more than levels.
   - Measured (1 November, from each stem's level against the mix and its
     60-150 Hz share; ours from the lead-muted split): the share of the
     mix's 60-150 Hz that the drums supply is ours 34% / records 24% in
