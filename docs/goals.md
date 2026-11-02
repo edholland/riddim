@@ -336,7 +336,7 @@ Each entry gives the commit, what changed, and the effect as before → after
   (3.5 kHz). A tone change you'll hear on every offbeat.
   - roots' "other" stem 2.5–10 kHz share 0.189 → 0.114 (0.087), 150–500 Hz
     0.281 → 0.385 (0.384), centroid 2275 → 2018 Hz (1884)
-- **Roots' held organ up (1.0 -> 1.6), high-passed at 220 Hz** (1 November,
+- **Needs Ed's ears. Roots' held organ up (1.0 -> 1.6), high-passed at 220 Hz** (1 November,
   seeds 101-116): the keys sound more of the time - the "other" stem held
   0.585 -> 0.626 (records 0.768) - nothing away. A longer organ bed under
   the skank.
