@@ -241,8 +241,14 @@ CHORDS_LP: dict[str, float] = {"roots_dub": 5000.0, "steppers_dub": 5000.0}
 # A 150 ms swell (HELD_ORGAN_SWELL) measured the same. Steppers at 0.5: held
 # 0.560 -> 0.599 (0.770), 150-500 Hz 0.345 -> 0.355 (0.356), nothing away; at
 # 1.0 its low mids overshot (0.391) over the bubble it already has.
-HELD_ORGAN: dict[str, float] = {"roots_dub": 1.0, "steppers_dub": 0.5}
+# Roots 1.0 -> 1.6, high-passed at 220 Hz (1 November, the lead audible,
+# seeds 101-116): held 0.585 -> 0.626 (0.768), its 2.5-10k toward, nothing
+# away. At 160 Hz its low mids overshot (0.392 -> 0.425, records 0.384); at
+# 300 the hold went with them. Dark garage 0.5: nothing moved - its clean
+# "other" bus already holds like the records'; the gap is Demucs's.
+HELD_ORGAN: dict[str, float] = {"roots_dub": 1.6, "steppers_dub": 0.5}
 HELD_ORGAN_SWELL = 0.0     # seconds
+HELD_ORGAN_HP: dict[str, float] = {"roots_dub": 220.0}   # its high-pass per profile (Hz), else 160
 # The plate and spring returns low-passed, per profile (Hz): darker
 # reverb, as on the old dub desks. Roots at 3.5 kHz, 16 seeds: the "other"
 # stem's 2.5-10 kHz share 0.193 -> 0.189 (records 0.087), centroid -14 Hz,
@@ -1259,7 +1265,7 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
                     x[:k] = x[:k] * np.linspace(0.0, 1.0, k, dtype=np.float32)
                     _add(hbuf, at(a), _pan(x, 0.0) / len(chord))
             i = j + 1
-        stems["pad"] = stems["pad"] + _hp(hbuf, 160) * held
+        stems["pad"] = stems["pad"] + _hp(hbuf, HELD_ORGAN_HP.get(prof or "", 160.0)) * held
     sends = dict(SENDS)
     for role, k in SEND_TRIM.get(prof or "", {}).items():
         sends[role] = tuple(v * k for v in sends[role])
