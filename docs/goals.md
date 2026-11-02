@@ -237,8 +237,11 @@ records' (0.191, records 0.163) with the lead in them.
     records'); dark garage keeps its own, unheard.
   - Garage hooks, the garage fine-tune (models/g1) against the base model:
     4-5 - the base stays the garage hook writer.
-  - Not yet picked: the steppers bass voices (:8782), the step-3000 hooks
-    (:8778).
+  - Steppers' bass: Ed picked UK Urban's Bassaw Multi, the SH101 Sub and
+    Nu Garage's Org_Bass 2-0 each over the synth sub (Birdy Sub lost 0-2).
+    Steppers now plays the Bassaw (nearest the records' bass stem); roots
+    keeps its synth sub, unheard.
+  - Not yet picked: the step-3000 hooks (:8778).
 
 - **The trained model writes the drops' hooks by default (1 November),
   routed by profile** from Ed's two hook blind tests: the dub fine-tune

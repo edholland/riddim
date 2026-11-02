@@ -427,6 +427,12 @@ PICKS: dict[str, dict[str, list[str]]] = {
         "organ": [r"Soulful Keys/Multisamples/Organ0[234]/"],
         "skank": [r"Guitar Chops/DD_TeleChop_", r"Guitar Chops/DD_StratChop_"],
         "siren": [r"alarm-siren-samples/100bpm/AaS_(Echo|Verb)Proc"],
+        # The bass, by ear (2 November, ml/audition_ab.py basses): Ed picked
+        # UK Urban's Bassaw Multi, the SH101 Sub and Nu Garage's Org_Bass
+        # 2-0 each over the synth sub (Birdy Sub lost 0-2); the Bassaw's
+        # 20-60/60-150/150-500 shares sit nearest the records' steppers
+        # bass stem. Steppers only (render's SAMPLED_SUB): roots' wasn't heard.
+        "sub": [r"UK Urban/Instruments/Bassaw Multi/"],
     },
     "dubstep": {
         # An electric piano, not the dub organ: the judge's text probes heard

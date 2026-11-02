@@ -99,7 +99,22 @@ def _basses() -> list[dict]:
             for pat in BASSES for s in SEEDS]
 
 
-SETS = {"kept": (_kept, "ab-kept"), "snares": (_snares, "ab-snares"), "basses": (_basses, "ab-basses")}
+def _unheard() -> list[dict]:
+    """Kept on the measured targets after the 'kept' page went up."""
+    from riddim.render import audio
+    out = []
+    for s in SEEDS:
+        out.append(dict(item="dubstep's leaner kick (e93f969)", profile="dubstep_140", seed=s, after=[],
+                        before=[("item", audio.DRUM_SHAPE, "dubstep_140", KeyError)]))
+    for s in SEEDS:
+        out.append(dict(item="roots' longer held organ (4bba5c9)", profile="roots_dub", seed=s, after=[],
+                        before=[("item", audio.HELD_ORGAN, "roots_dub", 1.0),
+                                ("item", audio.HELD_ORGAN_HP, "roots_dub", KeyError)]))
+    return out
+
+
+SETS = {"kept": (_kept, "ab-kept"), "snares": (_snares, "ab-snares"), "basses": (_basses, "ab-basses"),
+        "unheard": (_unheard, "ab-unheard")}
 
 
 def cmd_build(a) -> int:

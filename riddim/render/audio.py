@@ -252,6 +252,9 @@ HELD_ORGAN_SWELL = 0.0     # seconds
 # The profiles that play their family's library snare (library.PICKS), by
 # Ed's ear: dubstep's (ml/audition_ab.py snares, 2 November).
 SAMPLED_SNARE = {"dubstep_140"}
+# The dub profiles that play dub's library bass (library.PICKS "sub"), by
+# Ed's ear: steppers' (ml/audition_ab.py basses, 2 November).
+SAMPLED_SUB = {"steppers_dub"}
 HELD_ORGAN_HP: dict[str, float] = {"roots_dub": 220.0}   # its high-pass per profile (Hz), else 160
 # The plate and spring returns low-passed, per profile (Hz): darker
 # reverb, as on the old dub desks. Roots at 3.5 kHz, 16 seeds: the "other"
@@ -1049,6 +1052,8 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
     inst = instruments(family, song.seed or 0, song.bpm, is140, garage)
     if prof not in SAMPLED_SNARE and "snare=" not in os.environ.get("RIDDIM_PICKS", ""):
         inst.pop("snare", None)       # the family's snare pick is for these profiles only
+    if family == "dub" and prof not in SAMPLED_SUB and "sub=" not in os.environ.get("RIDDIM_PICKS", ""):
+        inst.pop("sub", None)         # and dub's bass pick for these
     shape = DRUM_SHAPE.get(prof or "", {})
 
     def kit(midi, dur, vel):
