@@ -81,7 +81,25 @@ def _snares() -> list[dict]:
     return out
 
 
-SETS = {"kept": (_kept, "ab-kept"), "snares": (_snares, "ab-snares")}
+# Bass multisamples from the library whose share of 20-60 / 60-150 /
+# 150-500 Hz (at E1, A1 and F2) sits nearest the records' steppers bass stem
+# (0.35 / 0.51 / 0.05): steppers' bottom end lacks the 60-250 the records'
+# bass supplies (docs/goals.md), and a voice, not a level, is the lever.
+BASSES = [
+    "UK Urban/Instruments/Bassaw Multi/",
+    "Sub Bass Weight/Multis/Birdy Sub/",
+    "Sub Bass Weight/Multis/SH101 Sub/",
+    "Nu Garage/Multis/Org_Bass/",
+]
+
+
+def _basses() -> list[dict]:
+    return [dict(item=f"steppers bass: {pat.rstrip('/').split('/')[-1]}", profile="steppers_dub", seed=s,
+                 before=[], after=[("env", "RIDDIM_PICKS", f"dub.sub={pat}")])
+            for pat in BASSES for s in SEEDS]
+
+
+SETS = {"kept": (_kept, "ab-kept"), "snares": (_snares, "ab-snares"), "basses": (_basses, "ab-basses")}
 
 
 def cmd_build(a) -> int:

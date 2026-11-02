@@ -941,11 +941,14 @@ def instruments(family: str, seed: int, bpm: float, is140: bool, garage: bool) -
             ref = sum(_pluck(m, 0.15, 100, r)[: int(0.3 * SR)] for m in (69, 72, 76))
             out["skank"] = sk
             out["skank_k"] = _level(ref, sk.play(9, "min", 0.15, 100).mean(axis=1))
-    if is140:
+    # The sub from the library: the 140s' picks, or dub's where RIDDIM_PICKS
+    # names one (none by default: ml/audition_ab.py basses), its level
+    # reference drawn apart so nothing else in the song moves.
+    if is140 or family == "dub":
         sb = lib.sub(family, seed)
         if sb is not None:
             out["sub"] = sb
-            out["sub_k"] = _level(_sub(36, 1.0, 100, r),
+            out["sub_k"] = _level(_sub(36, 1.0, 100, r if is140 else _Rand(seed + 2)),
                                   sb.play(36, 1.0, 100, 0.035, loop=True).mean(axis=1))
     if garage:
         for voice, ref in (("hat", _drum(HAT, 0.1, 100, r, True)),
@@ -1146,6 +1149,7 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
                 continue
             if role == "sub":
                 if inst.get("sub") is not None:
+                    _sub(note.midi, dur, note.velocity, rnd)   # its draws, so the stream matches the synth's
                     x = inst["sub"].play(note.midi, dur, note.velocity, 0.035, loop=True)
                     x = x.mean(axis=1) * inst["sub_k"]
                 else:
