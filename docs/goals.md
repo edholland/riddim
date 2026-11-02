@@ -389,7 +389,10 @@ Tried and not kept:
   records keep a deep bass stem and a full 60-250 band at once: the 60-250
   energy our mixes lack when the sub goes deep must come from somewhere else
   in the records' band (the kick's body, the drums) - the next thing to
-  measure, not the sub.
+  measure, not the sub. With the kick's sub cut short as well (300 ms):
+  reverted - the mix's sub held, but its 60-250 went further under (0.471 ->
+  0.417, records 0.500), its mids and the sub's hold away. A deeper sub in
+  steppers needs the 60-250 the records' bass guitar supplies.
   - Measured (1 November, from each stem's level against the mix and its
     60-150 Hz share; ours from the lead-muted split): the share of the
     mix's 60-150 Hz that the drums supply is ours 34% / records 24% in
