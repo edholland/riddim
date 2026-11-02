@@ -130,5 +130,6 @@ def save(model: GPT2, out_dir: str) -> None:
     with open(os.path.join(out_dir, "config.json"), "w") as f:
         json.dump(model.config, f, indent=2)
     src = getattr(model, "source_dir", None)
-    if src and os.path.exists(os.path.join(src, "generation_config.json")):
+    if (src and os.path.exists(os.path.join(src, "generation_config.json"))
+            and os.path.realpath(src) != os.path.realpath(out_dir)):   # resumed from latest: already there
         shutil.copy(os.path.join(src, "generation_config.json"), out_dir)
