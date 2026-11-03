@@ -128,6 +128,11 @@ class Profile:
     mined_bass: float = 0.5
     # Whether the sub may sit on the in-between sixteenths (compose._on_eighths).
     sub_sixteenths: bool = False
+    # The bass is the hook (compose._bass_hook_phrase): in the peaks the sub
+    # plays the hook's motive, the lead only teases in the intro and answers
+    # in the bass's drop-outs, the growl moves by the phrase, and the drops
+    # differ. Off everywhere until Ed picks it (ml/audition_ab.py basshook).
+    bass_hook: bool = False
     note: str = ""
 
     @property

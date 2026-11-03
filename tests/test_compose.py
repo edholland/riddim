@@ -907,3 +907,24 @@ def test_dub_keys_bubble():
             assert (n.start // TICKS_PER_16TH) % 4 in (1, 2)
     held = compose("dubstep_140", seed=5).part("pad").notes
     assert held and max(n.length for n in held) > TICKS_PER_BAR // 2
+
+
+def test_bass_hook_gives_the_peaks_to_the_bass(monkeypatch):
+    from dataclasses import replace
+    from riddim import profile
+    from riddim.units import TICKS_PER_BAR
+    monkeypatch.setitem(profile.PROFILES, "dubstep_140",
+                        replace(profile.PROFILES["dubstep_140"], bass_hook=True))
+    song = compose("dubstep_140", seed=701)
+    peaks = [s for s in song.arrangement.sections if s.energy >= 0.85]
+    assert len(peaks) >= 2
+    sub, lead, drums = song.part("sub"), song.part("lead"), song.part("drums")
+    for sec in peaks:
+        span = range(sec.start_tick, sec.start_tick + sec.length_ticks)
+        assert any(n.start in span for n in sub.notes)
+        # the lead only answers, in the second half of each phrase's last bar
+        for n in lead.notes:
+            if n.start in span:
+                assert (n.start - sec.start_tick) // TICKS_PER_BAR % 8 == 7
+    held = range(peaks[1].start_tick, peaks[1].start_tick + 4 * TICKS_PER_BAR)
+    assert not any(n.start in held and n.midi in (36, 37) for n in drums.notes)

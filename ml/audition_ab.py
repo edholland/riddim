@@ -113,7 +113,15 @@ def _unheard() -> list[dict]:
     return out
 
 
-SETS = {"kept": (_kept, "ab-kept"), "snares": (_snares, "ab-snares"), "basses": (_basses, "ab-basses"),
+def _basshook() -> list[dict]:
+    """Dubstep as it ships (the fine-tuned model's lead in the drops) against
+    the bass as the hook (profile bass_hook), on fresh songs."""
+    return [dict(item="dubstep: the bass as the hook", profile="dubstep_140", seed=s, before=[], model_before=True,
+                 after=[("profile", "dubstep_140", {"bass_hook": True})])
+            for s in range(801, 807)]
+
+
+SETS = {"basshook": (_basshook, "ab-basshook"), "kept": (_kept, "ab-kept"), "snares": (_snares, "ab-snares"), "basses": (_basses, "ab-basses"),
         "unheard": (_unheard, "ab-unheard")}
 
 
@@ -130,7 +138,11 @@ def cmd_build(a) -> int:
             span = blind_ab._span(compose(p["profile"], seed=p["seed"]))
         for side in ("after", "before"):
             with blind_ab.patched(p[side]):
-                sides[side] = audio.render(compose(p["profile"], seed=p["seed"]), span)
+                song = compose(p["profile"], seed=p["seed"])
+                if side == "before" and p.get("model_before"):
+                    from riddim import model_lead
+                    song = model_lead.write(song)
+                sides[side] = audio.render(song, span)
         x, y = blind_ab._match(sides["after"], sides["before"])
         files = {}
         for side, z in (("after", x), ("before", y)):

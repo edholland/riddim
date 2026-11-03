@@ -289,6 +289,9 @@ def bend(notes: list[Note], song: Song, lo: int, hi: int) -> list[Note]:
 
 
 def drops(song: Song) -> list:
+    from . import profile
+    if song.params is not None and profile.get(song.params.profile).bass_hook:
+        return []                # the bass has the hook: no lead to write
     return [s for s in song.arrangement.sections if s.energy >= DROP_ENERGY and s.plays("lead")]
 
 

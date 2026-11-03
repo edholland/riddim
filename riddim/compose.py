@@ -513,6 +513,10 @@ def _resolve_structure(params: SongParams, prof: Profile, rng: random.Random) ->
         for sec in arrangement.sections:
             if "chords" in sec.active and "pad" not in sec.active:
                 sec.active = tuple(sec.active) + ("pad",)
+    if prof.bass_hook:
+        for sec in arrangement.sections:     # the lead's tease, ahead of the bass's hook
+            if structure.kind_of(sec) == "intro" and "lead" not in sec.active:
+                sec.active = tuple(sec.active) + ("lead",)
     params.sections = [_section_spec(s) for s in arrangement.sections]
     return arrangement
 
@@ -1331,6 +1335,13 @@ def _build_drums(part, section, prof, m: Material, rng):
             start, length = span
             part.add(Note(KIT_ROWS["riser"], start, length, int(80 + 40 * dyn.riser)))
 
+    # The second drop opens on the bass and hats alone: kick and clap held
+    # back four bars, so the drop that follows the first isn't the same drop.
+    if prof.bass_hook and peak and len(peaks_before) == 1:
+        held = section.start_tick + 4 * TICKS_PER_BAR
+        part.notes = [n for n in part.notes if not (
+            section.start_tick <= n.start < held and n.midi in (KIT_ROWS["kick"], KIT_ROWS["snare"]))]
+
 
 def _hat_block(pattern, m: Material, prof: Profile, voice_seed: float, bar: int):
     """The hat figure for this bar's eight-bar block: the riddim's, or - by
@@ -1557,6 +1568,11 @@ def _build_sub(part, section, prof, m: Material, rng):
             abs_bar = section.start_bar + rel_bar
             vel_energy = structure.bar_energy(section, rel_bar)
             lo_step = rel_bar * STEPS_PER_BAR
+            if prof.bass_hook and is_peak and m.hook is not None:
+                notes = _bass_hook_phrase(rel_bar, roots[b], m, prof, section)
+                notes = [(mi, s, l, structure.velocity_for(vel_energy, v)) for mi, s, l, v in notes]
+                _emit(part, notes, abs_bar * TICKS_PER_BAR)
+                continue
             hook_here = [t for t in line.bass_line if lo_step <= t.step < lo_step + STEPS_PER_BAR]
             if hook_here:
                 notes = _bass_from_hook(hook_here, lo_step, roots[b], m, prof, section)
@@ -1591,6 +1607,31 @@ def _build_sub(part, section, prof, m: Material, rng):
                 notes = _sub_economy(notes, m, prof, roots[b], roots[b + 1], rel_bar)
             notes = [(mi, s, l, structure.velocity_for(vel_energy, v)) for mi, s, l, v in notes]
             _emit(part, notes, abs_bar * TICKS_PER_BAR)
+
+
+# Which bar of the hook each bar of an eight-bar bass phrase plays: stated,
+# restated with its third bar skipped for a change in the second four.
+BASS_HOOK_BARS = (0, 1, 2, 3, 0, 1, 3, 0)
+
+
+def _bass_hook_phrase(rel_bar: int, root: int, m: Material, prof, section: Section):
+    """One bar of the bass as the hook: the motive said by the sub, over an
+    eight-bar phrase that breathes. A beat's gap opens each phrase after the
+    first (the kick lands alone), half a beat the second four bars, and the
+    last bar stops at beat three so a fill or the lead's answer has the
+    room. On the grid, as the style wants it."""
+    tones = hook_mod.realise(m.hook, m.scale, _chords_from(m.plan, section.start_tick))
+    total = max(STEPS_PER_BAR, m.hook.length)
+    pos = rel_bar % 8
+    src = (BASS_HOOK_BARS[pos] * STEPS_PER_BAR) % total
+    here = [replace(t, step=t.step - src + rel_bar * STEPS_PER_BAR) for t in tones
+            if src <= t.step < src + STEPS_PER_BAR]
+    if not here:
+        return [(_sub_note(m, prof, root, root), 0.0, 8.0 * m.bass.gate, 110)]
+    notes = _bass_from_hook(here, rel_bar * STEPS_PER_BAR, root, m, prof, section)
+    gap = 4.0 if pos == 0 and rel_bar else 2.0 if pos == 4 else 0.0
+    end = 8.0 if pos == 7 else 16.0
+    return [(mi, s, min(l, end - s), v) for mi, s, l, v in notes if gap <= s < end]
 
 
 def _sub_economy(notes, m: Material, prof, root, nxt_root, rel_bar):
@@ -2180,6 +2221,10 @@ def _build_lead(part, section, prof, m: Material, rng):
     lp = m.lead
     throw = 1.5 if section.dub_throw else 1.0
     ordered = sorted(m.line(section).tones, key=lambda t: t.step)
+    if prof.bass_hook and structure.kind_of(section) == "peak":
+        # The bass has the hook: the lead only answers in its drop-outs.
+        ordered = [t for t in ordered if (t.step // STEPS_PER_BAR) % 8 == 7
+                   and t.step % STEPS_PER_BAR >= 8]
     notes = []   # (midi, step, length, velocity)
     for t in ordered:
         midi = _borrowed(t, m, t.step, section) + m.lead_shift

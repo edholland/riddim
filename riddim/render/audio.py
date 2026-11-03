@@ -48,7 +48,7 @@ import numpy as np
 from scipy.signal import sosfiltfilt, butter, lfilter, oaconvolve, sosfilt
 
 from .. import library as _library
-from ..song import Song
+from ..song import Note, Song
 from ..units import TICKS_PER_16TH, TICKS_PER_BAR
 
 SR = 44100
@@ -553,9 +553,10 @@ def _bass_guitar(midi, dur, vel, rnd):
     return (y * _env(n, 0.003, 0.05, decay=0.9) * _vel(vel) * 0.8).astype(np.float32)
 
 
-def _wobble(midi, dur, vel, rnd, rate_hz):
+def _wobble(midi, dur, vel, rnd, rate_hz, depth=1.0, grit=1.0):
     """The 140 mid-bass: detuned saws and a square an octave above the sub,
-    through a filter that opens and closes `rate_hz` times a second."""
+    through a filter that opens and closes `rate_hz` times a second; `depth`
+    how far it opens (0..1), `grit` how hard it is driven."""
     n = int((dur + 0.03) * SR)
     f = _f(midi) * 2
     a = _saw(_phase(f * 1.004, n, rnd.jitter(0.5)))
@@ -563,13 +564,32 @@ def _wobble(midi, dur, vel, rnd, rate_hz):
     c = _sq(_phase(f / 2, n, rnd.jitter(0.5)), 0.42)
     x = 0.5 * a + 0.5 * b + 0.45 * c
     t = np.arange(n) / SR
-    lfo = 0.5 - 0.5 * np.cos(2 * np.pi * rate_hz * t)          # 0..1, starts closed
+    lfo = (0.5 - 0.5 * np.cos(2 * np.pi * rate_hz * t)) * depth     # 0..1, starts closed
     dark = _lp(x, 180, order=4)
     mid = _lp(x, 650, order=4)
     bright = _lp(x, 1900, order=4)
     y = np.where(lfo < 0.5, dark + (mid - dark) * (lfo * 2), mid + (bright - mid) * (lfo * 2 - 1))
-    y = _sat(y * 1.4, 2.0)
+    y = _sat(y * 1.4, 2.0 * grit)
     return (_hp(y, 70) * _env(n, 0.006, 0.04) * _vel(vel)).astype(np.float32)
+
+
+def _growl_phrase(song: Song, note: Note) -> tuple[float, float, float, float]:
+    """The growl by the phrase, for a bass_hook profile: (rate multiplier,
+    depth, grit, mid-bass layer). It holds still through an eight-bar phrase
+    and moves at the end of it, where the mid-bass layer comes in; later
+    drops thin the wobble (the last half of the second, all of a third)."""
+    secs = song.arrangement.sections
+    bar = note.start // TICKS_PER_BAR
+    sec = next((s for s in secs if s.start_bar <= bar < s.end_bar), None)
+    if sec is None or sec.energy < 0.85:
+        return 1.0, 0.5, 1.0, 0.0
+    drop = sum(1 for s in secs if s.energy >= 0.85 and s.start_bar < sec.start_bar)
+    rel = bar - sec.start_bar
+    pos = rel % 8
+    thin = 0.5 if drop >= 2 or (drop == 1 and rel >= sec.bars // 2) else 1.0
+    if pos >= 6:
+        return 2.0, 1.0 * thin, 1.5, 0.5 * thin
+    return 1.0, (0.45 + 0.08 * pos) * thin, 1.0 + 0.05 * pos, 0.0
 
 
 def _pluck(midi, dur, vel, rnd):
@@ -1055,6 +1075,10 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
     if family == "dub" and prof not in SAMPLED_SUB and "sub=" not in os.environ.get("RIDDIM_PICKS", ""):
         inst.pop("sub", None)         # and dub's bass pick for these
     shape = DRUM_SHAPE.get(prof or "", {})
+    try:
+        phrased = _profile_mod.get(prof).bass_hook if prof else False
+    except Exception:      # noqa: BLE001
+        phrased = False
 
     def kit(midi, dur, vel):
         """A kit hit as this genre plays it: in dub the one-drop's backbeat
@@ -1178,7 +1202,13 @@ def render(song: Song, window: tuple[int, int] | None = None, stems_out: dict | 
                 # garage keeps the growl.)
                 if is140:
                     rate = 2.0 / beat if note.length * spt > beat else 1.0 / beat
-                    mb = _wobble(note.midi, dur, note.velocity, rnd, rate)
+                    if phrased:
+                        fast, depth, grit, layer = _growl_phrase(song, note)
+                        mb = _wobble(note.midi, dur, note.velocity, rnd, rate * fast, depth, grit)
+                        if layer:         # the distorted copy, its sub taken out
+                            mb = mb + _hp(_sat(mb * 3.0, 3.0), 150.0) * layer
+                    else:
+                        mb = _wobble(note.midi, dur, note.velocity, rnd, rate)
                     if prof == "dark_garage":
                         # Dark garage is the deep sub with a little growl over
                         # it; the judge heard a dubstep wobble in it (+1.5 sd).

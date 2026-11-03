@@ -225,6 +225,18 @@ stem away; undoing eda2fb9 put the kick and snare shares, the sub, the bass
 band and the loudness away. Roots' low mids now sit a little over the
 records' (0.191, records 0.163) with the lead in them.
 
+## The bass as the hook (3 November, off: profile bass_hook)
+
+From an EDMProd 140 tutorial (notes in the thread): in this style the bass
+line is the hook. `bass_hook=True` on a profile: in the peaks the sub plays
+the hook's motive in eight-bar phrases that breathe (a gap at the phrase
+start, the second four varied, a drop-out at the end), the lead teases in
+the intro and answers in the drop-outs (the model writes no lead), the growl
+holds through a phrase and moves at its end with a distorted mid-bass layer,
+and the drops differ (the second opens without kick and clap for 4 bars,
+the wobble thins later on). Default off; blind against dubstep as it ships
+on ml/audition_ab.py basshook.
+
 ## Ed's calls (over the targets)
 
 - **2 November, the audition pages** (ml/audition_ab.py, ml/hook_ab.py):
