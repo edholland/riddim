@@ -131,7 +131,7 @@ class Profile:
     # The bass is the hook (compose._bass_hook_phrase): in the peaks the sub
     # plays the hook's motive, the lead only teases in the intro and answers
     # in the bass's drop-outs, the growl moves by the phrase, and the drops
-    # differ. Off everywhere until Ed picks it (ml/audition_ab.py basshook).
+    # differ. On for dubstep_140 by Ed's pick (ml/audition_ab.py basshook).
     bass_hook: bool = False
     note: str = ""
 
@@ -232,6 +232,7 @@ STEPPERS_DUB = Profile(
 
 DUBSTEP_140 = Profile(
     name="dubstep_140",
+    bass_hook=True,        # Ed's pick, 4-2 blind against the model's lead (3 November)
     bpm=140,
     bpm_range=(138, 142),
     modes=("minor", "phrygian", "harmonic_minor"),

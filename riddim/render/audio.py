@@ -215,12 +215,12 @@ GROWL: dict[str, float] = {}
 # all kick. Seeds 101-116: the mix's 60-250 0.299 -> 0.283 (records 0.265),
 # low and high mids, loudness and crest toward; only the bass stem's sub
 # share away, a Demucs artifact in the 140 profiles (ml/gaps.py). Dark
-# garage the same: its mix sub share and bass stem away - not kept.
+# garage the same: its mix sub share and bass stem away - not kept. Dubstep's
+# dropped unheard too (Ed, 3 November); the knob stays.
 DRUM_SHAPE: dict[str, dict[str, float]] = {"roots_dub": {"snare_gain": 0.55, "hat_gain": 1.7, "kick_gain": 1.6,
                                                          "kick_sub_decay_ms": 160.0},
                                            "steppers_dub": {"snare_body": 0.3, "hat_gain": 1.35},
-                                           "uk_garage": {"snare_body": 0.3, "snare_hp": 350.0},
-                                           "dubstep_140": {"kick_body_db": -4.0}}
+                                           "uk_garage": {"snare_body": 0.3, "snare_hp": 350.0}}
 # A low-pass on the chords per profile (Hz), for an "other" stem brighter
 # than the records'. Roots' skank, at 5 kHz with CHORDS_TONE's dip at 2.2 kHz
 # and lift at 500 Hz - a darker, fuller guitar - 16 seeds: the "other" stem's
@@ -244,10 +244,10 @@ CHORDS_LP: dict[str, float] = {"roots_dub": 5000.0, "steppers_dub": 5000.0}
 # 1.0 its low mids overshot (0.391) over the bubble it already has.
 # Roots 1.0 -> 1.6, high-passed at 220 Hz (1 November, the lead audible,
 # seeds 101-116): held 0.585 -> 0.626 (0.768), its 2.5-10k toward, nothing
-# away. At 160 Hz its low mids overshot (0.392 -> 0.425, records 0.384); at
+# away - but dropped unheard (Ed, 3 November). At 160 Hz its low mids overshot (0.392 -> 0.425, records 0.384); at
 # 300 the hold went with them. Dark garage 0.5: nothing moved - its clean
 # "other" bus already holds like the records'; the gap is Demucs's.
-HELD_ORGAN: dict[str, float] = {"roots_dub": 1.6, "steppers_dub": 0.5}
+HELD_ORGAN: dict[str, float] = {"roots_dub": 1.0, "steppers_dub": 0.5}
 HELD_ORGAN_SWELL = 0.0     # seconds
 # The profiles that play their family's library snare (library.PICKS), by
 # Ed's ear: dubstep's (ml/audition_ab.py snares, 2 November).
@@ -255,7 +255,7 @@ SAMPLED_SNARE = {"dubstep_140"}
 # The dub profiles that play dub's library bass (library.PICKS "sub"), by
 # Ed's ear: steppers' (ml/audition_ab.py basses, 2 November).
 SAMPLED_SUB = {"steppers_dub"}
-HELD_ORGAN_HP: dict[str, float] = {"roots_dub": 220.0}   # its high-pass per profile (Hz), else 160
+HELD_ORGAN_HP: dict[str, float] = {}   # its high-pass per profile (Hz), else 160
 # The plate and spring returns low-passed, per profile (Hz): darker
 # reverb, as on the old dub desks. Roots at 3.5 kHz, 16 seeds: the "other"
 # stem's 2.5-10 kHz share 0.193 -> 0.189 (records 0.087), centroid -14 Hz,

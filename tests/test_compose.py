@@ -926,5 +926,6 @@ def test_bass_hook_gives_the_peaks_to_the_bass(monkeypatch):
         for n in lead.notes:
             if n.start in span:
                 assert (n.start - sec.start_tick) // TICKS_PER_BAR % 8 == 7
+    assert all(n.start % (TICKS_PER_BAR // 16) == 0 for n in sub.notes)     # on the grid
     held = range(peaks[1].start_tick, peaks[1].start_tick + 4 * TICKS_PER_BAR)
     assert not any(n.start in held and n.midi in (36, 37) for n in drums.notes)

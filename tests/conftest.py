@@ -19,6 +19,19 @@ os.environ["RIDDIM_CELLS"] = "off"
 os.environ["RIDDIM_MODEL_LEAD"] = "off"
 
 
+def _rule_dubstep():
+    """Dubstep plays the bass as the hook (Ed's pick), a different idiom from
+    the rules most of these tests pin (a lead in the drops, the sub on eighths
+    and few notes) and use dubstep to exercise. They test the engine's default
+    path; test_bass_hook_gives_the_peaks_to_the_bass tests that one."""
+    from dataclasses import replace
+    from riddim import profile
+    profile.PROFILES["dubstep_140"] = replace(profile.PROFILES["dubstep_140"], bass_hook=False)
+
+
+_rule_dubstep()
+
+
 @lru_cache(maxsize=None)
 def wall_seed(profile="roots_dub", bpm=72) -> int:
     """A seed whose only finding is the sub warning, which the loop cures by

@@ -225,7 +225,7 @@ stem away; undoing eda2fb9 put the kick and snare shares, the sub, the bass
 band and the loudness away. Roots' low mids now sit a little over the
 records' (0.191, records 0.163) with the lead in them.
 
-## The bass as the hook (3 November, off: profile bass_hook)
+## The bass as the hook (3 November, on for dubstep_140: profile bass_hook)
 
 From an EDMProd 140 tutorial (notes in the thread): in this style the bass
 line is the hook. `bass_hook=True` on a profile: in the peaks the sub plays
@@ -234,8 +234,15 @@ start, the second four varied, a drop-out at the end), the lead teases in
 the intro and answers in the drop-outs (the model writes no lead), the growl
 holds through a phrase and moves at its end with a distorted mid-bass layer,
 and the drops differ (the second opens without kick and clap for 4 bars,
-the wobble thins later on). Default off; blind against dubstep as it ships
-on ml/audition_ab.py basshook.
+the wobble thins later on). Blind against dubstep as it shipped (the
+fine-tuned model's lead), ml/audition_ab.py basshook: Ed picked it 4-2
+(p = 0.69 by chance: a lean), so it is on for dubstep_140. `bass_hook=False`
+in riddim/profile.py undoes it.
+
+Ed discarded what he hadn't listened to (3 November): dubstep's kick body
+and roots' held organ 1.6 are reverted (the knobs stay), and the step-3000
+hook test is gone. The lead's 3.5 kHz low-pass stays: it corrected the
+overshoot from his own "too quiet" call.
 
 ## Ed's calls (over the targets)
 
@@ -364,15 +371,7 @@ Each entry gives the commit, what changed, and the effect as before → after
   (3.5 kHz). A tone change you'll hear on every offbeat.
   - roots' "other" stem 2.5–10 kHz share 0.189 → 0.114 (0.087), 150–500 Hz
     0.281 → 0.385 (0.384), centroid 2275 → 2018 Hz (1884)
-- **Needs Ed's ears. Roots' held organ up (1.0 -> 1.6), high-passed at 220 Hz** (1 November,
-  seeds 101-116): the keys sound more of the time - the "other" stem held
-  0.585 -> 0.626 (records 0.768) - nothing away. A longer organ bed under
-  the skank.
-- **Dubstep's kick body (70-130 Hz) 4 dB down** (1 November, seeds 101-116):
-  the mix's 60-250 0.299 -> 0.283 (records 0.265), mids, loudness and crest
-  toward; the one move away is the bass stem's sub share, a Demucs artifact
-  in the 140 profiles. A leaner kick under the sub.
-- **Needs Ed's ears. Roots' kick 1.6x louder with its sub tail cut short (160 ms), hats
+- **Roots' kick 1.6x louder with its sub tail cut short (160 ms), hats
   x1.7, drive 3.6** (1 November, seeds 101-116): the drum stem's kick share
   0.408 -> 0.478 (records 0.567), snare 0.508 -> 0.444 (0.276), the mix's sub
   0.140 -> 0.109 (0.102), bass 0.494 -> 0.539 (0.548). You'll hear a
