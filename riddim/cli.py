@@ -590,6 +590,26 @@ def cmd_library(args) -> int:
     return 0
 
 
+
+def cmd_judge(args) -> int:
+    """Two takes: which sounds more like the records. One take: where it's off.
+    --stem ROLE=FILE (repeatable): an L6max multitrack take, stem by stem."""
+    from . import judge
+    if args.stem:
+        stems = dict(s.split("=", 1) for s in args.stem)
+        print(judge.rig_report(stems, args.style, mix_path=args.files[0] if args.files else None))
+        return 0
+    if len(args.files) == 1:
+        print(judge.report(args.files[0], args.style))
+        return 0
+    if len(args.files) != 2:
+        print("give one take, two takes, or --stem ROLE=FILE ...", file=sys.stderr)
+        return 2
+    v = judge.compare(args.files[0], args.files[1], args.style, aligned=not args.unaligned,
+                      start=args.start, seconds=args.seconds)
+    print(v.text)
+    return 0
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="riddim",
@@ -649,6 +669,20 @@ def build_parser() -> argparse.ArgumentParser:
                    help="run the whole send path without opening a port")
     p.add_argument("--verbose", action="store_true")
     p.set_defaults(func=cmd_send)
+
+    p = subs.add_parser(
+        "judge", help="which of two takes sounds more like the records (or where one take is off)")
+    p.add_argument("files", nargs="*", help="one or two recordings (with --stem: the mix, optional)")
+    p.add_argument("--style", default=None,
+                   help="dubstep_140 | dubby_halftime | dark_garage | uk_garage | roots_dub | steppers_dub, "
+                        "or a record family (dubstep, roots_reggae, ...)")
+    p.add_argument("--stem", action="append", default=[], metavar="ROLE=FILE",
+                   help="a multitrack stem, e.g. drums=ch1.wav bass=ch3.wav chords=ch5.wav")
+    p.add_argument("--unaligned", action="store_true",
+                   help="the takes are not the same bars at the same times")
+    p.add_argument("--start", type=float, default=0.0, help="seconds into both takes")
+    p.add_argument("--seconds", type=float, default=None, help="how much of each take")
+    p.set_defaults(func=cmd_judge)
 
     p = subs.add_parser("ping", help="check the Deluge is listening")
     p.add_argument("--port", default=None)

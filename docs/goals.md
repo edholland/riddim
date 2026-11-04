@@ -91,6 +91,20 @@ The plan's gate still applies: the judge only keeps or rejects changes once it
 has matched Ed's blind picks. That check has now been run, and it has not
 matched (below).
 
+## The judge rebuilt (4 November): docs/judge.md
+
+`riddim/judge.py` replaces the CLAP judge for keep-or-revert calls. It is
+plain DSP measurements of each window against the style's records, and two
+judges must agree before it names a winner. It was tested on 954 records
+(754 artists) against the same records with 24 kinds of known flaw. On
+unseen artists it was right on 97.6% of its calls and never called a 0.5 dB
+nudge. The old closeness rule scored 57% on the same pairs. On Ed's 22
+blind and library pairs it named a winner once, on a pair he couldn't tell
+apart, and otherwise said "can't tell". It never went against one of his
+picks. It is reliable only on the kinds of flaw it was fitted on, and it
+does not judge notes, arrangement or instrument choice. It reads L6max
+stems: `riddim-cli judge --stem ...`.
+
 ## The blind A/B (28 October, ml/blind_ab.py)
 
 This covered 12 of the judge's keep-or-revert calls. Each pair is the same

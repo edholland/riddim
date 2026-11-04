@@ -25,6 +25,8 @@ include = ["riddim*"]
 "riddim.render" = ["samples/*.md", "samples/*/*.wav"]
 # Rhythm cells mined from the references (ml/mine_cells.py): grid positions only.
 "riddim.theory" = ["cells.json"]
+# The judge's fitted model and the records' stem levels (ml/judge_fit.py, docs/judge.md).
+"riddim" = ["data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
