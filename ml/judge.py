@@ -1,4 +1,10 @@
-"""The judge: how much does a recording sound like the records we love?
+"""The CLAP judge: how much does a recording sound like the records we love?
+
+Superseded for keep-or-revert calls by riddim/judge.py (docs/judge.md): on
+known flaws put on real records, this file's closeness-to-centroid picks the
+record over its flawed copy about as often as a coin (57%), and it matched
+Ed's blind picks 5 of 9. Kept for coarse questions (genre ranking, FAD over a
+panel).
 
 Ears for a model that has none. Every recording is cut into 10-second
 windows and embedded by CLAP (laion/clap-htsat-unfused, a contrastive
