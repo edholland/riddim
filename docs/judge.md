@@ -158,5 +158,5 @@ python ml/judge_fit.py --feats references/judge2/judge_feats.npz --ed ed_feats.j
 ```
 
 The measured features this model was fitted on (`judge_feats.npz`, 31 MB,
-numbers only) are in `references/judge2/` on the Mac. The fitted model is
+numbers only) are in the project's shared files (`judge/judge_feats.npz`); Ed's pair features are in `references/judge2/ed_feats.json` on the Mac. The fitted model is
 74 KB of JSON.
