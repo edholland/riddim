@@ -385,6 +385,71 @@ def cmd_ports(args) -> int:
     return 0
 
 
+def _rig_backend(args):
+    from . import rig
+
+    if args.sim:
+        return rig.SimRig(routes={1: 1, 2: 1})
+    return rig.Hardware(midi=args.midi, audio=args.audio, channels=args.inputs)
+
+
+def _channel_range(text: str) -> list[int]:
+    out: list[int] = []
+    for part in text.split(","):
+        lo, _, hi = part.partition("-")
+        out.extend(range(int(lo), int(hi or lo) + 1))
+    return out
+
+
+def cmd_rig_devices(args) -> int:
+    import mido
+
+    from . import rig
+
+    rig.warm_midi()
+    print("midi out:", ", ".join(mido.get_output_names()) or "none")
+    print("midi in: ", ", ".join(mido.get_input_names()) or "none")
+    print("audio in:")
+    for d in rig.audio_inputs():
+        print(f"  {d['name']}: {d['channels']} ch @ {d['rate']:.0f}")
+    return 0
+
+
+def cmd_rig_probe(args) -> int:
+    from pathlib import Path
+    from time import strftime
+
+    from . import rig
+
+    try:
+        take, reports = rig.probe(_rig_backend(args), args.channel, args.note,
+                                  args.velocity, args.hold)
+    except rig.RigError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(f"MIDI {args.channel} note {args.note} ({rig.note_name(args.note)}) "
+          f"-> {take.device} via {take.midi_port}")
+    print(rig.describe(reports))
+    folder = Path(args.out or f"takes/{strftime('%Y%m%d-%H%M%S')}-probe")
+    print(f"saved {rig.save_take(take, reports, folder)}")
+    return 0 if any(r.sounding for r in reports) else 2
+
+
+def cmd_rig_scan(args) -> int:
+    from . import rig
+
+    try:
+        result = rig.scan(
+            _rig_backend(args), _channel_range(args.midi_channels), args.note,
+            on_step=lambda c, heard: print(
+                f"MIDI {c} -> " + (", ".join(f"in{h}" for h in heard) or "silent"), flush=True),
+        )
+    except rig.RigError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0 if result.routes else 2
+
+
 def cmd_batch(args) -> int:
     """Compose a batch, let the critic score it, and rank.
 
@@ -657,6 +722,29 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = subs.add_parser("ports", help="list MIDI ports")
     p.set_defaults(func=cmd_ports)
+
+    p = subs.add_parser("rig", help="hear the real rig: send MIDI, record, measure")
+    rig_subs = p.add_subparsers(dest="rig_command", required=True)
+    rig_common = argparse.ArgumentParser(add_help=False)
+    rig_common.add_argument("--midi", default=None, help="MIDI output (part of its name)")
+    rig_common.add_argument("--audio", default=None, help="audio input (part of its name)")
+    rig_common.add_argument("--inputs", type=int, default=None, help="inputs to record")
+    rig_common.add_argument("--sim", action="store_true",
+                            help="a pretend rig, for checking the tool itself")
+    q = rig_subs.add_parser("devices", help="list what the Mac can reach")
+    q.set_defaults(func=cmd_rig_devices)
+    q = rig_subs.add_parser("probe", parents=[rig_common], help="one note, record, measure")
+    q.add_argument("--channel", type=int, default=1)
+    q.add_argument("--note", type=int, default=36)
+    q.add_argument("--velocity", type=int, default=100)
+    q.add_argument("--hold", type=float, default=1.0)
+    q.add_argument("--out", default=None)
+    q.set_defaults(func=cmd_rig_probe)
+    q = rig_subs.add_parser("scan", parents=[rig_common],
+                            help="learn which MIDI channel reaches which input")
+    q.add_argument("--midi-channels", default="1-16")
+    q.add_argument("--note", type=int, default=48)
+    q.set_defaults(func=cmd_rig_scan)
 
     p = subs.add_parser(
         "batch", help="compose a batch of songs, ranked by the critic's score")
